@@ -24,42 +24,25 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         lottoengine.h lottoengine.cpp
-        # android/res/mipmap-mdpi/ic_launcher.png android/res/mipmap-mdpi/ic_launcher_round.png
-        # android/res/mipmap-xhdpi/ic_launcher.png android/res/mipmap-xhdpi/ic_launcher_round.png
-        # android/res/mipmap-xxhdpi/ic_launcher.png android/res/mipmap-xxhdpi/ic_launcher_round.png
-        # android/res/mipmap-xxxhdpi/ic_launcher.png android/res/mipmap-xxxhdpi/ic_launcher_round.png
-        # android/res/mipmap-hdpi/ic_launcher.png android/res/mipmap-hdpi/ic_launcher_round.png
-        # android/AndroidManifest.xml
-        # android/playstore/play_store_icon.png
+        android/AndroidManifest.xml
     )
+
+    set_target_properties(SuperLottoNumberGenerator PROPERTIES
+       QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET SuperLottoNumberGenerator APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
 #                 ${CMAKE_CURRENT_SOURCE_DIR}/android)
 # For more information, see https://doc.qt.io/qt-6/qt-add-executable.html#target-creation
 else()
     if(ANDROID)
-        add_library(SuperLottoNumberGenerator SHARED
-            ${PROJECT_SOURCES}
-        )
-      set_target_properties(SuperLottoNumberGenerator PROPERTIES
-        QT_ANDROID_APP_NAME "超级大乐透号码生成器")
-
-      # 设置图标基础名称和资源文件夹路径
-      set_target_properties(SuperLottoNumberGenerator PROPERTIES
-          QT_ANDROID_APP_ICON "ic_launcher"   # 对应 res/mipmap-*/icon.png 文件
-      )
-
-      # 设置包含自定义 Android 资源的文件夹路径
-      set_property(TARGET SuperLottoNumberGenerator APPEND PROPERTY
-          QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/android
-      )
-# Define properties for Android with Qt 5 after find_package() calls as:
-#    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
+    add_library(SuperLottoNumberGenerator SHARED
+        ${PROJECT_SOURCES}
+    )
     else()
         add_executable(SuperLottoNumberGenerator
             ${PROJECT_SOURCES}
         )
-    endif()
+endif()
 endif()
 
 target_link_libraries(SuperLottoNumberGenerator PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
