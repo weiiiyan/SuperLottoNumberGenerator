@@ -150,7 +150,7 @@ void MainWindow::init()
     m_btnGenerate->setStyleSheet(R"(
         QPushButton {
             font-size:16px; padding:10px;
-            background:#E63946; color:white;
+            background:#C62D39; color:white;
             border-radius:8px;
         }
         QPushButton:hover    { background:#FF4D6D; }
