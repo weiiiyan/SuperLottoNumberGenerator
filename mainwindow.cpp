@@ -1,13 +1,11 @@
-#include "mainwindow.h"
+﻿#include "mainwindow.h"
 #include "lottoengine.h"
 #include "./ui_mainwindow.h"
 
 #include <QApplication>
 #include <QDateTime>
-#include <QFontMetrics>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QList>
 #include <QPushButton>
 #include <QRandomGenerator>
 #include <QScreen>
@@ -38,7 +36,7 @@ void MainWindow::generateFiveGroups()
         for (int i = 0; i < 2; i++)
             m_backLabels[g][i]->setText(QString("%1").arg(numbers[g].backVec()[i], 2, 10, QChar('0')));
     }
-    m_timeLabel->setText("🕐 生成时间：" + QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss"));
+    m_timeLabel->setText("🕐 生成时间：" + QDateTime::currentDateTimeUtc().toLocalTime().toString("yyyy-MM-dd HH:mm:ss"));
     m_btnLock->setEnabled(true);
     m_btnLock->setChecked(false);
 }
@@ -63,8 +61,8 @@ void MainWindow::adaptToMobile()
         m_labelHeight = 40;
     }
 
-    m_labelWidth  = qMax(24, m_labelWidth);
-    m_labelHeight = qMax(24, m_labelHeight);
+    m_labelWidth  = (std::max)(24, m_labelWidth);
+    m_labelHeight = (std::max)(24, m_labelHeight);
 }
 
 void MainWindow::init()
@@ -77,37 +75,10 @@ void MainWindow::init()
         setCentralWidget(ui->centralwidget);
     }
 
-    m_btnGenerate = new QPushButton("🎲 生成号码", ui->centralwidget);
-    m_btnGenerate->setStyleSheet(R"(
-        QPushButton {
-            font-size:16px; padding:10px;
-            background:#E63946; color:white;
-            border-radius:8px;
-        }
-        QPushButton:hover    { background:#FF4D6D; }
-        QPushButton:disabled { background:#CCCCCC; color:#666666; }
-    )");
-
-    m_btnLock = new QPushButton("🔓 锁定号码", ui->centralwidget);
-    m_btnLock->setCheckable(true);
-    m_btnLock->setEnabled(false);
-    m_btnLock->setStyleSheet(R"(
-        QPushButton {
-            font-size:16px; padding:10px;
-            background:#F4A261; color:#1A1A1A;
-            border-radius:8px;
-        }
-        QPushButton:hover   { background:#E76F51; color:white; }
-        QPushButton:checked { background:#C1121F; color:white; }
-        QPushButton:disabled{ background:#CCCCCC; color:#666666; }
-    )");
-
     m_mainLayout = new QVBoxLayout(ui->centralwidget);
     m_mainLayout->setSpacing(18);
     m_mainLayout->setContentsMargins(40, 30, 40, 30);
     m_mainLayout->addStretch();
-
-    adaptToMobile();
 
     // 生成时间标签
     m_timeLabel = new QLabel("🕐 生成时间：年-月-日 时:分:秒", ui->centralwidget);
@@ -124,6 +95,8 @@ void MainWindow::init()
     )");
     m_mainLayout->addWidget(m_timeLabel, 0, Qt::AlignHCenter);
     m_mainLayout->addSpacing(18);
+
+    adaptToMobile();
 
     // 五组号码行
     for (int group = 0; group < 5; group++) {
@@ -169,6 +142,31 @@ void MainWindow::init()
     }
 
     // 按钮行
+    m_btnGenerate = new QPushButton("🎲 生成号码", ui->centralwidget);
+    m_btnGenerate->setStyleSheet(R"(
+        QPushButton {
+            font-size:16px; padding:10px;
+            background:#E63946; color:white;
+            border-radius:8px;
+        }
+        QPushButton:hover    { background:#FF4D6D; }
+        QPushButton:disabled { background:#CCCCCC; color:#666666; }
+    )");
+
+    m_btnLock = new QPushButton("🔓 锁定号码", ui->centralwidget);
+    m_btnLock->setCheckable(true);
+    m_btnLock->setEnabled(false);
+    m_btnLock->setStyleSheet(R"(
+        QPushButton {
+            font-size:16px; padding:10px;
+            background:#F4A261; color:#1A1A1A;
+            border-radius:8px;
+        }
+        QPushButton:hover   { background:#E76F51; color:white; }
+        QPushButton:checked { background:#C1121F; color:white; }
+        QPushButton:disabled{ background:#CCCCCC; color:#666666; }
+    )");
+
     QHBoxLayout *btnLayout = new QHBoxLayout();
     btnLayout->addStretch();
     btnLayout->addWidget(m_btnLock);

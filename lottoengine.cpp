@@ -34,6 +34,8 @@ LottoResult LottoEngine::generate() const
 QVector<LottoResult> LottoEngine::generateBatch(int count) const
 {
     QVector<LottoResult> results;
+    if (count <= 0)
+        return results;
     results.reserve(count);
     for (int i = 0; i < count; ++i)
         results.append(generate());
