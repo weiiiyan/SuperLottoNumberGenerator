@@ -82,6 +82,7 @@ void MainWindow::init()
 
     // 生成时间标签
     m_timeLabel = new QLabel("🕐 生成时间：年-月-日 时:分:秒", ui->centralwidget);
+    m_timeLabel->setObjectName("timeLabel");
     m_timeLabel->setAlignment(Qt::AlignCenter);
     m_timeLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     m_timeLabel->setStyleSheet(R"(
@@ -105,6 +106,7 @@ void MainWindow::init()
 
         for (int i = 0; i < 5; i++) {
             m_frontLabels[group][i] = new QLabel("?", ui->centralwidget);
+            m_frontLabels[group][i]->setObjectName(QString("frontLabel_%1_%2").arg(group).arg(i));
             m_frontLabels[group][i]->setFixedSize(m_labelWidth, m_labelHeight);
             m_frontLabels[group][i]->setStyleSheet(R"(
                 QLabel {
@@ -125,6 +127,7 @@ void MainWindow::init()
 
         for (int i = 0; i < 2; i++) {
             m_backLabels[group][i] = new QLabel("?", ui->centralwidget);
+            m_backLabels[group][i]->setObjectName(QString("backLabel_%1_%2").arg(group).arg(i));
             m_backLabels[group][i]->setFixedSize(m_labelWidth, m_labelHeight);
             m_backLabels[group][i]->setStyleSheet(R"(
                 QLabel {
@@ -143,6 +146,7 @@ void MainWindow::init()
 
     // 按钮行
     m_btnGenerate = new QPushButton("🎲 生成号码", ui->centralwidget);
+    m_btnGenerate->setObjectName("btnGenerate");
     m_btnGenerate->setStyleSheet(R"(
         QPushButton {
             font-size:16px; padding:10px;
@@ -154,6 +158,7 @@ void MainWindow::init()
     )");
 
     m_btnLock = new QPushButton("🔓 锁定号码", ui->centralwidget);
+    m_btnLock->setObjectName("btnLock");
     m_btnLock->setCheckable(true);
     m_btnLock->setEnabled(false);
     m_btnLock->setStyleSheet(R"(
