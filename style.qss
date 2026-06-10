@@ -14,28 +14,38 @@ QLabel#timeLabel {
     padding: 4px 20px;
 }
 
-/* ---- 前区号码标签（红球 1–35）---- */
+/* ---- 前区号码标签（红球 1–35）
+        字号由代码根据标签尺寸动态计算，不在此处硬编码 ---- */
 QLabel[area="front"] {
-    font-size: 20px;
     color: white;
     background: red;
     border: 2px solid red;
     border-radius: 6px;
 }
 
-/* ---- 后区号码标签（蓝球 1–12）---- */
+/* ---- 后区号码标签（蓝球 1–12）
+        字号由代码根据标签尺寸动态计算，不在此处硬编码 ---- */
 QLabel[area="back"] {
-    font-size: 20px;
     color: white;
     background: #0077B6;
     border: 2px solid #0077B6;
     border-radius: 6px;
 }
 
+/* ---- 前/后区之间的分隔符 ---- */
+QLabel[objectName^="separator_"] {
+    color: #888;
+    background: transparent;
+    border: none;
+}
+
 /* ---- 生成按钮 ---- */
 QPushButton#btnGenerate {
     font-size: 16px;
     padding: 10px;
+    min-width: 120px;
+    min-height: 26px;
+    border: none;
     background: #C62D39;
     color: white;
     border-radius: 8px;
@@ -56,6 +66,9 @@ QPushButton#btnGenerate:disabled {
 QPushButton#btnLock {
     font-size: 16px;
     padding: 10px;
+    min-width: 120px;
+    min-height: 26px;
+    border: none;
     background: #F4A261;
     color: #1A1A1A;
     border-radius: 8px;
@@ -75,4 +88,24 @@ QPushButton#btnLock:checked {
 QPushButton#btnLock:disabled {
     background: #CCCCCC;
     color: #666666;
+}
+
+/* ============================================================
+   横屏适配 — 通过 QWidget[layoutMode="landscape"] 选择器覆盖
+   竖屏模式不受影响（layoutMode != "landscape" 时回退到上方默认值）
+   ============================================================ */
+
+QWidget[layoutMode="landscape"] QLabel#timeLabel {
+    font-size: 13px;
+    padding: 2px 14px;
+    border-radius: 8px;
+}
+
+QWidget[layoutMode="landscape"] QPushButton#btnGenerate,
+QWidget[layoutMode="landscape"] QPushButton#btnLock {
+    font-size: 14px;
+    padding: 6px 10px;
+    min-width: 100px;
+    min-height: 32px;
+    border: none;
 }
