@@ -4,12 +4,14 @@
 
 #include <QApplication>
 #include <QDateTime>
+#include <QFile>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
 #include <QRandomGenerator>
 #include <QScreen>
 #include <QSettings>
+#include <QTextStream>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -85,15 +87,6 @@ void MainWindow::init()
     m_timeLabel->setObjectName("timeLabel");
     m_timeLabel->setAlignment(Qt::AlignCenter);
     m_timeLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    m_timeLabel->setStyleSheet(R"(
-        QLabel {
-            font-size:16px; color:#C1121F;
-            background:rgba(230,57,70,0.10);
-            border:1px solid rgba(230,57,70,0.35);
-            border-radius:12px;
-            padding:4px 20px;
-        }
-    )");
     m_mainLayout->addWidget(m_timeLabel, 0, Qt::AlignHCenter);
     m_mainLayout->addSpacing(18);
 
@@ -109,12 +102,7 @@ void MainWindow::init()
             m_frontLabels[group][i]->setObjectName(QString("frontLabel_%1_%2").arg(group).arg(i));
             m_frontLabels[group][i]->setFixedSize(m_labelWidth, m_labelHeight);
             m_frontLabels[group][i]->setAlignment(Qt::AlignCenter);
-            m_frontLabels[group][i]->setStyleSheet(R"(
-                QLabel {
-                    font-size:20px; color:white;
-                    background:red; border:2px solid red; border-radius:6px;
-                }
-            )");
+            m_frontLabels[group][i]->setProperty("area", "front");
             row->addWidget(m_frontLabels[group][i]);
             row->addSpacing(8);
         }
@@ -130,12 +118,7 @@ void MainWindow::init()
             m_backLabels[group][i]->setObjectName(QString("backLabel_%1_%2").arg(group).arg(i));
             m_backLabels[group][i]->setFixedSize(m_labelWidth, m_labelHeight);
             m_backLabels[group][i]->setAlignment(Qt::AlignCenter);
-            m_backLabels[group][i]->setStyleSheet(R"(
-                QLabel {
-                    font-size:20px; color:white;
-                    background:#0077B6; border:2px solid #0077B6; border-radius:6px;
-                }
-            )");
+            m_backLabels[group][i]->setProperty("area", "back");
             row->addWidget(m_backLabels[group][i]);
             row->addSpacing(8);
         }
@@ -147,32 +130,11 @@ void MainWindow::init()
     // 按钮行
     m_btnGenerate = new QPushButton("🎲 生成号码", ui->centralwidget);
     m_btnGenerate->setObjectName("btnGenerate");
-    m_btnGenerate->setStyleSheet(R"(
-        QPushButton {
-            font-size:16px; padding:10px;
-            background:#C62D39; color:white;
-            border-radius:8px;
-        }
-        QPushButton:hover    { background:#FF4D6D; }
-        QPushButton:focus    { border: 3px solid #4A90D9; outline: none; }
-        QPushButton:disabled { background:#CCCCCC; color:#666666; }
-    )");
 
     m_btnLock = new QPushButton("🔓 锁定号码", ui->centralwidget);
     m_btnLock->setObjectName("btnLock");
     m_btnLock->setCheckable(true);
     m_btnLock->setEnabled(false);
-    m_btnLock->setStyleSheet(R"(
-        QPushButton {
-            font-size:16px; padding:10px;
-            background:#F4A261; color:#1A1A1A;
-            border-radius:8px;
-        }
-        QPushButton:hover   { background:#E76F51; color:white; }
-        QPushButton:focus   { border: 3px solid #4A90D9; outline: none; }
-        QPushButton:checked { background:#C1121F; color:white; }
-        QPushButton:disabled{ background:#CCCCCC; color:#666666; }
-    )");
 
     QHBoxLayout *btnLayout = new QHBoxLayout();
     btnLayout->addStretch();
@@ -183,6 +145,12 @@ void MainWindow::init()
     m_mainLayout->addSpacing(40);
     m_mainLayout->addLayout(btnLayout);
     m_mainLayout->addStretch();
+
+    // 从资源文件加载统一样式表，避免样式散落在代码各处
+    QFile qss(":/style.qss");
+    if (qss.open(QFile::ReadOnly | QFile::Text)) {
+        setStyleSheet(QTextStream(&qss).readAll());
+    }
 
     connect(m_btnGenerate, &QPushButton::clicked,  this, &MainWindow::generateFiveGroups);
     connect(m_btnLock,     &QPushButton::toggled,  this, &MainWindow::onLockToggled);

@@ -1,0 +1,78 @@
+/* ============================================================
+   SuperLottoNumberGenerator — 统一样式表
+   通过对象名选择器（#id）和动态属性选择器（[area]）区分控件，
+   避免代码中重复编写样式，降低主题迭代成本。
+   ============================================================ */
+
+/* ---- 生成时间标签 ---- */
+QLabel#timeLabel {
+    font-size: 16px;
+    color: #C1121F;
+    background: rgba(230, 57, 70, 0.10);
+    border: 1px solid rgba(230, 57, 70, 0.35);
+    border-radius: 12px;
+    padding: 4px 20px;
+}
+
+/* ---- 前区号码标签（红球 1–35）---- */
+QLabel[area="front"] {
+    font-size: 20px;
+    color: white;
+    background: red;
+    border: 2px solid red;
+    border-radius: 6px;
+}
+
+/* ---- 后区号码标签（蓝球 1–12）---- */
+QLabel[area="back"] {
+    font-size: 20px;
+    color: white;
+    background: #0077B6;
+    border: 2px solid #0077B6;
+    border-radius: 6px;
+}
+
+/* ---- 生成按钮 ---- */
+QPushButton#btnGenerate {
+    font-size: 16px;
+    padding: 10px;
+    background: #C62D39;
+    color: white;
+    border-radius: 8px;
+}
+QPushButton#btnGenerate:hover {
+    background: #FF4D6D;
+}
+QPushButton#btnGenerate:focus {
+    border: 3px solid #4A90D9;
+    outline: none;
+}
+QPushButton#btnGenerate:disabled {
+    background: #CCCCCC;
+    color: #666666;
+}
+
+/* ---- 锁定按钮 ---- */
+QPushButton#btnLock {
+    font-size: 16px;
+    padding: 10px;
+    background: #F4A261;
+    color: #1A1A1A;
+    border-radius: 8px;
+}
+QPushButton#btnLock:hover {
+    background: #E76F51;
+    color: white;
+}
+QPushButton#btnLock:focus {
+    border: 3px solid #4A90D9;
+    outline: none;
+}
+QPushButton#btnLock:checked {
+    background: #C1121F;
+    color: white;
+}
+QPushButton#btnLock:disabled {
+    background: #CCCCCC;
+    color: #666666;
+}
