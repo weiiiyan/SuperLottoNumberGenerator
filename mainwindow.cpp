@@ -154,6 +154,7 @@ void MainWindow::init()
             border-radius:8px;
         }
         QPushButton:hover    { background:#FF4D6D; }
+        QPushButton:focus    { border: 3px solid #4A90D9; outline: none; }
         QPushButton:disabled { background:#CCCCCC; color:#666666; }
     )");
 
@@ -168,6 +169,7 @@ void MainWindow::init()
             border-radius:8px;
         }
         QPushButton:hover   { background:#E76F51; color:white; }
+        QPushButton:focus   { border: 3px solid #4A90D9; outline: none; }
         QPushButton:checked { background:#C1121F; color:white; }
         QPushButton:disabled{ background:#CCCCCC; color:#666666; }
     )");
