@@ -108,11 +108,11 @@ void MainWindow::init()
             m_frontLabels[group][i] = new QLabel("?", ui->centralwidget);
             m_frontLabels[group][i]->setObjectName(QString("frontLabel_%1_%2").arg(group).arg(i));
             m_frontLabels[group][i]->setFixedSize(m_labelWidth, m_labelHeight);
+            m_frontLabels[group][i]->setAlignment(Qt::AlignCenter);
             m_frontLabels[group][i]->setStyleSheet(R"(
                 QLabel {
                     font-size:20px; color:white;
                     background:red; border:2px solid red; border-radius:6px;
-                    qproperty-alignment:AlignCenter;
                 }
             )");
             row->addWidget(m_frontLabels[group][i]);
@@ -129,11 +129,11 @@ void MainWindow::init()
             m_backLabels[group][i] = new QLabel("?", ui->centralwidget);
             m_backLabels[group][i]->setObjectName(QString("backLabel_%1_%2").arg(group).arg(i));
             m_backLabels[group][i]->setFixedSize(m_labelWidth, m_labelHeight);
+            m_backLabels[group][i]->setAlignment(Qt::AlignCenter);
             m_backLabels[group][i]->setStyleSheet(R"(
                 QLabel {
                     font-size:20px; color:white;
                     background:#0077B6; border:2px solid #0077B6; border-radius:6px;
-                    qproperty-alignment:AlignCenter;
                 }
             )");
             row->addWidget(m_backLabels[group][i]);
