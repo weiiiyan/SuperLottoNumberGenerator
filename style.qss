@@ -89,23 +89,3 @@ QPushButton#btnLock:disabled {
     background: #CCCCCC;
     color: #666666;
 }
-
-/* ============================================================
-   横屏适配 — 通过 QWidget[layoutMode="landscape"] 选择器覆盖
-   竖屏模式不受影响（layoutMode != "landscape" 时回退到上方默认值）
-   ============================================================ */
-
-QWidget[layoutMode="landscape"] QLabel#timeLabel {
-    font-size: 13px;
-    padding: 2px 14px;
-    border-radius: 8px;
-}
-
-QWidget[layoutMode="landscape"] QPushButton#btnGenerate,
-QWidget[layoutMode="landscape"] QPushButton#btnLock {
-    font-size: 14px;
-    padding: 6px 10px;
-    min-width: 100px;
-    min-height: 32px;
-    border: none;
-}
