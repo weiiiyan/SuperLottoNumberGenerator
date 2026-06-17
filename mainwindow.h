@@ -14,6 +14,12 @@ class QVBoxLayout;
 class QTimer;
 class LottoEngine;
 
+/// 号码格式化：零填充两位数字（如 3 → "03"），供 UI 与测试复用
+inline QString formatNumber(int n)
+{
+    return QString::number(n).rightJustified(2, '0');
+}
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT

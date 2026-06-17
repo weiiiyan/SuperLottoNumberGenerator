@@ -122,3 +122,4 @@ Qt 资源文件，将 `style.qss` 打包到 `:/` 前缀下，编译时嵌入二�
 - Qt 6 优先，CMake 中 Fallback 到 Qt 5
 - `CMAKE_AUTOMOC` / `AUTOUIC` / `AUTORCC` 已启用，MOC 自动运行
 - 源码中注释使用中文
+- **行长度上限 100 字符**（遵循 [Qt Coding Style](https://wiki.qt.io/Qt_Coding_Style)），注释/文档 80 字符。不要过早换行——短于 100 字符的代码行保持单行

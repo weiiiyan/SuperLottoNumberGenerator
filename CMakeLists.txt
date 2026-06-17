@@ -9,6 +9,9 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# ── 测试开关 ──
+option(BUILD_TESTS "构建单元测试" ON)
+
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
@@ -71,4 +74,10 @@ install(TARGETS SuperLottoNumberGenerator
 
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(SuperLottoNumberGenerator)
+endif()
+
+# ── 单元测试子目录 ──
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
 endif()

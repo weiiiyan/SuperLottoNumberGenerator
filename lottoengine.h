@@ -13,6 +13,13 @@ struct LottoResult {
     explicit LottoResult(const QVector<int> &f, const QVector<int> &b) : front(f), back(b) {}
     const QVector<int>& frontVec() const { return front; }
     const QVector<int>& backVec() const { return back; }
+
+    bool operator==(const LottoResult &other) const {
+        return front == other.front && back == other.back;
+    }
+    bool operator!=(const LottoResult &other) const {
+        return !(*this == other);
+    }
 };
 
 Q_DECLARE_METATYPE(LottoResult)

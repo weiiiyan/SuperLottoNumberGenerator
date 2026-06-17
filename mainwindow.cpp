@@ -22,11 +22,7 @@
 //  工具函数
 // ────────────────────────────────────────────
 
-/// 号码格式化：零填充两位数字（如 3 → "03"）
-static QString formatNumber(int n)
-{
-    return QString::number(n).rightJustified(2, '0');
-}
+// formatNumber() 已提取至 mainwindow.h 供 UI 与测试复用
 
 /// 根据竖屏可用宽度推算动态间距分档
 static void spacingForWidth(int availableWidth, int &outSpacing, int &outSeparatorWidth)
@@ -99,11 +95,10 @@ void MainWindow::save() const
     if (m_btnLock->isChecked()) {
         QVariantList frontList, backList;
         for (int g = 0; g < GROUP_COUNT; ++g) {
-            QVariantList fg, bg;
-            for (int i = 0; i < FRONT_COUNT; ++i) fg << m_frontLabels[g][i]->text().toInt();
-            for (int i = 0; i < BACK_COUNT;  ++i) bg << m_backLabels[g][i]->text().toInt();
-            frontList << fg;
-            backList  << bg;
+            for (int i = 0; i < FRONT_COUNT; ++i)
+                frontList << m_frontLabels[g][i]->text().toInt();
+            for (int i = 0; i < BACK_COUNT; ++i)
+                backList  << m_backLabels[g][i]->text().toInt();
         }
         settings.setValue("isLocked",     true);
         settings.setValue("frontNumbers", frontList);
