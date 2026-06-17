@@ -123,3 +123,9 @@ Qt 资源文件，将 `style.qss` 打包到 `:/` 前缀下，编译时嵌入二�
 - `CMAKE_AUTOMOC` / `AUTOUIC` / `AUTORCC` 已启用，MOC 自动运行
 - 源码中注释使用中文
 - **行长度上限 100 字符**（遵循 [Qt Coding Style](https://wiki.qt.io/Qt_Coding_Style)），注释/文档 80 字符。不要过早换行——短于 100 字符的代码行保持单行
+- **注释遵循 [Qt Coding Style](https://wiki.qt.io/Qt_Coding_Style) 和 [C++ Documentation Style](https://wiki.qt.io/C%2B%2B_Documentation_Style)**：
+  - 类和公共函数使用 `/*! ... */` QDoc 风格文档块，以 `\brief` 开头
+  - 成员变量行内文档使用 `/*!< ... */`
+  - 不使用装饰性分隔符（`────`、`════` 等）
+  - 不在代码注释中使用 emoji（UI 字符串除外）
+  - 注释在 80 列以内

@@ -19,9 +19,7 @@ class TestMainWindow : public QObject
 private:
     MainWindow *m_window = nullptr;
 
-    // ═══════════════════════════════════════════
-    //  辅助方法
-    // ═══════════════════════════════════════════
+    // 辅助方法
 
     static constexpr const char *SETTINGS_FILE = "SuperLottoNumberGenerator.ini";
 
@@ -33,7 +31,7 @@ private:
         settings.sync();
     }
 
-    // ── 控件快捷查找（减少 findChild 样板代码）──
+    // 控件快捷查找（减少 findChild 样板代码）
 
     QLabel* frontLabel(int g, int i) const {
         return m_window->findChild<QLabel*>(QString("frontLabel_%1_%2").arg(g).arg(i));
@@ -55,7 +53,7 @@ private:
     }
 
 private slots:
-    // ── 测试生命周期 ──
+    // 测试生命周期
 
     void initTestCase()
     {
@@ -80,10 +78,8 @@ private slots:
         clearSettings();
     }
 
-    // ═══════════════════════════════════════════════════
-    // 场景 1：窗口初始化
-    // ═══════════════════════════════════════════════════
-
+        // 场景 1：窗口初始化
+    
     void shouldHaveCorrectWindowTitle()
     {
         QCOMPARE(m_window->windowTitle(), QString("大乐透随机号码生成器"));
@@ -123,10 +119,8 @@ private slots:
         QVERIFY(btn->isEnabled());
     }
 
-    // ═══════════════════════════════════════════════════
-    // 场景 2：点击"生成号码" — 号码格式验证
-    // ═══════════════════════════════════════════════════
-
+        // 场景 2：点击"生成号码" — 号码格式验证
+    
     void clickGenerate_shouldUpdateAllNumberLabels()
     {
         QVERIFY(btnGenerate() != nullptr);
@@ -170,10 +164,8 @@ private slots:
         }
     }
 
-    // ═══════════════════════════════════════════════════
-    // 场景 3：生成后锁定按钮状态变化
-    // ═══════════════════════════════════════════════════
-
+        // 场景 3：生成后锁定按钮状态变化
+    
     void clickGenerate_shouldEnableLockButton()
     {
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
@@ -183,10 +175,8 @@ private slots:
         QCOMPARE(btnLock()->text(), QString("🔓 锁定号码"));
     }
 
-    // ═══════════════════════════════════════════════════
-    // 场景 4：锁定 / 解锁流程
-    // ═══════════════════════════════════════════════════
-
+        // 场景 4：锁定 / 解锁流程
+    
     void lockButton_shouldToggleGenerateButtonState()
     {
         // 先生成号码
@@ -206,10 +196,8 @@ private slots:
         QVERIFY(btnGenerate()->isEnabled());
     }
 
-    // ═══════════════════════════════════════════════════
-    // 场景 5：同组内前区号码 UI 展示应升序
-    // ═══════════════════════════════════════════════════
-
+        // 场景 5：同组内前区号码 UI 展示应升序
+    
     void clickGenerate_frontNumbersShouldDisplayAscending()
     {
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
@@ -242,10 +230,8 @@ private slots:
         }
     }
 
-    // ═══════════════════════════════════════════════════
-    // 场景 6：时间标签更新
-    // ═══════════════════════════════════════════════════
-
+        // 场景 6：时间标签更新
+    
     void clickGenerate_shouldUpdateTimeLabel()
     {
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
@@ -260,11 +246,9 @@ private slots:
                  QString("时间格式不正确: '%1'").arg(text).toUtf8());
     }
 
-    // ═══════════════════════════════════════════════════
-    // 场景 7：持久化 round-trip
+        // 场景 7：持久化 round-trip
     // 生成 → 锁定 → 销毁窗口 → 重建 → 验证号码恢复
-    // ═══════════════════════════════════════════════════
-
+    
     void saveAndRestore_roundTrip()
     {
         // ─ Step 0: 验证 QSettings 读写通道正常 ─
@@ -311,10 +295,8 @@ private slots:
         QCOMPARE(timeLabel()->text(), QString("🕐 测试时间：2024-01-01 00:00:00"));
     }
 
-    // ═══════════════════════════════════════════════════
-    // 场景 8：无锁定时不恢复
-    // ═══════════════════════════════════════════════════
-
+        // 场景 8：无锁定时不恢复
+    
     void restore_whenNotLocked_shouldNotRestore()
     {
         clearSettings();
@@ -327,10 +309,8 @@ private slots:
         QVERIFY(!btnLock()->isChecked());
     }
 
-    // ═══════════════════════════════════════════════════
-    // 场景 9：resize 布局自适应不崩溃
-    // ═══════════════════════════════════════════════════
-
+        // 场景 9：resize 布局自适应不崩溃
+    
     void resizeWindow_shouldNotCrash()
     {
         m_window->show();

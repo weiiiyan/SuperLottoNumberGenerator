@@ -39,7 +39,7 @@ private:
     }
 
 private slots:
-    // ── 测试生命周期 ──
+    // 测试生命周期
 
     void initTestCase()
     {
@@ -51,10 +51,8 @@ private slots:
         // engine 作为 QObject 子对象自动析构，无需手动 delete
     }
 
-    // ═══════════════════════════════════════════
-    // generate() — 数量正确性
-    // ═══════════════════════════════════════════
-
+        // generate() — 数量正确性
+    
     void generate_shouldReturn5FrontNumbers()
     {
         LottoResult r = engine->generate();
@@ -67,10 +65,8 @@ private slots:
         QCOMPARE(r.back.size(), 2);
     }
 
-    // ═══════════════════════════════════════════
-    // generate() — 值域正确性
-    // ═══════════════════════════════════════════
-
+        // generate() — 值域正确性
+    
     void generate_frontNumbersShouldBeInRange1to35()
     {
         // 多次验证以增加置信度
@@ -92,10 +88,8 @@ private slots:
         }
     }
 
-    // ═══════════════════════════════════════════
-    // generate() — 排序正确性
-    // ═══════════════════════════════════════════
-
+        // generate() — 排序正确性
+    
     void generate_frontNumbersShouldBeSortedAscending()
     {
         for (int iter = 0; iter < 100; ++iter) {
@@ -112,10 +106,8 @@ private slots:
         }
     }
 
-    // ═══════════════════════════════════════════
-    // generate() — 唯一性（无重复）
-    // ═══════════════════════════════════════════
-
+        // generate() — 唯一性（无重复）
+    
     void generate_frontNumbersShouldBeUnique()
     {
         for (int iter = 0; iter < 100; ++iter) {
@@ -140,19 +132,15 @@ private slots:
         }
     }
 
-    // ═══════════════════════════════════════════
-    // generate() — 一次调用综合验证
-    // ═══════════════════════════════════════════
-
+        // generate() — 一次调用综合验证
+    
     void generate_allPropertiesCombined()
     {
         verifySingleResult(engine->generate());
     }
 
-    // ═══════════════════════════════════════════
-    // generateBatch() — 边界与数量
-    // ═══════════════════════════════════════════
-
+        // generateBatch() — 边界与数量
+    
     void generateBatch_countZero_shouldReturnEmpty()
     {
         QVector<LottoResult> results = engine->generateBatch(0);
@@ -201,10 +189,8 @@ private slots:
         QCOMPARE(results.size(), count);
     }
 
-    // ═══════════════════════════════════════════
-    // 随机性测试（概率性，但失败概率极低）
-    // ═══════════════════════════════════════════
-
+        // 随机性测试（概率性，但失败概率极低）
+    
     void generate_consecutiveCallsShouldNotBeIdentical()
     {
         // 连续 100 次调用，应该至少产生 2 种不同的结果

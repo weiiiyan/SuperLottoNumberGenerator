@@ -36,21 +36,22 @@ private slots:
     void onLockToggled(bool checked);
 
 public:
-    // ── 彩票格式常量 ──
+    // 彩票格式常量
     static constexpr int GROUP_COUNT   = 5;    // 注数（5 组）
     static constexpr int FRONT_COUNT   = 5;    // 前区每注号码个数（1–35）
     static constexpr int BACK_COUNT    = 2;    // 后区每注号码个数（1–12）
     static constexpr int LABELS_PER_ROW = FRONT_COUNT + BACK_COUNT;  // 每行标签总数 = 7
 
-    // ── 竖屏宽度分档阈值（逻辑像素）──
+    // 竖屏宽度分档阈值（逻辑像素）
     static constexpr int WIDTH_TIER_XS = 280;  // ~iPhone SE / 小屏 Android
     static constexpr int WIDTH_TIER_SM = 350;  // ~iPhone 6/7/8
     static constexpr int WIDTH_TIER_MD = 440;  // ~iPhone Plus / 中屏 Android
 
-    // ── 标签尺寸约束 ──
+    // 标签尺寸约束
     static constexpr int LABEL_MAX_SIZE = 44;           // 标签尺寸上限
     static constexpr int LABEL_MIN_SIZE_PORTRAIT = 22;  // 标签尺寸下限
-    static constexpr double LABEL_ROW_WIDTH_FRACTION = 0.94;  // 宽度安全系数（消化 QLabel 内边距 / 系统圆角 / 亚像素误差）
+    // 宽度安全系数（消化 QLabel 内边距和系统圆角）
+    static constexpr double LABEL_ROW_WIDTH_FRACTION = 0.94;
 
 private:
     void init();

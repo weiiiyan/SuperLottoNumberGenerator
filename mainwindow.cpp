@@ -18,9 +18,7 @@
 
 #include <algorithm>
 
-// ────────────────────────────────────────────
-//  工具函数
-// ────────────────────────────────────────────
+// 工具函数
 
 // formatNumber() 已提取至 mainwindow.h 供 UI 与测试复用
 
@@ -42,9 +40,7 @@ static void spacingForWidth(int availableWidth, int &outSpacing, int &outSeparat
     }
 }
 
-// ────────────────────────────────────────────
-//  构造 / 析构
-// ────────────────────────────────────────────
+// 构造 / 析构
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -60,9 +56,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-// ────────────────────────────────────────────
-//  号码生成
-// ────────────────────────────────────────────
+// 号码生成
 
 void MainWindow::generateFiveGroups()
 {
@@ -79,9 +73,7 @@ void MainWindow::generateFiveGroups()
     m_btnLock->setChecked(false);
 }
 
-// ────────────────────────────────────────────
-//  锁定 / 保存 / 恢复
-// ────────────────────────────────────────────
+// 锁定 / 保存 / 恢复
 
 void MainWindow::onLockToggled(bool checked)
 {
@@ -141,9 +133,7 @@ void MainWindow::restore()
     });
 }
 
-// ────────────────────────────────────────────
-//  窗口尺寸变化 → 更新标签尺寸
-// ────────────────────────────────────────────
+// 窗口尺寸变化 → 更新标签尺寸
 
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
@@ -157,9 +147,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     }
 }
 
-// ────────────────────────────────────────────
-//  标签尺寸计算（竖屏：根据可用宽度反推标签尺寸）
-// ────────────────────────────────────────────
+// 标签尺寸计算（竖屏：根据可用宽度反推标签尺寸）
 
 void MainWindow::updateLabelSizes(int availableWidth)
 {
@@ -205,9 +193,7 @@ void MainWindow::updateLabelSizes(int availableWidth)
     }
 }
 
-// ────────────────────────────────────────────
-//  创建单组号码行（复用已有标签和分隔符）
-// ────────────────────────────────────────────
+// 创建单组号码行（复用已有标签和分隔符）
 
 QHBoxLayout* MainWindow::createGroupRow(int group)
 {
@@ -232,9 +218,7 @@ QHBoxLayout* MainWindow::createGroupRow(int group)
     return row;
 }
 
-// ────────────────────────────────────────────
-//  清空布局中所有项（widget 保留，子布局/spacer 销毁）
-// ────────────────────────────────────────────
+// 清空布局中所有项（widget 保留，子布局/spacer 销毁）
 
 static void clearLayout(QLayout *layout)
 {
@@ -248,9 +232,7 @@ static void clearLayout(QLayout *layout)
     }
 }
 
-// ────────────────────────────────────────────
-//  构建固定竖屏布局（仅在 init 中调用一次）
-// ────────────────────────────────────────────
+// 构建固定竖屏布局（仅在 init 中调用一次）
 
 void MainWindow::buildLayout()
 {
@@ -285,9 +267,7 @@ void MainWindow::buildLayout()
     m_mainLayout->addStretch(1);
 }
 
-// ────────────────────────────────────────────
-//  间距档位变化时重建组行（保留主布局不变）
-// ────────────────────────────────────────────
+// 间距档位变化时重建组行（保留主布局不变）
 
 void MainWindow::rebuildGroupRows()
 {
@@ -304,9 +284,7 @@ void MainWindow::rebuildGroupRows()
     }
 }
 
-// ────────────────────────────────────────────
-//  UI 初始化
-// ────────────────────────────────────────────
+// UI 初始化
 
 void MainWindow::init()
 {
@@ -318,16 +296,16 @@ void MainWindow::init()
         setCentralWidget(ui->centralwidget);
     }
 
-    // ── 主布局 ──
+    // 主布局
     m_mainLayout = new QVBoxLayout(ui->centralwidget);
 
-    // ── 时间标签 ──
+    // 时间标签
     m_timeLabel = new QLabel("🕐 生成时间：年-月-日 时:分:秒", ui->centralwidget);
     m_timeLabel->setObjectName("timeLabel");
     m_timeLabel->setAlignment(Qt::AlignCenter);
     m_timeLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-    // ── 计算初始可用宽度（竖屏：以屏幕宽度为基准）──
+    // 计算初始可用宽度（竖屏：以屏幕宽度为基准）
     QRect screen = QApplication::primaryScreen()->availableGeometry();
     QMargins margins(40, 30, 40, 30);
     int availableWidth = static_cast<int>(
@@ -335,7 +313,7 @@ void MainWindow::init()
     qDebug() << "[LOTTO] init screen=" << screen
              << "availableWidth=" << availableWidth;
 
-    // ── 号码标签 + 分隔符（只创建一次）──
+    // 号码标签 + 分隔符（只创建一次）
     auto createLabels = [&](const QString &prefix, const QString &area, int count,
                              QLabel *out[], int group) {
         for (int i = 0; i < count; i++) {
@@ -358,10 +336,10 @@ void MainWindow::init()
         m_separators[g]->setContentsMargins(0, 0, 0, 0);
     }
 
-    // ── 预设主布局边距（竖屏固定值）──
+    // 预设主布局边距（竖屏固定值）
     m_mainLayout->setContentsMargins(40, 30, 40, 30);
 
-    // ── 统一计算初始尺寸 ──
+    // 统一计算初始尺寸
     updateLabelSizes(availableWidth);
     qDebug() << "[LOTTO] init after updateLabelSizes labelW=" << m_labelWidth
              << "spacing=" << m_spacing
@@ -369,13 +347,13 @@ void MainWindow::init()
              << "contentW=" << (LABELS_PER_ROW * m_labelWidth + LABELS_PER_ROW * m_spacing + m_separatorWidth)
              << "cwMarginL+R=" << (m_mainLayout ? (m_mainLayout->contentsMargins().left() + m_mainLayout->contentsMargins().right()) : -1);
 
-    // ── 号码容器 ──
+    // 号码容器
     m_groupsContainer = new QWidget(ui->centralwidget);
     m_groupsContainer->setObjectName("groupsContainer");
     m_groupsLayout = new QVBoxLayout(m_groupsContainer);
     m_groupsLayout->setContentsMargins(0, 0, 0, 0);
 
-    // ── 按钮 ──
+    // 按钮
     m_btnGenerate = new QPushButton("🎲 生成号码", ui->centralwidget);
     m_btnGenerate->setObjectName("btnGenerate");
 
@@ -384,20 +362,20 @@ void MainWindow::init()
     m_btnLock->setCheckable(true);
     m_btnLock->setEnabled(false);
 
-    // ── 构建竖屏布局 ──
+    // 构建竖屏布局
     buildLayout();
 
-    // ── 统一样式表 ──
+    // 统一样式表
     QFile qss(":/style.qss");
     if (qss.open(QFile::ReadOnly | QFile::Text))
         setStyleSheet(qss.readAll());
 
-    // ── 信号连接 ──
+    // 信号连接
     connect(m_btnGenerate, &QPushButton::clicked,  this, &MainWindow::generateFiveGroups);
     connect(m_btnLock,     &QPushButton::toggled,  this, &MainWindow::onLockToggled);
     connect(m_btnLock,     &QPushButton::clicked,  this, [this]{ save(); });
 
-    // ── 布局防抖定时器（解决 Android resizeEvent 自激震荡）──
+    // 布局防抖定时器（解决 Android resizeEvent 自激震荡）
     m_layoutDebounceTimer = new QTimer(this);
     m_layoutDebounceTimer->setSingleShot(true);
     connect(m_layoutDebounceTimer, &QTimer::timeout, this, [this]() {
