@@ -9,6 +9,8 @@
 #include <QSettings>
 #include <QRegularExpression>
 
+#include <QDebug>
+
 #include "mainwindow.h"
 #include "lottoengine.h"
 
@@ -82,11 +84,13 @@ private slots:
     
     void shouldHaveCorrectWindowTitle()
     {
+        qDebug() << "验证窗口标题正确";
         QCOMPARE(m_window->windowTitle(), QString("大乐透随机号码生成器"));
     }
 
     void allKeyWidgetsShouldExist()
     {
+        qDebug() << "验证所有关键控件存在";
         QVERIFY(btnGenerate() != nullptr);
         QVERIFY(btnLock() != nullptr);
         QVERIFY(timeLabel() != nullptr);
@@ -95,6 +99,7 @@ private slots:
 
     void allNumberLabelsAndSeparatorsShouldExist()
     {
+        qDebug() << "验证所有号码标签和分隔符存在（5 组）";
         for (int g = 0; g < MainWindow::GROUP_COUNT; g++) {
             for (int i = 0; i < MainWindow::FRONT_COUNT; i++)
                 QVERIFY(frontLabel(g, i) != nullptr);
@@ -106,6 +111,7 @@ private slots:
 
     void btnLockShouldBeInitiallyDisabled()
     {
+        qDebug() << "验证初始化时锁定按钮禁用且未选中";
         auto *btn = btnLock();
         QVERIFY(btn != nullptr);
         QVERIFY(!btn->isEnabled());
@@ -114,6 +120,7 @@ private slots:
 
     void btnGenerateShouldBeInitiallyEnabled()
     {
+        qDebug() << "验证初始化时生成按钮可用";
         auto *btn = btnGenerate();
         QVERIFY(btn != nullptr);
         QVERIFY(btn->isEnabled());
@@ -123,6 +130,7 @@ private slots:
     
     void clickGenerate_shouldUpdateAllNumberLabels()
     {
+        qDebug() << "验证点击生成后 35 个标签均为 2 位数字且在范围内";
         QVERIFY(btnGenerate() != nullptr);
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
 
@@ -155,6 +163,7 @@ private slots:
 
     void clickGenerate_separatorsShouldDisplayPlus()
     {
+        qDebug() << "验证分隔符显示 '+'";
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
 
         for (int g = 0; g < MainWindow::GROUP_COUNT; g++) {
@@ -168,6 +177,7 @@ private slots:
     
     void clickGenerate_shouldEnableLockButton()
     {
+        qDebug() << "验证生成号码后锁定按钮变为可用";
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
 
         QVERIFY(btnLock()->isEnabled());
@@ -179,6 +189,7 @@ private slots:
     
     void lockButton_shouldToggleGenerateButtonState()
     {
+        qDebug() << "验证锁定/解锁切换生成按钮状态和按钮文字";
         // 先生成号码
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
         QVERIFY(btnLock()->isEnabled());
@@ -200,6 +211,7 @@ private slots:
     
     void clickGenerate_frontNumbersShouldDisplayAscending()
     {
+        qDebug() << "验证 UI 上前区号码按升序显示（5 组）";
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
 
         for (int g = 0; g < MainWindow::GROUP_COUNT; g++) {
@@ -216,6 +228,7 @@ private slots:
 
     void clickGenerate_backNumbersShouldDisplayAscending()
     {
+        qDebug() << "验证 UI 上后区号码按升序显示（5 组）";
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
 
         for (int g = 0; g < MainWindow::GROUP_COUNT; g++) {
@@ -234,6 +247,7 @@ private slots:
     
     void clickGenerate_shouldUpdateTimeLabel()
     {
+        qDebug() << "验证生成后时间标签更新且格式正确";
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
 
         QString text = timeLabel()->text();
@@ -251,6 +265,7 @@ private slots:
     
     void saveAndRestore_roundTrip()
     {
+        qDebug() << "验证持久化 round-trip: 生成→锁定→重建→恢复";
         // ─ Step 0: 验证 QSettings 读写通道正常 ─
         QSettings preSettings(SETTINGS_FILE, QSettings::IniFormat);
         preSettings.clear();
@@ -299,6 +314,7 @@ private slots:
     
     void restore_whenNotLocked_shouldNotRestore()
     {
+        qDebug() << "验证未锁定时不恢复任何状态";
         clearSettings();
 
         delete m_window;
@@ -313,6 +329,7 @@ private slots:
     
     void resizeWindow_shouldNotCrash()
     {
+        qDebug() << "验证多种宽度 resize 不崩溃且标签尺寸正常";
         m_window->show();
         QTest::qWait(100);  // 等初始布局完成 + 防抖定时器
 

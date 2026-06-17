@@ -7,6 +7,8 @@
 #include <QVector>
 #include <algorithm>
 
+#include <QDebug>
+
 #include "lottoengine.h"
 
 class TestLottoEngine : public QObject
@@ -55,12 +57,14 @@ private slots:
     
     void generate_shouldReturn5FrontNumbers()
     {
+        qDebug() << "验证 generate() 返回 5 个前区号码";
         LottoResult r = engine->generate();
         QCOMPARE(r.front.size(), 5);
     }
 
     void generate_shouldReturn2BackNumbers()
     {
+        qDebug() << "验证 generate() 返回 2 个后区号码";
         LottoResult r = engine->generate();
         QCOMPARE(r.back.size(), 2);
     }
@@ -69,6 +73,7 @@ private slots:
     
     void generate_frontNumbersShouldBeInRange1to35()
     {
+        qDebug() << "验证前区号码均在 [1,35] 范围内（100 次）";
         // 多次验证以增加置信度
         for (int iter = 0; iter < 100; ++iter) {
             LottoResult r = engine->generate();
@@ -80,6 +85,7 @@ private slots:
 
     void generate_backNumbersShouldBeInRange1to12()
     {
+        qDebug() << "验证后区号码均在 [1,12] 范围内（100 次）";
         for (int iter = 0; iter < 100; ++iter) {
             LottoResult r = engine->generate();
             for (int n : r.back) {
@@ -92,6 +98,7 @@ private slots:
     
     void generate_frontNumbersShouldBeSortedAscending()
     {
+        qDebug() << "验证前区号码按升序排列（100 次）";
         for (int iter = 0; iter < 100; ++iter) {
             LottoResult r = engine->generate();
             QVERIFY2(std::is_sorted(r.front.begin(), r.front.end()), "前区号码未按升序排列");
@@ -100,6 +107,7 @@ private slots:
 
     void generate_backNumbersShouldBeSortedAscending()
     {
+        qDebug() << "验证后区号码按升序排列（100 次）";
         for (int iter = 0; iter < 100; ++iter) {
             LottoResult r = engine->generate();
             QVERIFY2(std::is_sorted(r.back.begin(), r.back.end()), "后区号码未按升序排列");
@@ -110,6 +118,7 @@ private slots:
     
     void generate_frontNumbersShouldBeUnique()
     {
+        qDebug() << "验证前区号码无重复（100 次）";
         for (int iter = 0; iter < 100; ++iter) {
             LottoResult r = engine->generate();
             QSet<int> seen;
@@ -122,6 +131,7 @@ private slots:
 
     void generate_backNumbersShouldBeUnique()
     {
+        qDebug() << "验证后区号码无重复（100 次）";
         for (int iter = 0; iter < 100; ++iter) {
             LottoResult r = engine->generate();
             QSet<int> seen;
@@ -136,6 +146,7 @@ private slots:
     
     void generate_allPropertiesCombined()
     {
+        qDebug() << "综合验证 generate() 结果满足所有约束";
         verifySingleResult(engine->generate());
     }
 
@@ -143,12 +154,14 @@ private slots:
     
     void generateBatch_countZero_shouldReturnEmpty()
     {
+        qDebug() << "验证 generateBatch(0) 返回空结果";
         QVector<LottoResult> results = engine->generateBatch(0);
         QCOMPARE(results.size(), 0);
     }
 
     void generateBatch_countNegative_shouldReturnEmpty()
     {
+        qDebug() << "验证 generateBatch(负数) 返回空结果";
         // 负数应被视为无效输入，返回空结果
         QVector<LottoResult> results = engine->generateBatch(-1);
         QCOMPARE(results.size(), 0);
@@ -159,6 +172,7 @@ private slots:
 
     void generateBatch_countOne_shouldReturnOneResult()
     {
+        qDebug() << "验证 generateBatch(1) 返回 1 个有效结果";
         QVector<LottoResult> results = engine->generateBatch(1);
         QCOMPARE(results.size(), 1);
         verifySingleResult(results[0]);
@@ -166,6 +180,7 @@ private slots:
 
     void generateBatch_countMultiple_shouldReturnCorrectCount()
     {
+        qDebug() << "验证 generateBatch(10) 返回正确数量";
         constexpr int expected = 10;
         QVector<LottoResult> results = engine->generateBatch(expected);
         QCOMPARE(results.size(), expected);
@@ -173,6 +188,7 @@ private slots:
 
     void generateBatch_allResultsShouldBeValid()
     {
+        qDebug() << "验证 generateBatch(50) 所有结果均有效";
         constexpr int count = 50;
         QVector<LottoResult> results = engine->generateBatch(count);
         QCOMPARE(results.size(), count);
@@ -183,6 +199,7 @@ private slots:
 
     void generateBatch_largeBatch_shouldNotCrash()
     {
+        qDebug() << "验证 generateBatch(1000) 大批量不崩溃且数量正确";
         // 大批量测试：确保性能和内存合理
         constexpr int count = 1000;
         QVector<LottoResult> results = engine->generateBatch(count);
@@ -193,6 +210,7 @@ private slots:
     
     void generate_consecutiveCallsShouldNotBeIdentical()
     {
+        qDebug() << "验证连续 100 次生成不全相同（随机性检查）";
         // 连续 100 次调用，应该至少产生 2 种不同的结果
         constexpr int rounds = 100;
         QVector<LottoResult> results = engine->generateBatch(rounds);
@@ -208,6 +226,7 @@ private slots:
 
     void generate_numberDistributionIsReasonable()
     {
+        qDebug() << "验证 5000 次生成中每个号码至少出现一次（分布合理性）";
         // 生成大量号码，验证每个号码至少出现过一次
         // 样本量足够大使得 "某个号码从未出现" 的概率极低（<< 10^-300）
         constexpr int sampleSize = 5000;
@@ -242,6 +261,7 @@ private slots:
 
     void generate_runsWithoutInitTestCase()
     {
+        qDebug() << "验证 LottoEngine 无状态独立工作（无需 init）";
         // 验证 LottoEngine 可以在没有 init 准备的情况下工作
         //（测试引擎的无状态特性）
         LottoEngine standaloneEngine;
