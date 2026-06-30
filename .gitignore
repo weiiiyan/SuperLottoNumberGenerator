@@ -169,6 +169,8 @@ CMakeLists.txt.user*
 
 /.claude/
 
+/.understand-anything/
+
 # LSP / clangd
 .cache/
 compile_commands.json
