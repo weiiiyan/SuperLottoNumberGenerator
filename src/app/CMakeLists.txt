@@ -32,6 +32,10 @@ endif()
 target_link_libraries(SuperLottoNumberGenerator PRIVATE
     lotto_app lotto_adapters lotto_core)
 
+# 可执行输出到构建根目录(子目录默认会把 exe 放到 src/app/, 改变 QSettings INI 落地位置)
+set_target_properties(SuperLottoNumberGenerator PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+
 # Qt for iOS 自 6.1 起自动设置 MACOSX_BUNDLE_GUI_IDENTIFIER
 if(${QT_VERSION} VERSION_LESS 6.1.0)
   set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.SuperLottoNumberGenerator)

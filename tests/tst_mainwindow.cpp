@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QWidget>
 #include <QSettings>
+#include <QResource>
 #include <QTemporaryDir>
 #include <QRegularExpression>
 
@@ -75,6 +76,8 @@ private slots:
     void initTestCase()
     {
         QVERIFY(m_dir.isValid());
+        // 与生产入口一致: 静态库 qrc 资源需显式初始化, 否则样式表不加载
+        Q_INIT_RESOURCE(resources);
         makeWindow();
         // 不在 offscreen 模式 show() 以避免平台差异(仅 resize 用例中 show)
     }

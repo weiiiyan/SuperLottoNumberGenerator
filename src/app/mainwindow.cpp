@@ -327,8 +327,12 @@ void MainWindow::init()
 
     // 统一样式表
     QFile qss(":/style.qss");
-    if (qss.open(QFile::ReadOnly | QFile::Text))
+    if (qss.open(QFile::ReadOnly | QFile::Text)) {
         setStyleSheet(qss.readAll());
+    } else {
+        qWarning() << "[LOTTO] 未能加载 :/style.qss, 样式表未应用"
+                   << "(静态库资源需在入口调用 Q_INIT_RESOURCE)";
+    }
 
     // 信号连接: 用户动作转发给控制器, 状态变化由 ticketChanged 信号回推
     connect(m_btnGenerate, &QPushButton::clicked, this, [this]{ m_controller->generateNewTicket(); });
