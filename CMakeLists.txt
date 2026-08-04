@@ -15,55 +15,10 @@ option(BUILD_TESTS "构建单元测试" ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
-set(PROJECT_SOURCES
-        main.cpp
-        mainwindow.cpp
-        mainwindow.h
-        mainwindow.ui
-        resources.qrc
-)
-
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(SuperLottoNumberGenerator
-        MANUAL_FINALIZATION
-        ${PROJECT_SOURCES}
-        lottoengine.h lottoengine.cpp
-        android/AndroidManifest.xml
-    )
-
-    set_target_properties(SuperLottoNumberGenerator PROPERTIES
-       QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
-# Define target properties for Android with Qt 6 as:
-#    set_property(TARGET SuperLottoNumberGenerator APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
-#                 ${CMAKE_CURRENT_SOURCE_DIR}/android)
-# For more information, see https://doc.qt.io/qt-6/qt-add-executable.html#target-creation
-else()
-    if(ANDROID)
-    add_library(SuperLottoNumberGenerator SHARED
-        ${PROJECT_SOURCES}
-    )
-    else()
-        add_executable(SuperLottoNumberGenerator
-            ${PROJECT_SOURCES}
-        )
-endif()
-endif()
-
-target_link_libraries(SuperLottoNumberGenerator PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
-
-# Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
-# If you are developing for iOS or macOS you should consider setting an
-# explicit, fixed bundle identifier manually though.
-if(${QT_VERSION} VERSION_LESS 6.1.0)
-  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.SuperLottoNumberGenerator)
-endif()
-set_target_properties(SuperLottoNumberGenerator PROPERTIES
-    ${BUNDLE_ID_OPTION}
-    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
-    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
-    MACOSX_BUNDLE TRUE
-    WIN32_EXECUTABLE TRUE
-)
+# ── 分层架构: 领域核心 / 适配器 / 应用 ──
+add_subdirectory(src/domain)
+add_subdirectory(src/adapters)
+add_subdirectory(src/app)
 
 include(GNUInstallDirs)
 install(TARGETS SuperLottoNumberGenerator
@@ -71,10 +26,6 @@ install(TARGETS SuperLottoNumberGenerator
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
-
-if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(SuperLottoNumberGenerator)
-endif()
 
 # ── 单元测试子目录 ──
 if(BUILD_TESTS)

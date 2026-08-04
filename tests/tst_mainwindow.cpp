@@ -1,5 +1,6 @@
-﻿// MainWindow GUI 集成测试
-// 通过 QTest::mouseClick 模拟用户操作，用 findChild 定位控件并验证属性
+// MainWindow GUI 集成测试
+// 通过 QTest::mouseClick 模拟用户操作, 用 findChild 定位控件并验证属性
+// 夹具为注入式: 每次重建窗口 = 全新 controller + 指向同一临时文件的仓储
 // 运行方式: MainWindowTest.exe -platform offscreen
 
 #include <QTest>
@@ -7,33 +8,47 @@
 #include <QLabel>
 #include <QWidget>
 #include <QSettings>
+#include <QTemporaryDir>
 #include <QRegularExpression>
 
 #include <QDebug>
 
 #include "mainwindow.h"
+#include "lottocontroller.h"
 #include "lottoengine.h"
+#include "qsettingsrepository.h"
 
 class TestMainWindow : public QObject
 {
     Q_OBJECT
 
 private:
+    QTemporaryDir m_dir;                       /*!< 测试专属临时目录(自动清理) */
+    QSettings *m_settings = nullptr;
+    QSettingsTicketRepository *m_repo = nullptr;
+    LottoEngine *m_engine = nullptr;
+    LottoController *m_controller = nullptr;
     MainWindow *m_window = nullptr;
 
-    // 辅助方法
-
-    static constexpr const char *SETTINGS_FILE = "SuperLottoNumberGenerator.ini";
-
-    /// 清理 QSettings 残留数据
-    static void clearSettings()
+    /// 重建完整装配: 全新 controller + 指向同一临时文件的仓储
+    MainWindow* makeWindow()
     {
-        QSettings settings(SETTINGS_FILE, QSettings::IniFormat);
-        settings.clear();
-        settings.sync();
+        delete m_window;
+        delete m_controller;
+        delete m_engine;
+        delete m_repo;
+        delete m_settings;
+
+        m_settings = new QSettings(m_dir.filePath("test.ini"), QSettings::IniFormat);
+        m_repo = new QSettingsTicketRepository(m_settings);
+        m_engine = new LottoEngine;
+        m_controller = new LottoController(m_repo, m_engine);
+        m_window = new MainWindow(m_controller);
+        QTest::qWait(50);   // 等 controller->load() 的 singleShot(0) 异步恢复
+        return m_window;
     }
 
-    // 控件快捷查找（减少 findChild 样板代码）
+    // 控件快捷查找(减少 findChild 样板代码)
 
     QLabel* frontLabel(int g, int i) const {
         return m_window->findChild<QLabel*>(QString("frontLabel_%1_%2").arg(g).arg(i));
@@ -59,29 +74,29 @@ private slots:
 
     void initTestCase()
     {
-        clearSettings();
-        m_window = new MainWindow;
-        // MainWindow 构造函数 → init() → restore()
-        // 不在 offscreen 模式 show() 以避免平台差异
+        QVERIFY(m_dir.isValid());
+        makeWindow();
+        // 不在 offscreen 模式 show() 以避免平台差异(仅 resize 用例中 show)
     }
 
     void init()
     {
-        // 每个测试前重置状态：取消锁定、清空号码
-        if (btnLock() && btnLock()->isChecked())
-            QTest::mouseClick(btnLock(), Qt::LeftButton);  // 解锁
-        clearSettings();
+        // 每个测试前重置状态: 若处于锁定则点击解锁, 恢复干净初始态
+        if (m_window && btnLock() && btnLock()->isChecked())
+            QTest::mouseClick(btnLock(), Qt::LeftButton);
     }
 
     void cleanupTestCase()
     {
         delete m_window;
-        m_window = nullptr;
-        clearSettings();
+        delete m_controller;
+        delete m_engine;
+        delete m_repo;
+        delete m_settings;
     }
 
-        // 场景 1：窗口初始化
-    
+    // ── 场景 1: 窗口初始化 ──
+
     void shouldHaveCorrectWindowTitle()
     {
         qDebug() << "验证窗口标题正确";
@@ -99,7 +114,7 @@ private slots:
 
     void allNumberLabelsAndSeparatorsShouldExist()
     {
-        qDebug() << "验证所有号码标签和分隔符存在（5 组）";
+        qDebug() << "验证所有号码标签和分隔符存在(5 组)";
         for (int g = 0; g < MainWindow::GROUP_COUNT; g++) {
             for (int i = 0; i < MainWindow::FRONT_COUNT; i++)
                 QVERIFY(frontLabel(g, i) != nullptr);
@@ -126,15 +141,14 @@ private slots:
         QVERIFY(btn->isEnabled());
     }
 
-        // 场景 2：点击"生成号码" — 号码格式验证
-    
+    // ── 场景 2: 点击"生成号码" — 号码格式验证 ──
+
     void clickGenerate_shouldUpdateAllNumberLabels()
     {
         qDebug() << "验证点击生成后 35 个标签均为 2 位数字且在范围内";
         QVERIFY(btnGenerate() != nullptr);
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
 
-        // 验证 35 个号码标签都是 2 位数字格式且在正确范围内
         for (int g = 0; g < MainWindow::GROUP_COUNT; g++) {
             for (int i = 0; i < MainWindow::FRONT_COUNT; i++) {
                 auto *label = frontLabel(g, i);
@@ -173,8 +187,8 @@ private slots:
         }
     }
 
-        // 场景 3：生成后锁定按钮状态变化
-    
+    // ── 场景 3: 生成后锁定按钮状态变化 ──
+
     void clickGenerate_shouldEnableLockButton()
     {
         qDebug() << "验证生成号码后锁定按钮变为可用";
@@ -185,12 +199,11 @@ private slots:
         QCOMPARE(btnLock()->text(), QString("🔓 锁定号码"));
     }
 
-        // 场景 4：锁定 / 解锁流程
-    
+    // ── 场景 4: 锁定 / 解锁流程 ──
+
     void lockButton_shouldToggleGenerateButtonState()
     {
         qDebug() << "验证锁定/解锁切换生成按钮状态和按钮文字";
-        // 先生成号码
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
         QVERIFY(btnLock()->isEnabled());
 
@@ -207,11 +220,11 @@ private slots:
         QVERIFY(btnGenerate()->isEnabled());
     }
 
-        // 场景 5：同组内前区号码 UI 展示应升序
-    
+    // ── 场景 5: 同组内号码 UI 展示应升序 ──
+
     void clickGenerate_frontNumbersShouldDisplayAscending()
     {
-        qDebug() << "验证 UI 上前区号码按升序显示（5 组）";
+        qDebug() << "验证 UI 上前区号码按升序显示(5 组)";
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
 
         for (int g = 0; g < MainWindow::GROUP_COUNT; g++) {
@@ -228,7 +241,7 @@ private slots:
 
     void clickGenerate_backNumbersShouldDisplayAscending()
     {
-        qDebug() << "验证 UI 上后区号码按升序显示（5 组）";
+        qDebug() << "验证 UI 上后区号码按升序显示(5 组)";
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
 
         for (int g = 0; g < MainWindow::GROUP_COUNT; g++) {
@@ -243,8 +256,8 @@ private slots:
         }
     }
 
-        // 场景 6：时间标签更新
-    
+    // ── 场景 6: 时间标签更新 ──
+
     void clickGenerate_shouldUpdateTimeLabel()
     {
         qDebug() << "验证生成后时间标签更新且格式正确";
@@ -254,86 +267,80 @@ private slots:
         QVERIFY2(text.contains("🕐 生成时间："),
                  QString("时间标签内容异常: '%1'").arg(text).toUtf8());
 
-        // 验证时间格式: yyyy-MM-dd HH:mm:ss
         QRegularExpression re(R"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})");
         QVERIFY2(re.match(text).hasMatch(),
                  QString("时间格式不正确: '%1'").arg(text).toUtf8());
     }
 
-        // 场景 7：持久化 round-trip
-    // 生成 → 锁定 → 销毁窗口 → 重建 → 验证号码恢复
-    
+    // ── 场景 7: 持久化 round-trip(数据层已由仓储测试覆盖, 此处验证视图管线)──
+    // 生成 → 锁定(触发保存) → 销毁窗口与控制器 → 重建 → 验证恢复
+
     void saveAndRestore_roundTrip()
     {
         qDebug() << "验证持久化 round-trip: 生成→锁定→重建→恢复";
-        // ─ Step 0: 验证 QSettings 读写通道正常 ─
-        QSettings preSettings(SETTINGS_FILE, QSettings::IniFormat);
-        preSettings.clear();
+        // 通过真实 UI 操作产生持久化数据
+        QTest::mouseClick(btnGenerate(), Qt::LeftButton);
+        QVERIFY(btnLock()->isEnabled());
+        QTest::mouseClick(btnLock(), Qt::LeftButton);   // 锁定 → controller 保存
 
-        QVariantList testFront, testBack;
+        // 记录期望值
+        QStringList expectedFront, expectedBack;
         for (int g = 0; g < MainWindow::GROUP_COUNT; g++) {
             for (int i = 0; i < MainWindow::FRONT_COUNT; i++)
-                testFront << (g * 10 + i + 1);   // 可识别的测试数据: 1,2,3,4,5,11,12,...
+                expectedFront << frontLabel(g, i)->text();
             for (int i = 0; i < MainWindow::BACK_COUNT; i++)
-                testBack  << (g * 10 + i + 1);
+                expectedBack << backLabel(g, i)->text();
         }
-        preSettings.setValue("isLocked", true);
-        preSettings.setValue("frontNumbers", testFront);
-        preSettings.setValue("backNumbers", testBack);
-        preSettings.setValue("generateTime", QString("🕐 测试时间：2024-01-01 00:00:00"));
-        preSettings.sync();
-        QVERIFY2(preSettings.value("isLocked").toBool(),
-                 "QSettings isLocked 写入失败");
-        QCOMPARE(preSettings.value("frontNumbers").toList().size(), 25);
-        QCOMPARE(preSettings.value("backNumbers").toList().size(), 10);
 
-        // ─ Step 1: 销毁旧窗口，用预设 QSettings 重建 → 触发 restore() ─
-        delete m_window;
-        m_window = new MainWindow;
-        QTest::qWait(100);  // 等 QTimer::singleShot(0, restore) 执行
+        // ─ Step 1: 销毁窗口与控制器, 用同一临时文件重建 → 触发 load() ─
+        makeWindow();
 
         // ─ Step 2: 验证锁定状态恢复 ─
-        QVERIFY(btnLock() != nullptr);
         QVERIFY2(btnLock()->isChecked(), "重建窗口后锁定按钮应为选中状态");
+        QCOMPARE(btnLock()->text(), QString("🔒 解锁生成"));
         QVERIFY(!btnGenerate()->isEnabled());
 
-        // ─ Step 3: 验证号码恢复为预设的测试数据 ─
+        // ─ Step 3: 验证号码恢复 ─
         int fIdx = 0, bIdx = 0;
         for (int g = 0; g < MainWindow::GROUP_COUNT; g++) {
             for (int i = 0; i < MainWindow::FRONT_COUNT; i++)
-                QCOMPARE(frontLabel(g, i)->text(), formatNumber(testFront[fIdx++].toInt()));
+                QCOMPARE(frontLabel(g, i)->text(), expectedFront[fIdx++]);
             for (int i = 0; i < MainWindow::BACK_COUNT; i++)
-                QCOMPARE(backLabel(g, i)->text(), formatNumber(testBack[bIdx++].toInt()));
+                QCOMPARE(backLabel(g, i)->text(), expectedBack[bIdx++]);
         }
 
-        // ─ Step 4: 验证时间标签恢复 ─
-        QCOMPARE(timeLabel()->text(), QString("🕐 测试时间：2024-01-01 00:00:00"));
+        // ─ Step 4: 验证时间标签恢复(格式为 yyyy-MM-dd HH:mm:ss) ─
+        QString text = timeLabel()->text();
+        QVERIFY2(text.contains("🕐 生成时间："),
+                 QString("时间标签内容异常: '%1'").arg(text).toUtf8());
+        QRegularExpression re(R"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})");
+        QVERIFY2(re.match(text).hasMatch(),
+                 QString("时间格式不正确: '%1'").arg(text).toUtf8());
     }
 
-        // 场景 8：无锁定时不恢复
-    
+    // ── 场景 8: 无锁定时不恢复 ──
+
     void restore_whenNotLocked_shouldNotRestore()
     {
         qDebug() << "验证未锁定时不恢复任何状态";
-        clearSettings();
+        m_repo->clear();   // 清空持久化, 等价于从未锁定过
 
-        delete m_window;
-        m_window = new MainWindow;
-        QTest::qWait(50);
+        makeWindow();
 
         QVERIFY(!btnLock()->isEnabled());
         QVERIFY(!btnLock()->isChecked());
+        QCOMPARE(frontLabel(0, 0)->text(), QString("?"));   // 号码标签保持占位符
     }
 
-        // 场景 9：resize 布局自适应不崩溃
-    
+    // ── 场景 9: resize 布局自适应不崩溃 ──
+
     void resizeWindow_shouldNotCrash()
     {
         qDebug() << "验证多种宽度 resize 不崩溃且标签尺寸正常";
         m_window->show();
         QTest::qWait(100);  // 等初始布局完成 + 防抖定时器
 
-        // 多种宽度，验证布局重建不崩溃
+        // 多种宽度, 验证布局重建不崩溃
         const QVector<int> widths = { 250, 320, 400, 500, 700 };
         for (int w : widths) {
             m_window->resize(w, 600);

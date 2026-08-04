@@ -1,0 +1,79 @@
+#include "lottoticket.h"
+
+LottoTicket::LottoTicket()
+{
+}
+
+LottoTicket::LottoTicket(const QVector<LottoResult> &groups,
+                         const QDateTime &generateTime, bool isLocked)
+    : m_groups(groups)
+    , m_generateTime(generateTime)
+    , m_isLocked(isLocked)
+{
+}
+
+const QVector<LottoResult> &LottoTicket::groups() const
+{
+    return m_groups;
+}
+
+void LottoTicket::setGroups(const QVector<LottoResult> &groups)
+{
+    m_groups = groups;
+}
+
+LottoResult LottoTicket::groupAt(int index) const
+{
+    return (index >= 0 && index < m_groups.size()) ? m_groups[index] : LottoResult();
+}
+
+QDateTime LottoTicket::generateTime() const
+{
+    return m_generateTime;
+}
+
+void LottoTicket::setGenerateTime(const QDateTime &time)
+{
+    m_generateTime = time;
+}
+
+bool LottoTicket::isLocked() const
+{
+    return m_isLocked;
+}
+
+void LottoTicket::setLocked(bool locked)
+{
+    m_isLocked = locked;
+}
+
+bool LottoTicket::isValid() const
+{
+    if (m_groups.size() != GROUP_COUNT)
+        return false;
+
+    for (const LottoResult &result : m_groups) {
+        if (result.front.size() != FRONT_COUNT || result.back.size() != BACK_COUNT)
+            return false;
+        for (int i = 0; i < FRONT_COUNT; ++i) {
+            if (result.front[i] < 1 || result.front[i] > 35)
+                return false;
+            if (i > 0 && result.front[i] <= result.front[i - 1])
+                return false;
+        }
+        for (int i = 0; i < BACK_COUNT; ++i) {
+            if (result.back[i] < 1 || result.back[i] > 12)
+                return false;
+            if (i > 0 && result.back[i] <= result.back[i - 1])
+                return false;
+        }
+    }
+    return true;
+}
+
+bool LottoTicket::operator==(const LottoTicket &other) const
+{
+    return m_groups == other.m_groups
+        && m_generateTime == other.m_generateTime
+        && m_isLocked == other.m_isLocked;
+}

@@ -1,22 +1,21 @@
 #include "mainwindow.h"
-#include "lottoengine.h"
+
 #include "./ui_mainwindow.h"
 
 #include <QApplication>
-#include <QDateTime>
 #include <QDebug>
 #include <QFile>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
-#include <QRandomGenerator>
 #include <QResizeEvent>
 #include <QScreen>
-#include <QSettings>
 #include <QTimer>
 #include <QVBoxLayout>
 
 #include <algorithm>
+
+#include "lottocontroller.h"
 
 // 工具函数
 
@@ -42,13 +41,13 @@ static void spacingForWidth(int availableWidth, int &outSpacing, int &outSeparat
 
 // 构造 / 析构
 
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(LottoController *controller, QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , m_lottoEngine(new LottoEngine(this))
+    , m_controller(controller)
 {
     init();
-    restore();
+    m_controller->load();   // 排定异步恢复, 不阻塞 Android 启动
 }
 
 MainWindow::~MainWindow()
@@ -56,81 +55,42 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-// 号码生成
+// 状态渲染(视图唯一渲染入口, 不做任何业务判断)
 
-void MainWindow::generateFiveGroups()
+void MainWindow::onTicketChanged(const LottoTicket &ticket)
 {
-    QVector<LottoResult> numbers = m_lottoEngine->generateBatch(GROUP_COUNT);
+    applyTicketToLabels(ticket);
+    updateTimeLabel(ticket.generateTime());
+
+    const bool hasTicket = !ticket.groups().isEmpty() && !ticket.groups().first().front.isEmpty();
+    m_btnLock->setEnabled(hasTicket);
+    m_btnLock->setChecked(ticket.isLocked());
+    m_btnLock->setText(ticket.isLocked() ? "🔒 解锁生成" : "🔓 锁定号码");
+    m_btnGenerate->setEnabled(!ticket.isLocked());
+}
+
+void MainWindow::applyTicketToLabels(const LottoTicket &ticket)
+{
     for (int g = 0; g < GROUP_COUNT; g++) {
-        const LottoResult &result = numbers[g];
-        for (int i = 0; i < FRONT_COUNT; i++)
-            m_frontLabels[g][i]->setText(formatNumber(result.frontVec()[i]));
-        for (int i = 0; i < BACK_COUNT; i++)
-            m_backLabels[g][i]->setText(formatNumber(result.backVec()[i]));
-    }
-    m_timeLabel->setText("🕐 生成时间：" + QDateTime::currentDateTimeUtc().toLocalTime().toString("yyyy-MM-dd HH:mm:ss"));
-    m_btnLock->setEnabled(true);
-    m_btnLock->setChecked(false);
-}
-
-// 锁定 / 保存 / 恢复
-
-void MainWindow::onLockToggled(bool checked)
-{
-    m_btnGenerate->setEnabled(!checked);
-    m_btnLock->setText(checked ? "🔒 解锁生成" : "🔓 锁定号码");
-}
-
-void MainWindow::save() const
-{
-    QSettings settings("SuperLottoNumberGenerator.ini", QSettings::IniFormat);
-    if (m_btnLock->isChecked()) {
-        QVariantList frontList, backList;
-        for (int g = 0; g < GROUP_COUNT; ++g) {
-            for (int i = 0; i < FRONT_COUNT; ++i)
-                frontList << m_frontLabels[g][i]->text().toInt();
-            for (int i = 0; i < BACK_COUNT; ++i)
-                backList  << m_backLabels[g][i]->text().toInt();
+        const LottoResult result = ticket.groupAt(g);
+        for (int i = 0; i < FRONT_COUNT; i++) {
+            m_frontLabels[g][i]->setText(
+                i < result.front.size() ? formatNumber(result.front[i]) : "?");
         }
-        settings.setValue("isLocked",     true);
-        settings.setValue("frontNumbers", frontList);
-        settings.setValue("backNumbers",  backList);
-        settings.setValue("generateTime", m_timeLabel->text());
+        for (int i = 0; i < BACK_COUNT; i++) {
+            m_backLabels[g][i]->setText(
+                i < result.back.size() ? formatNumber(result.back[i]) : "?");
+        }
+    }
+}
+
+void MainWindow::updateTimeLabel(const QDateTime &time)
+{
+    if (time.isValid()) {
+        m_timeLabel->setText("🕐 生成时间：" + time.toString("yyyy-MM-dd HH:mm:ss"));
     } else {
-        settings.setValue("isLocked", false);
+        m_timeLabel->setText("🕐 生成时间：年-月-日 时:分:秒");
     }
-    settings.sync();
-}
-
-void MainWindow::restore()
-{
-    QTimer::singleShot(0, this, [this] {
-        QSettings settings("SuperLottoNumberGenerator.ini", QSettings::IniFormat);
-        if (!settings.value("isLocked", false).toBool())
-            return;
-
-        QVariantList frontNumbers = settings.value("frontNumbers").toList();
-        QVariantList backNumbers  = settings.value("backNumbers").toList();
-        for (int g = 0; g < GROUP_COUNT; ++g) {
-            for (int i = 0; i < FRONT_COUNT; ++i) {
-                int idx = g * FRONT_COUNT + i;
-                if (idx < frontNumbers.size())
-                    m_frontLabels[g][i]->setText(formatNumber(frontNumbers[idx].toInt()));
-            }
-            for (int i = 0; i < BACK_COUNT; ++i) {
-                int idx = g * BACK_COUNT + i;
-                if (idx < backNumbers.size())
-                    m_backLabels[g][i]->setText(formatNumber(backNumbers[idx].toInt()));
-            }
-        }
-
-        QString genTime = settings.value("generateTime").toString();
-        if (!genTime.isEmpty())
-            m_timeLabel->setText(genTime);
-
-        m_btnLock->setChecked(true);
-        m_btnLock->setEnabled(true);
-    });
 }
 
 // 窗口尺寸变化 → 更新标签尺寸
@@ -139,7 +99,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 {
     QMainWindow::resizeEvent(event);
 
-    // 防抖：每次 resize 重启定时器，50ms 内无新事件才执行布局更新
+    // 防抖: 每次 resize 重启定时器, 50ms 内无新事件才执行布局更新
     // 解决 Android 端 centralWidget 宽度在 448/800 间反复跳动导致的
     // resizeEvent → updateLabelSizes → rebuildGroupRows → resizeEvent 自激震荡
     if (m_layoutDebounceTimer) {
@@ -147,7 +107,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     }
 }
 
-// 标签尺寸计算（竖屏：根据可用宽度反推标签尺寸）
+// 标签尺寸计算(竖屏: 根据可用宽度反推标签尺寸)
 
 void MainWindow::updateLabelSizes(int availableWidth)
 {
@@ -158,7 +118,7 @@ void MainWindow::updateLabelSizes(int availableWidth)
     m_labelWidth = (availableWidth - m_separatorWidth - LABELS_PER_ROW * m_spacing) / LABELS_PER_ROW;
     m_labelWidth = std::clamp(m_labelWidth, LABEL_MIN_SIZE_PORTRAIT, LABEL_MAX_SIZE);
 
-    // 动态字号：标签尺寸的 50%，不窄于 10px
+    // 动态字号: 标签尺寸的 50%, 不窄于 10px
     int fontSize = std::max(10, static_cast<int>(m_labelWidth * 0.50));
 
     qDebug() << "[LOTTO] updateLabelSizes result labelW=" << m_labelWidth
@@ -193,7 +153,7 @@ void MainWindow::updateLabelSizes(int availableWidth)
     }
 }
 
-// 创建单组号码行（复用已有标签和分隔符）
+// 创建单组号码行(复用已有标签和分隔符)
 
 QHBoxLayout* MainWindow::createGroupRow(int group)
 {
@@ -218,7 +178,7 @@ QHBoxLayout* MainWindow::createGroupRow(int group)
     return row;
 }
 
-// 清空布局中所有项（widget 保留，子布局/spacer 销毁）
+// 清空布局中所有项(widget 保留, 子布局/spacer 销毁)
 
 static void clearLayout(QLayout *layout)
 {
@@ -232,7 +192,7 @@ static void clearLayout(QLayout *layout)
     }
 }
 
-// 构建固定竖屏布局（仅在 init 中调用一次）
+// 构建固定竖屏布局(仅在 init 中调用一次)
 
 void MainWindow::buildLayout()
 {
@@ -242,7 +202,7 @@ void MainWindow::buildLayout()
     qDebug() << "[LOTTO] buildLayout labelW=" << m_labelWidth
              << "spacing=" << m_spacing;
 
-    // 竖屏：5 行纵向
+    // 竖屏: 5 行纵向
     m_groupsLayout->setSpacing(14);
     for (int g = 0; g < GROUP_COUNT; g++) {
         m_groupsLayout->addLayout(createGroupRow(g));
@@ -256,7 +216,7 @@ void MainWindow::buildLayout()
     btnLayout->addWidget(m_btnGenerate);
     btnLayout->addStretch(1);
 
-    // 主布局（竖屏固定间距/边距）
+    // 主布局(竖屏固定间距/边距)
     m_mainLayout->setSpacing(18);
     m_mainLayout->addStretch(1);
     m_mainLayout->addWidget(m_timeLabel, 0, Qt::AlignHCenter);
@@ -267,7 +227,7 @@ void MainWindow::buildLayout()
     m_mainLayout->addStretch(1);
 }
 
-// 间距档位变化时重建组行（保留主布局不变）
+// 间距档位变化时重建组行(保留主布局不变)
 
 void MainWindow::rebuildGroupRows()
 {
@@ -305,7 +265,7 @@ void MainWindow::init()
     m_timeLabel->setAlignment(Qt::AlignCenter);
     m_timeLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-    // 计算初始可用宽度（竖屏：以屏幕宽度为基准）
+    // 计算初始可用宽度(竖屏: 以屏幕宽度为基准)
     QRect screen = QApplication::primaryScreen()->availableGeometry();
     QMargins margins(40, 30, 40, 30);
     int availableWidth = static_cast<int>(
@@ -313,7 +273,7 @@ void MainWindow::init()
     qDebug() << "[LOTTO] init screen=" << screen
              << "availableWidth=" << availableWidth;
 
-    // 号码标签 + 分隔符（只创建一次）
+    // 号码标签 + 分隔符(只创建一次)
     auto createLabels = [&](const QString &prefix, const QString &area, int count,
                              QLabel *out[], int group) {
         for (int i = 0; i < count; i++) {
@@ -336,7 +296,7 @@ void MainWindow::init()
         m_separators[g]->setContentsMargins(0, 0, 0, 0);
     }
 
-    // 预设主布局边距（竖屏固定值）
+    // 预设主布局边距(竖屏固定值)
     m_mainLayout->setContentsMargins(40, 30, 40, 30);
 
     // 统一计算初始尺寸
@@ -370,12 +330,12 @@ void MainWindow::init()
     if (qss.open(QFile::ReadOnly | QFile::Text))
         setStyleSheet(qss.readAll());
 
-    // 信号连接
-    connect(m_btnGenerate, &QPushButton::clicked,  this, &MainWindow::generateFiveGroups);
-    connect(m_btnLock,     &QPushButton::toggled,  this, &MainWindow::onLockToggled);
-    connect(m_btnLock,     &QPushButton::clicked,  this, [this]{ save(); });
+    // 信号连接: 用户动作转发给控制器, 状态变化由 ticketChanged 信号回推
+    connect(m_btnGenerate, &QPushButton::clicked, this, [this]{ m_controller->generateNewTicket(); });
+    connect(m_btnLock,     &QPushButton::clicked, this, [this]{ m_controller->toggleLock(); });
+    connect(m_controller, &LottoController::ticketChanged, this, &MainWindow::onTicketChanged);
 
-    // 布局防抖定时器（解决 Android resizeEvent 自激震荡）
+    // 布局防抖定时器(解决 Android resizeEvent 自激震荡)
     m_layoutDebounceTimer = new QTimer(this);
     m_layoutDebounceTimer->setSingleShot(true);
     connect(m_layoutDebounceTimer, &QTimer::timeout, this, [this]() {
@@ -387,7 +347,7 @@ void MainWindow::init()
         int availableWidth = static_cast<int>(
             (cwWidth - m.left() - m.right()) * LABEL_ROW_WIDTH_FRACTION);
 
-        // 宽度未变化则跳过，避免无意义的重绘
+        // 宽度未变化则跳过, 避免无意义的重绘
         if (availableWidth == m_lastAppliedWidth)
             return;
 

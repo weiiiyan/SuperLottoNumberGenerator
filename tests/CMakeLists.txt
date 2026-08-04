@@ -3,7 +3,8 @@
 #
 # 注意事项：
 #   - 测试仅在桌面平台构建（MinGW/MSVC/Linux/macOS），Android 跳过
-#   - LottoEngine 源码直接编译到测试目标中（非库链接）
+#   - 测试目标链接各层库（lotto_core / lotto_adapters / lotto_app），
+#     不再手工编译被测源码
 #   - 使用 CTest 集成，可通过 ctest 或 cmake --build . --target test 运行
 
 # ── 查找 Qt Test（复用父级 CMake 的 QT_VERSION_MAJOR，避免版本不一致）──
@@ -11,16 +12,11 @@ set(TEST_QT_MAJOR ${QT_VERSION_MAJOR})
 find_package(Qt${TEST_QT_MAJOR} REQUIRED COMPONENTS Test)
 message(STATUS "测试: 使用 Qt${TEST_QT_MAJOR}::Test")
 
-# CTest 集成由父级 CMakeLists.txt 的 enable_testing() 负责，此处不重复调用
-
 if(NOT ANDROID)
-    # ═══════════════════════════════════════════════════
-    # 辅助：推导 Qt 和编译器的 bin 目录，加入 PATH
+    # ── 辅助：推导 Qt 和编译器的 bin 目录，加入 PATH ──
     # 解决 Windows 上运行测试时找不到 DLL 的问题
-    # ═══════════════════════════════════════════════════
 
     # Qt 的 bin 目录（通过 Qt${TEST_QT_MAJOR}_DIR 推导，消除 Qt6/Qt5 分支重复）
-    # Qt6_DIR / Qt5_DIR 典型值: <prefix>/lib/cmake/Qt6
     if(DEFINED Qt${TEST_QT_MAJOR}_DIR)
         cmake_path(GET Qt${TEST_QT_MAJOR}_DIR PARENT_PATH _qt_lib_cmake_dir)
         cmake_path(GET _qt_lib_cmake_dir PARENT_PATH _qt_lib_dir)
@@ -38,58 +34,48 @@ if(NOT ANDROID)
         set(RUNTIME_PATH "${QT_BIN_DIR}\;${RUNTIME_PATH}")
     endif()
 
-    # ═══════════════════════════════════════════════════
-    # 测试目标 1: LottoEngineTest (纯逻辑，无 GUI 依赖)
-    # ═══════════════════════════════════════════════════
+    # ── 统一测试目标辅助函数 ──
+    # 建可执行 + 链接 Qt::Test + 非 GUI 子系统(注册 CTest 用 register_lotto_test)
+    function(add_lotto_test target)
+        add_executable(${target} ${ARGN})
+        target_link_libraries(${target} PRIVATE Qt${TEST_QT_MAJOR}::Test)
+        set_target_properties(${target} PROPERTIES
+            WIN32_EXECUTABLE FALSE
+            MACOSX_BUNDLE FALSE
+        )
+    endfunction()
 
-    set(LOTTO_TEST_SOURCES
-        tst_lottoengine.cpp
-        ${CMAKE_SOURCE_DIR}/lottoengine.h
-        ${CMAKE_SOURCE_DIR}/lottoengine.cpp
-    )
+    # 注册 CTest + PATH 注入(命令参数可附加, 如 -platform offscreen)
+    function(register_lotto_test target)
+        add_test(NAME ${target} COMMAND ${ARGN})
+        set_tests_properties(${target} PROPERTIES
+            ENVIRONMENT "PATH=${RUNTIME_PATH}\;$ENV{PATH}")
+    endfunction()
 
-    add_executable(LottoEngineTest ${LOTTO_TEST_SOURCES})
-    target_include_directories(LottoEngineTest PRIVATE ${CMAKE_SOURCE_DIR})
-    target_link_libraries(LottoEngineTest PRIVATE Qt${TEST_QT_MAJOR}::Test)
-    add_test(NAME LottoEngineTest COMMAND LottoEngineTest)
-    set_tests_properties(LottoEngineTest PROPERTIES
-        ENVIRONMENT "PATH=${RUNTIME_PATH}\;$ENV{PATH}")
-    set_target_properties(LottoEngineTest PROPERTIES
-        WIN32_EXECUTABLE FALSE
-        MACOSX_BUNDLE FALSE
-    )
+    # ── 领域层: 引擎单元测试(纯逻辑, 无 GUI)──
+    add_lotto_test(LottoEngineTest tst_lottoengine.cpp)
+    target_link_libraries(LottoEngineTest PRIVATE lotto_core)
+    register_lotto_test(LottoEngineTest LottoEngineTest)
     message(STATUS "测试目标 LottoEngineTest 已创建")
 
-    # ═══════════════════════════════════════════════════
-    # 测试目标 2: MainWindowTest (GUI 集成测试)
-    # 需要 Qt::Widgets，运行时需 -platform offscreen
-    # ═══════════════════════════════════════════════════
+    # ── 应用层: 控制器状态机测试(注入内存仓储)──
+    add_lotto_test(LottoControllerTest tst_lottocontroller.cpp)
+    target_link_libraries(LottoControllerTest PRIVATE lotto_app lotto_core)
+    register_lotto_test(LottoControllerTest LottoControllerTest)
+    message(STATUS "测试目标 LottoControllerTest 已创建")
 
+    # ── 适配器层: 持久化测试(真文件隔离)──
+    add_lotto_test(QSettingsRepositoryTest tst_qsettingsrepository.cpp)
+    target_link_libraries(QSettingsRepositoryTest PRIVATE lotto_adapters lotto_core)
+    register_lotto_test(QSettingsRepositoryTest QSettingsRepositoryTest)
+    message(STATUS "测试目标 QSettingsRepositoryTest 已创建")
+
+    # ── GUI 集成测试: 需要 Qt::Widgets, 运行时需 -platform offscreen ──
     find_package(Qt${TEST_QT_MAJOR} REQUIRED COMPONENTS Widgets)
-
-    set(GUI_TEST_SOURCES
-        tst_mainwindow.cpp
-        ${CMAKE_SOURCE_DIR}/mainwindow.h
-        ${CMAKE_SOURCE_DIR}/mainwindow.cpp
-        ${CMAKE_SOURCE_DIR}/mainwindow.ui
-        ${CMAKE_SOURCE_DIR}/lottoengine.h
-        ${CMAKE_SOURCE_DIR}/lottoengine.cpp
-        ${CMAKE_SOURCE_DIR}/resources.qrc
-    )
-
-    add_executable(MainWindowTest ${GUI_TEST_SOURCES})
-    target_include_directories(MainWindowTest PRIVATE ${CMAKE_SOURCE_DIR})
+    add_lotto_test(MainWindowTest tst_mainwindow.cpp)
     target_link_libraries(MainWindowTest PRIVATE
-        Qt${TEST_QT_MAJOR}::Test
-        Qt${TEST_QT_MAJOR}::Widgets
-    )
-    add_test(NAME MainWindowTest COMMAND MainWindowTest -platform offscreen)
-    set_tests_properties(MainWindowTest PROPERTIES
-        ENVIRONMENT "PATH=${RUNTIME_PATH}\;$ENV{PATH}")
-    set_target_properties(MainWindowTest PROPERTIES
-        WIN32_EXECUTABLE FALSE
-        MACOSX_BUNDLE FALSE
-    )
+        lotto_app lotto_adapters lotto_core Qt${TEST_QT_MAJOR}::Widgets)
+    register_lotto_test(MainWindowTest MainWindowTest -platform offscreen)
     message(STATUS "测试目标 MainWindowTest 已创建")
 else()
     message(STATUS "跳过测试目标：当前为 Android 构建（测试仅支持桌面平台）")
