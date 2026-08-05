@@ -2,12 +2,13 @@
 
 基于 Qt 6 Widgets 的大乐透随机号码生成器(桌面端 + Android),按整洁架构(Clean Architecture)分层,**依赖只指向内层**。
 
-## 图表
+## 图表与文档
 
-| 图 | PlantUML 源文件 | 渲染结果 |
+| 图/文档 | PlantUML 源文件 | 渲染结果 |
 | --- | --- | --- |
 | 模块依赖图(分层/目标/测试) | [module-dependency.puml](module-dependency.puml) | [module-dependency.svg](module-dependency.svg) |
 | 控制流图(恢复/生成/锁定) | [control-flow.puml](control-flow.puml) | [control-flow.svg](control-flow.svg) |
+| Web 化迁移分析(边界划分/替换清单/关键决策) | — | [web-migration.md](web-migration.md) |
 
 ## 分层结构
 
