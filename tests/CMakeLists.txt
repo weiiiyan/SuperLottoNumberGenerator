@@ -60,10 +60,10 @@ if(NOT ANDROID)
     message(STATUS "测试目标 LottoEngineTest 已创建")
 
     # ── 用例层: 控制器状态机测试(注入内存仓储, 无 GUI 依赖)──
-    add_lotto_test(LottoControllerTest tst_lottocontroller.cpp)
-    target_link_libraries(LottoControllerTest PRIVATE lotto_application lotto_core)
-    register_lotto_test(LottoControllerTest LottoControllerTest)
-    message(STATUS "测试目标 LottoControllerTest 已创建")
+    add_lotto_test(LottoInteractorTest tst_lottointeractor.cpp)
+    target_link_libraries(LottoInteractorTest PRIVATE lotto_application lotto_core)
+    register_lotto_test(LottoInteractorTest LottoInteractorTest)
+    message(STATUS "测试目标 LottoInteractorTest 已创建")
 
     # ── 适配器层: 持久化测试(真文件隔离)──
     add_lotto_test(QSettingsRepositoryTest tst_qsettingsrepository.cpp)

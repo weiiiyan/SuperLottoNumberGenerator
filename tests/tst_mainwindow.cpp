@@ -15,7 +15,7 @@
 #include <QDebug>
 
 #include "mainwindow.h"
-#include "lottocontroller.h"
+#include "lottointeractor.h"
 #include "lottoengine.h"
 #include "lottoresult.h"
 #include "lottopresenter.h"
@@ -30,7 +30,7 @@ private:
     QSettings *m_settings = nullptr;
     QSettingsTicketRepository *m_repo = nullptr;
     LottoEngine *m_engine = nullptr;
-    LottoController *m_controller = nullptr;
+    LottoInteractor *m_controller = nullptr;
     MainWindow *m_window = nullptr;
 
     /// 重建完整装配: 全新 controller + 指向同一临时文件的仓储
@@ -46,7 +46,7 @@ private:
         m_settings = new QSettings(m_dir.filePath("test.ini"), QSettings::IniFormat);
         m_repo = new QSettingsTicketRepository(m_settings);
         m_engine = new LottoEngine;
-        m_controller = new LottoController(m_repo, m_engine);
+        m_controller = new LottoInteractor(m_repo, m_engine);
         m_window = new MainWindow(m_controller);
         m_controller->load();   // 用例启动: 排定异步恢复
         QTest::qWait(50);       // 等 controller->load() 的 singleShot(0) 异步恢复

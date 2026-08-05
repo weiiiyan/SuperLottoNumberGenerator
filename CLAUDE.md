@@ -35,7 +35,7 @@ cmake --build build/Desktop_Qt_6_11_1_MinGW_64_bit-Debug --target clean
 ### 测试
 
 ```bash
-# 运行全部测试（5 个 target：LottoEngineTest / LottoControllerTest /
+# 运行全部测试（5 个 target：LottoEngineTest / LottoInteractorTest /
 # QSettingsRepositoryTest / LottoPresenterTest / MainWindowTest）
 ctest --test-dir build/Desktop_Qt_6_11_1_MinGW_64_bit-Debug --output-on-failure
 ```
@@ -52,7 +52,7 @@ ctest --test-dir build/Desktop_Qt_6_11_1_MinGW_64_bit-Debug --output-on-failure
 
 ```text
 src/domain/      → lotto_core 库：实体 + 领域服务（仅 Qt::Core）
-src/application/ → lotto_application 库：用例交互器 LottoController + 用例层持久化接口 TicketRepository（仅 Qt::Core）
+src/application/ → lotto_application 库：用例交互器 LottoInteractor + 用例层持久化接口 TicketRepository（仅 Qt::Core）
 src/adapters/    → lotto_adapters 库：QSettings 仓储实现（仅 Qt::Core）
 src/app/         → lotto_app 库：谦卑视图 + 展示器（Qt::Widgets，展示器本身不依赖 Widget）
 src/app/main.cpp → 组合根：装配具体依赖（唯一接触 QSettings 具体类的点）
@@ -63,7 +63,7 @@ tests/           → 5 个测试 target
 
 **展示器为何在 `app/` 而非 `adapters/` 或 `application/`（有意权衡）**：按洋葱图展示器属接口适配器层，与 QSettings 仓储同层对称（用例层两侧的输出/输入端口），因此不放 `application/`（用例层不做任何 I/O 格式适配）。物理上放 `app/` 而非 `adapters/` 是因为它与谦卑视图配对、共享展示词汇（按钮文字/时间前缀），同库内聚；真正约束（展示器不依赖 Widget、依赖只指向内层）已守住，目录归属只是组织方式——属不完全边界（ch24）。若未来出现多视图/展示器膨胀，应把展示器独立为 `adapters/presenter/` 或单独组件。
 
-跨层数据只传 `LottoTicket`（值类型）：`MainWindow`（框架层）→ `LottoController`（用例层）→ `TicketRepository` 接口（用例层）→ `QSettingsTicketRepository`（adapters 层）。
+跨层数据只传 `LottoTicket`（值类型）：`MainWindow`（框架层）→ `LottoInteractor`（用例层）→ `TicketRepository` 接口（用例层）→ `QSettingsTicketRepository`（adapters 层）。
 
 领域层使用 Qt::Core 类型（`QDateTime`/`QVector`/`QObject`）是**有意权衡**：本项目以 Qt 为应用语言，不追求与框架无关的纯领域，但绝不依赖任何 UI/存储框架。
 
@@ -73,9 +73,11 @@ tests/           → 5 个测试 target
 - `LottoTicket`（[lottoticket.h](src/domain/lottoticket.h)）— 领域实体：5 组号码 + `QDateTime` 生成时间戳 + 锁定标志。票据级常量 `GROUP_COUNT` 定义于此；`FRONT_COUNT`/`BACK_COUNT` 为 `LottoResult::*` 的别名（组级规则唯一来源是 LottoResult）。
 - `LottoEngine`（[lottoengine.h](src/domain/lottoengine.h)）— 领域服务：使用 `std::shuffle` 对 `std::iota` 填充的号码池随机洗牌，随机引擎为 `QRandomGenerator::global()`。不使用 `rand()`，不手动 seed。
 
-### 用例层：[src/application/lottocontroller.h](src/application/lottocontroller.h)
+### 用例层：[src/application/lottointeractor.h](src/application/lottointeractor.h)
 
-`LottoController` 是用例交互器（use case interactor），而非 MVC 控制器——它不做任何输入/输出格式适配，只执行应用特定业务规则与编排：`generateNewTicket()`（锁定时拒绝）、`toggleLock()`/`setLocked()`（状态变化守卫防重复保存）、`load()`（`singleShot(0)` 异步恢复，不阻塞 Android 启动，**由组合根在窗口构造后调用**）。持有**唯一状态源** `LottoTicket`，通过唯一信号 `ticketChanged(LottoTicket)` 推送状态，视图只依赖此信号渲染。仅依赖 Qt::Core，不接触任何 UI/存储具体类。
+`LottoInteractor` 是用例交互器（use case interactor），而非 MVC 控制器——它不做任何输入/输出格式适配，只执行应用特定业务规则与编排：`generateNewTicket()`（锁定时拒绝）、`toggleLock()`/`setLocked()`（状态变化守卫防重复保存）、`load()`（`singleShot(0)` 异步恢复，不阻塞 Android 启动，**由组合根在窗口构造后调用**）。持有**唯一状态源** `LottoTicket`，通过唯一信号 `ticketChanged(LottoTicket)` 推送状态，视图只依赖此信号渲染。仅依赖 Qt::Core，不接触任何 UI/存储具体类。
+
+**书中 Controller 角色的说明（有意权衡）**：《架构整洁之道》图 22.2 中 Controller 与 UseCaseInteractor 是两个角色——Controller（接口适配器层）把外部输入（HTTP 请求/UI 事件）**打包成 InputData**，UseCaseInteractor（用例层）执行业务编排。本项目的 `LottoInteractor` 在架构上等于后者，**输入侧适配器被谦卑视图吸收了**：输入来源是按钮 click，`MainWindow` 转发只有一行 lambda（`clicked → generateNewTicket()`），零翻译逻辑，不值得独立建类；有可测试逻辑的输出侧才单独提取为 `LottoPresenter`。判定层归属的标准是**职责与依赖方向而非名称**——若未来出现需要解析的表单输入（如选择注数/玩法），应引入真正的输入侧适配器（Controller），届时用例层仍只保留交互器。
 
 `TicketRepository`（[ticketrepository.h](src/application/ticketrepository.h)）— 用例层持久化接口（DIP 端口）：`save/load/clear` 纯抽象，由适配器层实现。端口归用例层所有（严格整洁架构），物理上位于 `src/application/`。
 
@@ -118,7 +120,7 @@ Qt 资源文件，将 `style.qss` 打包到 `:/` 前缀下，编译时嵌入二�
 
 ### 持久化：[src/adapters/qsettingsrepository.cpp](src/adapters/qsettingsrepository.cpp)
 
-`QSettingsTicketRepository` 实现 `TicketRepository` 接口。键名与旧版本完全兼容：`isLocked`（bool）、`frontNumbers`（25 个扁平 int）、`backNumbers`（10 个扁平 int）、`generateTime`（**ISO 字符串**，读取时兼容旧版显示字符串 "🕐 生成时间：..."）。锁定时写全量 + `sync()`；未锁定仅写 `isLocked=false`。恢复流程保持 `singleShot(0)` 异步语义（由 `LottoController::load()` 承担）。QSettings 路径由组合根注入（相对路径 `SuperLottoNumberGenerator.ini`），测试注入 `QTemporaryDir` 文件隔离。
+`QSettingsTicketRepository` 实现 `TicketRepository` 接口。键名与旧版本完全兼容：`isLocked`（bool）、`frontNumbers`（25 个扁平 int）、`backNumbers`（10 个扁平 int）、`generateTime`（**ISO 字符串**，读取时兼容旧版显示字符串 "🕐 生成时间：..."）。锁定时写全量 + `sync()`；未锁定仅写 `isLocked=false`。恢复流程保持 `singleShot(0)` 异步语义（由 `LottoInteractor::load()` 承担）。QSettings 路径由组合根注入（相对路径 `SuperLottoNumberGenerator.ini`），测试注入 `QTemporaryDir` 文件隔离。
 
 ### Android 支持
 
@@ -137,9 +139,9 @@ Qt 资源文件，将 `style.qss` 打包到 `:/` 前缀下，编译时嵌入二�
 | `LottoPresenter::present()` | lottopresenter.h | 展示推导（号码格式化/占位符/按钮互斥/时间格式），视图机械写入 |
 | `LottoViewState` | lottopresenter.h | 展示状态结构，UI 展示字符串常量单来源 |
 | `formatNumber()` | lottopresenter.h | 零填充两位数字（inline，UI 与测试复用） |
-| `ticketChanged(LottoTicket)` | src/application/lottocontroller.h | 唯一状态信号，视图唯一渲染入口 |
+| `ticketChanged(LottoTicket)` | src/application/lottointeractor.h | 唯一状态信号，视图唯一渲染入口 |
 | `onTicketChanged()` | mainwindow.cpp | 谦卑视图消费 LottoViewState 纯渲染（号码/时间/按钮互斥） |
-| `setLocked()` 状态守卫 | src/application/lottocontroller.cpp | 相同状态不重复保存 |
+| `setLocked()` 状态守卫 | src/application/lottointeractor.cpp | 相同状态不重复保存 |
 | `hasNumbers()` | src/domain/lottoticket.cpp | 实体层"是否含号码"判定，展示器据此推导锁定按钮可用性 |
 | `parseGenerateTime()` | qsettingsrepository.cpp | 时间 ISO 优先、旧显示串正则回退、无效兜底 |
 | `clearLayout()` | mainwindow.cpp | 递归清空布局项，保留 widget |

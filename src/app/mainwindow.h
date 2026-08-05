@@ -5,7 +5,7 @@
 
 #include "lottoticket.h"
 
-class LottoController;
+class LottoInteractor;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -20,7 +20,7 @@ class QTimer;
 /*!
  * \brief MainWindow 谦卑视图: 只负责渲染控制器推送的状态与转发用户动作
  *
- * 所有业务状态(号码/锁定/时间)由 LottoController 持有, 展示推导由
+ * 所有业务状态(号码/锁定/时间)由 LottoInteractor 持有, 展示推导由
  * LottoPresenter 承担, 本类通过 ticketChanged 信号做机械的控件写入,
  * 不做任何业务判断与展示推导。
  */
@@ -34,7 +34,7 @@ public:
      * \param controller 应用控制器(不持有所有权, 组合根保证生命周期)
      * \param parent 父窗口
      */
-    MainWindow(LottoController *controller, QWidget *parent = nullptr);
+    MainWindow(LottoInteractor *controller, QWidget *parent = nullptr);
     ~MainWindow();
 
 protected:
@@ -70,7 +70,7 @@ private:
     QHBoxLayout* createGroupRow(int group);
 
     Ui::MainWindow *ui;
-    LottoController *m_controller = nullptr;
+    LottoInteractor *m_controller = nullptr;
 
     QLabel       *m_frontLabels[GROUP_COUNT][FRONT_COUNT];
     QLabel       *m_backLabels[GROUP_COUNT][BACK_COUNT];

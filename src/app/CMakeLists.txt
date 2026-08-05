@@ -1,5 +1,5 @@
 # 视图层: lotto_app 静态库(谦卑视图)与可执行目标
-# 用例层(LottoController)位于 src/application/lotto_application, 视图依赖其抽象接口
+# 用例层(LottoInteractor)位于 src/application/lotto_application, 视图依赖其抽象接口
 # 拆分为库+薄 exe: 测试可链接库而非手工编译视图源码
 
 add_library(lotto_app STATIC

@@ -15,7 +15,7 @@
 
 #include <algorithm>
 
-#include "lottocontroller.h"
+#include "lottointeractor.h"
 #include "lottopresenter.h"
 
 // 工具函数
@@ -43,7 +43,7 @@ static void spacingForWidth(int availableWidth, int &outSpacing, int &outSeparat
 
 // 构造 / 析构
 
-MainWindow::MainWindow(LottoController *controller, QWidget *parent)
+MainWindow::MainWindow(LottoInteractor *controller, QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , m_controller(controller)
@@ -324,7 +324,7 @@ void MainWindow::init()
     // 信号连接: 用户动作转发给控制器, 状态变化由 ticketChanged 信号回推
     connect(m_btnGenerate, &QPushButton::clicked, this, [this]{ m_controller->generateNewTicket(); });
     connect(m_btnLock,     &QPushButton::clicked, this, [this]{ m_controller->toggleLock(); });
-    connect(m_controller, &LottoController::ticketChanged, this, &MainWindow::onTicketChanged);
+    connect(m_controller, &LottoInteractor::ticketChanged, this, &MainWindow::onTicketChanged);
 
     // 布局防抖定时器(解决 Android resizeEvent 自激震荡)
     m_layoutDebounceTimer = new QTimer(this);

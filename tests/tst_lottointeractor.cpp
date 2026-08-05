@@ -1,4 +1,4 @@
-// LottoController 应用层逻辑单元测试
+// LottoInteractor 应用层逻辑单元测试
 // 通过注入内存 FakeTicketRepository, 无需 GUI 与真实文件即可验证状态机
 
 #include <QTest>
@@ -6,7 +6,7 @@
 
 #include <QDebug>
 
-#include "lottocontroller.h"
+#include "lottointeractor.h"
 #include "lottoengine.h"
 #include "ticketrepository.h"
 
@@ -24,14 +24,14 @@ public:
     void clear() override { savedTickets.clear(); }
 };
 
-class TestLottoController : public QObject
+class TestLottoInteractor : public QObject
 {
     Q_OBJECT
 
 private:
     FakeTicketRepository *m_repo = nullptr;
     LottoEngine *m_engine = nullptr;
-    LottoController *m_controller = nullptr;
+    LottoInteractor *m_controller = nullptr;
     QSignalSpy *m_spy = nullptr;
 
     /// 构造一组固定号码, 供确定性断言使用(号码均合法: 前区 1-25, 后区 1-10)
@@ -76,8 +76,8 @@ private slots:
     {
         m_repo = new FakeTicketRepository;
         m_engine = new LottoEngine;
-        m_controller = new LottoController(m_repo, m_engine);
-        m_spy = new QSignalSpy(m_controller, &LottoController::ticketChanged);
+        m_controller = new LottoInteractor(m_repo, m_engine);
+        m_spy = new QSignalSpy(m_controller, &LottoInteractor::ticketChanged);
     }
 
     void cleanup()
@@ -227,6 +227,6 @@ private slots:
     }
 };
 
-QTEST_GUILESS_MAIN(TestLottoController)
+QTEST_GUILESS_MAIN(TestLottoInteractor)
 
-#include "tst_lottocontroller.moc"
+#include "tst_lottointeractor.moc"

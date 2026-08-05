@@ -1,9 +1,9 @@
 # 用例层库: 应用特定业务逻辑(仅依赖 Qt::Core)
-# LottoController 在此实现用例编排与业务规则;
+# LottoInteractor 在此实现用例编排与业务规则;
 # TicketRepository 持久化端口(DIP)由用例层定义, 适配器层实现
 
 add_library(lotto_application STATIC
-    lottocontroller.h lottocontroller.cpp
+    lottointeractor.h lottointeractor.cpp
     ticketrepository.h
 )
 

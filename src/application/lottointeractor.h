@@ -1,5 +1,5 @@
-#ifndef LOTTOCONTROLLER_H
-#define LOTTOCONTROLLER_H
+#ifndef LOTTOINTERACTOR_H
+#define LOTTOINTERACTOR_H
 
 #include <QObject>
 
@@ -9,24 +9,24 @@ class TicketRepository;
 class LottoEngine;
 
 /*!
- * \brief LottoController 用例层交互器(use case interactor), 持有票据状态并编排用例
+ * \brief LottoInteractor 用例层交互器(use case interactor), 持有票据状态并编排用例
  *
  * 不做输入/输出格式适配, 只执行应用特定业务规则(锁定时拒绝生成、
  * 状态变化守卫)与用例编排。视图只依赖本类(通过 ticketChanged 信号渲染),
  * 持久化只依赖 TicketRepository 抽象。本类不持有 repository/engine 所有权,
  * 生命周期由组合根保证。
  */
-class LottoController : public QObject
+class LottoInteractor : public QObject
 {
     Q_OBJECT
 public:
     /*!
-     * \brief 构造控制器
+     * \brief 构造交互器
      * \param repository 票据仓储(不持有所有权)
      * \param engine 号码生成器(不持有所有权)
      * \param parent QObject 父对象
      */
-    explicit LottoController(TicketRepository *repository, LottoEngine *engine,
+    explicit LottoInteractor(TicketRepository *repository, LottoEngine *engine,
                              QObject *parent = nullptr);
 
     /*! 用例: 生成 5 组新号码(锁定时拒绝) */
@@ -48,7 +48,7 @@ signals:
 private:
     TicketRepository *m_repository = nullptr;  /*!< 票据仓储(不持有所有权) */
     LottoEngine      *m_engine     = nullptr;  /*!< 号码生成器(不持有所有权) */
-    LottoTicket       m_ticket;                /*!< 控制器持有的唯一状态源 */
+    LottoTicket       m_ticket;                /*!< 交互器持有的唯一状态源 */
 };
 
-#endif // LOTTOCONTROLLER_H
+#endif // LOTTOINTERACTOR_H

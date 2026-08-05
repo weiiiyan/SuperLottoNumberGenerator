@@ -1,4 +1,4 @@
-#include "lottocontroller.h"
+#include "lottointeractor.h"
 
 #include <QDateTime>
 #include <QTimer>
@@ -6,7 +6,7 @@
 #include "lottoengine.h"
 #include "ticketrepository.h"
 
-LottoController::LottoController(TicketRepository *repository, LottoEngine *engine,
+LottoInteractor::LottoInteractor(TicketRepository *repository, LottoEngine *engine,
                                  QObject *parent)
     : QObject(parent)
     , m_repository(repository)
@@ -14,7 +14,7 @@ LottoController::LottoController(TicketRepository *repository, LottoEngine *engi
 {
 }
 
-void LottoController::generateNewTicket()
+void LottoInteractor::generateNewTicket()
 {
     // 锁定状态下拒绝生成(视图禁用按钮只是辅助, 此处判定是权威)
     if (m_ticket.isLocked())
@@ -26,12 +26,12 @@ void LottoController::generateNewTicket()
     emit ticketChanged(m_ticket);
 }
 
-void LottoController::toggleLock()
+void LottoInteractor::toggleLock()
 {
     setLocked(!m_ticket.isLocked());
 }
 
-void LottoController::setLocked(bool locked)
+void LottoInteractor::setLocked(bool locked)
 {
     // 状态变化守卫: 相同状态不重复保存
     if (m_ticket.isLocked() == locked)
@@ -42,7 +42,7 @@ void LottoController::setLocked(bool locked)
     emit ticketChanged(m_ticket);
 }
 
-void LottoController::load()
+void LottoInteractor::load()
 {
     // 异步恢复, 避免阻塞 Android 启动
     QTimer::singleShot(0, this, [this] {
@@ -51,7 +51,7 @@ void LottoController::load()
     });
 }
 
-const LottoTicket &LottoController::currentTicket() const
+const LottoTicket &LottoInteractor::currentTicket() const
 {
     return m_ticket;
 }

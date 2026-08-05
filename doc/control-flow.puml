@@ -8,11 +8,13 @@ title SuperLottoNumberGenerator 控制流图
 actor 用户 as U
 participant "main()\n(组合根)" as Main
 participant "MainWindow\n(谦卑视图)" as MW
-participant "LottoController\n(应用层编排器)" as C
+participant "LottoInteractor\n(用例交互器)" as C
 participant "LottoEngine\n(领域服务)" as E
 participant "QSettingsTicketRepository\n(适配器)" as R
+participant "LottoPresenter\n(展示侧适配器)" as P
 
 note over C : 持有唯一状态源 m_ticket (LottoTicket 值类型)\n跨层只传 LottoTicket, 不传 widget/存储内部结构
+note over P : present() 推导展示状态 (不依赖 Widget)\nMainWindow 只做机械控件写入
 
 == 启动: 异步恢复 (main() 装配后调用 load(), 视图不驱动用例) ==
 
@@ -23,7 +25,9 @@ C -> R : load()
 R --> C : LottoTicket\n(未锁定 → 默认票: 空号码/无效时间)
 C -> MW : emit ticketChanged(ticket)
 deactivate C
-MW -> MW : onTicketChanged() 纯渲染\n(号码/时间/按钮互斥状态)
+MW -> P : present(ticket)
+P --> MW : LottoViewState\n(号码文本/时间/按钮互斥)
+MW -> MW : onTicketChanged() 机械写入控件
 
 == 用户点击 [生成] (未锁定) ==
 
@@ -40,7 +44,9 @@ else 未锁定
     deactivate E
     C -> C : 更新 m_ticket\n(时间戳 UTC→本地, setLocked(false))
     C -> MW : emit ticketChanged(ticket)
-    MW -> MW : onTicketChanged() 渲染 5 组号码
+    MW -> P : present(ticket)
+    P --> MW : LottoViewState\n(5 组号码文本)
+    MW -> MW : onTicketChanged() 写入标签
 end
 deactivate C
 
@@ -56,7 +62,9 @@ else 状态变化
     C -> R : save(ticket)
     R -> R : 锁定时写全量 + sync()\n未锁定仅写 isLocked=false
     C -> MW : emit ticketChanged(ticket)
-    MW -> MW : onTicketChanged() 按钮互斥更新
+    MW -> P : present(ticket)
+    P --> MW : LottoViewState\n(按钮文字/互斥状态)
+    MW -> MW : onTicketChanged() 更新按钮
 end
 deactivate C
 

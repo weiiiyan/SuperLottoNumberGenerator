@@ -26,7 +26,7 @@ src/app/main.cpp → 组合根: 装配具体依赖(唯一接触 QSettings 具体
 | 洋葱图层 | 目录 | 内容 |
 | --- | --- | --- |
 | 业务实体(Entities) | src/domain/ | LottoResult/LottoTicket/LottoEngine |
-| 用例(Use Cases) | src/application/ | LottoController + TicketRepository 端口 |
+| 用例(Use Cases) | src/application/ | LottoInteractor + TicketRepository 端口 |
 | 接口适配器(Interface Adapters) | src/adapters/(存储侧) + app 内展示器(展示侧) | QSettingsTicketRepository、LottoPresenter |
 | 框架与驱动(Frameworks & Drivers) | src/app/ | MainWindow(谦卑视图)/QSS/qrc |
 | Main 组件(洋葱外) | src/app/main.cpp | 装配具体依赖 |
@@ -45,7 +45,8 @@ src/app/main.cpp → 组合根: 装配具体依赖(唯一接触 QSettings 具体
 
 ### 用例层(application)
 
-- `LottoController` — 用例交互器(use case interactor),而非 MVC 控制器:不做输入/输出格式适配,只执行应用特定业务规则与编排。持有唯一状态源 `LottoTicket`;提供生成(锁定时拒绝)、锁定切换(状态守卫防重复保存)、异步恢复(`load()` 由组合根在窗口构造后调用,视图不驱动用例启动);通过唯一信号 `ticketChanged` 推送状态。仅依赖 Qt::Core,不接触任何 UI/存储具体类
+- `LottoInteractor` — 用例交互器(use case interactor),而非 MVC 控制器:不做输入/输出格式适配,只执行应用特定业务规则与编排。持有唯一状态源 `LottoTicket`;提供生成(锁定时拒绝)、锁定切换(状态守卫防重复保存)、异步恢复(`load()` 由组合根在窗口构造后调用,视图不驱动用例启动);通过唯一信号 `ticketChanged` 推送状态。仅依赖 Qt::Core,不接触任何 UI/存储具体类
+  - **书中 Controller 角色说明(有意权衡)**:书图 22.2 中 Controller(接口适配器层)与 UseCaseInteractor(用例层)是两个角色,前者把外部输入打包成 InputData。本项目输入是按钮 click,转发仅一行 lambda 无翻译逻辑,**输入侧适配器被谦卑视图 MainWindow 吸收**,未独立建类;输出侧才有可测试逻辑,单独提取为 LottoPresenter。判定层归属的标准是职责与依赖方向而非名称。未来若出现需解析的表单输入,应引入真正的输入侧适配器(Controller)
 - `TicketRepository` — 用例层持久化接口(纯抽象,DIP 端口):端口归用例层所有,由适配器层实现
 
 ### 适配器层(adapters)
@@ -61,7 +62,7 @@ src/app/main.cpp → 组合根: 装配具体依赖(唯一接触 QSettings 具体
 ## 数据流
 
 ```text
-用户点击(生成/锁定) → LottoController 用例 → 状态变化 → ticketChanged 信号
+用户点击(生成/锁定) → LottoInteractor 用例 → 状态变化 → ticketChanged 信号
                                                           ↓
                                 MainWindow 纯渲染(号码/时间/按钮互斥)
                                                           ↑
@@ -77,7 +78,7 @@ src/app/main.cpp → 组合根: 装配具体依赖(唯一接触 QSettings 具体
 | target | 覆盖 |
 | --- | --- |
 | LottoEngineTest | 引擎随机性/边界/分布 |
-| LottoControllerTest | 状态机(注入内存 Fake 仓储,无 GUI 依赖) |
+| LottoInteractorTest | 状态机(注入内存 Fake 仓储,无 GUI 依赖) |
 | QSettingsRepositoryTest | 持久化 round-trip 与旧 INI 兼容 |
 | LottoPresenterTest | 展示推导(格式化/占位符/按钮互斥/时间格式,无 GUI 依赖) |
 | MainWindowTest | GUI 集成(注入式夹具,offscreen) |
