@@ -9,9 +9,10 @@ class TicketRepository;
 class LottoEngine;
 
 /*!
- * \brief LottoController 应用层编排器, 持有票据状态并驱动用例
+ * \brief LottoController 用例层交互器(use case interactor), 持有票据状态并编排用例
  *
- * 位于接口适配器与框架之间: 视图只依赖本类(通过 ticketChanged 信号渲染),
+ * 不做输入/输出格式适配, 只执行应用特定业务规则(锁定时拒绝生成、
+ * 状态变化守卫)与用例编排。视图只依赖本类(通过 ticketChanged 信号渲染),
  * 持久化只依赖 TicketRepository 抽象。本类不持有 repository/engine 所有权,
  * 生命周期由组合根保证。
  */

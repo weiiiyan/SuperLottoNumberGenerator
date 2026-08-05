@@ -27,6 +27,8 @@ int main(int argc, char *argv[])
     LottoEngine engine;
     LottoController controller(&repository, &engine);
     MainWindow window(&controller);
+    // 用例启动由组合根发起(视图不驱动用例): 异步恢复, 不阻塞 Android 启动
+    controller.load();
     window.showMaximized();
     return a.exec();
 }

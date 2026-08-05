@@ -16,10 +16,12 @@
 #include <algorithm>
 
 #include "lottocontroller.h"
+#include "lottopresenter.h"
 
 // 工具函数
 
-// formatNumber() 已提取至 mainwindow.h 供 UI 与测试复用
+// formatNumber() 与展示推导已提取至 lottopresenter.h (LottoPresenter),
+// MainWindow 只消费 LottoViewState 做机械写入
 
 /// 根据竖屏可用宽度推算动态间距分档
 static void spacingForWidth(int availableWidth, int &outSpacing, int &outSeparatorWidth)
@@ -47,7 +49,6 @@ MainWindow::MainWindow(LottoController *controller, QWidget *parent)
     , m_controller(controller)
 {
     init();
-    m_controller->load();   // 排定异步恢复, 不阻塞 Android 启动
 }
 
 MainWindow::~MainWindow()
@@ -55,42 +56,24 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-// 状态渲染(视图唯一渲染入口, 不做任何业务判断)
+// 状态渲染(视图唯一渲染入口: 消费展示状态, 机械写入控件, 不做任何推导)
 
 void MainWindow::onTicketChanged(const LottoTicket &ticket)
 {
-    applyTicketToLabels(ticket);
-    updateTimeLabel(ticket.generateTime());
+    const LottoViewState state = LottoPresenter::present(ticket);
 
-    const bool hasTicket = !ticket.groups().isEmpty() && !ticket.groups().first().front.isEmpty();
-    m_btnLock->setEnabled(hasTicket);
-    m_btnLock->setChecked(ticket.isLocked());
-    m_btnLock->setText(ticket.isLocked() ? "🔒 解锁生成" : "🔓 锁定号码");
-    m_btnGenerate->setEnabled(!ticket.isLocked());
-}
-
-void MainWindow::applyTicketToLabels(const LottoTicket &ticket)
-{
     for (int g = 0; g < GROUP_COUNT; g++) {
-        const LottoResult result = ticket.groupAt(g);
-        for (int i = 0; i < FRONT_COUNT; i++) {
-            m_frontLabels[g][i]->setText(
-                i < result.front.size() ? formatNumber(result.front[i]) : "?");
-        }
-        for (int i = 0; i < BACK_COUNT; i++) {
-            m_backLabels[g][i]->setText(
-                i < result.back.size() ? formatNumber(result.back[i]) : "?");
-        }
+        const QStringList &row = state.groups.at(g);
+        for (int i = 0; i < FRONT_COUNT; i++)
+            m_frontLabels[g][i]->setText(row.at(i));
+        for (int i = 0; i < BACK_COUNT; i++)
+            m_backLabels[g][i]->setText(row.at(FRONT_COUNT + i));
     }
-}
-
-void MainWindow::updateTimeLabel(const QDateTime &time)
-{
-    if (time.isValid()) {
-        m_timeLabel->setText("🕐 生成时间：" + time.toString("yyyy-MM-dd HH:mm:ss"));
-    } else {
-        m_timeLabel->setText("🕐 生成时间：年-月-日 时:分:秒");
-    }
+    m_timeLabel->setText(state.timeText);
+    m_btnLock->setEnabled(state.lockButtonEnabled);
+    m_btnLock->setChecked(state.lockButtonChecked);
+    m_btnLock->setText(state.lockButtonText);
+    m_btnGenerate->setEnabled(state.generateEnabled);
 }
 
 // 窗口尺寸变化 → 更新标签尺寸
@@ -259,8 +242,10 @@ void MainWindow::init()
     // 主布局
     m_mainLayout = new QVBoxLayout(ui->centralwidget);
 
-    // 时间标签
-    m_timeLabel = new QLabel("🕐 生成时间：年-月-日 时:分:秒", ui->centralwidget);
+    // 时间标签(初始文本来自展示器常量, 与 onTicketChanged 渲染一致)
+    m_timeLabel = new QLabel(QString::fromUtf8(LottoPresenter::TIME_PREFIX)
+                                 + QString::fromUtf8(LottoPresenter::TIME_PLACEHOLDER),
+                             ui->centralwidget);
     m_timeLabel->setObjectName("timeLabel");
     m_timeLabel->setAlignment(Qt::AlignCenter);
     m_timeLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -277,7 +262,8 @@ void MainWindow::init()
     auto createLabels = [&](const QString &prefix, const QString &area, int count,
                              QLabel *out[], int group) {
         for (int i = 0; i < count; i++) {
-            out[i] = new QLabel("?", ui->centralwidget);
+            out[i] = new QLabel(QString::fromUtf8(LottoPresenter::NUMBER_PLACEHOLDER),
+                                ui->centralwidget);
             out[i]->setObjectName(QString("%1_%2_%3").arg(prefix).arg(group).arg(i));
             out[i]->setFixedSize(m_labelWidth, m_labelWidth);
             out[i]->setAlignment(Qt::AlignCenter);
@@ -317,7 +303,8 @@ void MainWindow::init()
     m_btnGenerate = new QPushButton("🎲 生成号码", ui->centralwidget);
     m_btnGenerate->setObjectName("btnGenerate");
 
-    m_btnLock = new QPushButton("🔓 锁定号码", ui->centralwidget);
+    m_btnLock = new QPushButton(QString::fromUtf8(LottoPresenter::LOCK_TEXT_UNLOCKED),
+                                ui->centralwidget);
     m_btnLock->setObjectName("btnLock");
     m_btnLock->setCheckable(true);
     m_btnLock->setEnabled(false);

@@ -16,10 +16,10 @@
 class LottoTicket
 {
 public:
-    // 游戏规则常量: 注数 / 前区每注个数 / 后区每注个数
+    // 游戏规则常量: 注数(票据级); 组级规则(每注个数/号码范围)定义于 LottoResult
     static constexpr int GROUP_COUNT = 5;
-    static constexpr int FRONT_COUNT = 5;
-    static constexpr int BACK_COUNT  = 2;
+    static constexpr int FRONT_COUNT = LottoResult::FRONT_COUNT;
+    static constexpr int BACK_COUNT  = LottoResult::BACK_COUNT;
 
     LottoTicket();   /*!< 默认构造: 空号码, 无效时间, 未锁定 */
     /*!
@@ -50,10 +50,22 @@ public:
     void setLocked(bool locked);
 
     /*!
-     * \brief 校验票据是否合法
+     * \brief 判断票据是否包含号码
+     *
+     * 任一组含任一号码即返回 true。空票据(未生成/未恢复)与恢复路径
+     * 可能产生的不完整票据在此区分; 视图据此决定锁定按钮是否可用。
+     */
+    bool hasNumbers() const;
+
+    /*!
+     * \brief 校验票据是否合法(严格不变量)
      *
      * 组数 = GROUP_COUNT,每组前区 FRONT_COUNT 个、后区 BACK_COUNT 个,
      * 号码在规则范围内且升序。
+     *
+     * 注意: 本方法用于生成/测试数据的完整性校验; 恢复路径
+     * (TicketRepository::load) 为兼容旧版缺项数据, 可能返回不满足
+     * 本校验的票据, 此时应使用 hasNumbers() 判断是否包含号码。
      */
     bool isValid() const;
 

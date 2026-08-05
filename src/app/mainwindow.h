@@ -17,17 +17,12 @@ class QHBoxLayout;
 class QVBoxLayout;
 class QTimer;
 
-/// 号码格式化: 零填充两位数字(如 3 → "03"), 供 UI 与测试复用
-inline QString formatNumber(int n)
-{
-    return QString::number(n).rightJustified(2, '0');
-}
-
 /*!
  * \brief MainWindow 谦卑视图: 只负责渲染控制器推送的状态与转发用户动作
  *
- * 所有业务状态(号码/锁定/时间)由 LottoController 持有,
- * 本类通过 ticketChanged 信号纯渲染, 不做任何业务判断。
+ * 所有业务状态(号码/锁定/时间)由 LottoController 持有, 展示推导由
+ * LottoPresenter 承担, 本类通过 ticketChanged 信号做机械的控件写入,
+ * 不做任何业务判断与展示推导。
  */
 class MainWindow : public QMainWindow
 {
@@ -73,10 +68,6 @@ private:
     void rebuildGroupRows();                           // 间距档位变化时重建组行
     void updateLabelSizes(int availableWidth);
     QHBoxLayout* createGroupRow(int group);
-    /*! 将票据号码写入标签(缺项显示 "?") */
-    void applyTicketToLabels(const LottoTicket &ticket);
-    /*! 更新时间标签(无效时间显示占位符) */
-    void updateTimeLabel(const QDateTime &time);
 
     Ui::MainWindow *ui;
     LottoController *m_controller = nullptr;

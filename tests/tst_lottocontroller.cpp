@@ -53,17 +53,17 @@ private:
     /// 校验一组号码是否合法(数量/范围/升序)
     static bool isValidGroup(const LottoResult &result)
     {
-        if (result.front.size() != LottoTicket::FRONT_COUNT
-            || result.back.size() != LottoTicket::BACK_COUNT)
+        if (result.front.size() != LottoResult::FRONT_COUNT
+            || result.back.size() != LottoResult::BACK_COUNT)
             return false;
         for (int i = 0; i < result.front.size(); ++i) {
-            if (result.front[i] < 1 || result.front[i] > 35)
+            if (result.front[i] < LottoResult::FRONT_MIN || result.front[i] > LottoResult::FRONT_MAX)
                 return false;
             if (i > 0 && result.front[i] <= result.front[i - 1])
                 return false;
         }
         for (int i = 0; i < result.back.size(); ++i) {
-            if (result.back[i] < 1 || result.back[i] > 12)
+            if (result.back[i] < LottoResult::BACK_MIN || result.back[i] > LottoResult::BACK_MAX)
                 return false;
             if (i > 0 && result.back[i] <= result.back[i - 1])
                 return false;

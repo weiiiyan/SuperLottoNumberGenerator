@@ -3,7 +3,8 @@
 #
 # 注意事项：
 #   - 测试仅在桌面平台构建（MinGW/MSVC/Linux/macOS），Android 跳过
-#   - 测试目标链接各层库（lotto_core / lotto_adapters / lotto_app），
+#   - 测试目标链接各层库（lotto_core / lotto_application / lotto_adapters /
+#     lotto_app），
 #     不再手工编译被测源码
 #   - 使用 CTest 集成，可通过 ctest 或 cmake --build . --target test 运行
 
@@ -58,9 +59,9 @@ if(NOT ANDROID)
     register_lotto_test(LottoEngineTest LottoEngineTest)
     message(STATUS "测试目标 LottoEngineTest 已创建")
 
-    # ── 应用层: 控制器状态机测试(注入内存仓储)──
+    # ── 用例层: 控制器状态机测试(注入内存仓储, 无 GUI 依赖)──
     add_lotto_test(LottoControllerTest tst_lottocontroller.cpp)
-    target_link_libraries(LottoControllerTest PRIVATE lotto_app lotto_core)
+    target_link_libraries(LottoControllerTest PRIVATE lotto_application lotto_core)
     register_lotto_test(LottoControllerTest LottoControllerTest)
     message(STATUS "测试目标 LottoControllerTest 已创建")
 
@@ -70,11 +71,18 @@ if(NOT ANDROID)
     register_lotto_test(QSettingsRepositoryTest QSettingsRepositoryTest)
     message(STATUS "测试目标 QSettingsRepositoryTest 已创建")
 
+    # ── 视图层: 展示器测试(纯展示推导, 无 GUI 依赖)──
+    add_lotto_test(LottoPresenterTest tst_lottopresenter.cpp)
+    target_link_libraries(LottoPresenterTest PRIVATE lotto_app lotto_core)
+    register_lotto_test(LottoPresenterTest LottoPresenterTest)
+    message(STATUS "测试目标 LottoPresenterTest 已创建")
+
     # ── GUI 集成测试: 需要 Qt::Widgets, 运行时需 -platform offscreen ──
     find_package(Qt${TEST_QT_MAJOR} REQUIRED COMPONENTS Widgets)
     add_lotto_test(MainWindowTest tst_mainwindow.cpp)
     target_link_libraries(MainWindowTest PRIVATE
-        lotto_app lotto_adapters lotto_core Qt${TEST_QT_MAJOR}::Widgets)
+        lotto_app lotto_adapters lotto_application lotto_core
+        Qt${TEST_QT_MAJOR}::Widgets)
     register_lotto_test(MainWindowTest MainWindowTest -platform offscreen)
     message(STATUS "测试目标 MainWindowTest 已创建")
 else()

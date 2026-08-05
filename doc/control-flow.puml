@@ -1,0 +1,63 @@
+@startuml control-flow
+!theme plain
+' 控制流图: 启动恢复 / 生成号码 / 锁定切换
+' 渲染: 可用 VS Code PlantUML 插件, 或上传 kroki.io / plantuml.com 在线渲染
+
+title SuperLottoNumberGenerator 控制流图
+
+actor 用户 as U
+participant "main()\n(组合根)" as Main
+participant "MainWindow\n(谦卑视图)" as MW
+participant "LottoController\n(应用层编排器)" as C
+participant "LottoEngine\n(领域服务)" as E
+participant "QSettingsTicketRepository\n(适配器)" as R
+
+note over C : 持有唯一状态源 m_ticket (LottoTicket 值类型)\n跨层只传 LottoTicket, 不传 widget/存储内部结构
+
+== 启动: 异步恢复 (main() 装配后调用 load(), 视图不驱动用例) ==
+
+Main -> C : load()
+activate C
+C -> C : QTimer::singleShot(0, ...)\n不阻塞 Android 启动
+C -> R : load()
+R --> C : LottoTicket\n(未锁定 → 默认票: 空号码/无效时间)
+C -> MW : emit ticketChanged(ticket)
+deactivate C
+MW -> MW : onTicketChanged() 纯渲染\n(号码/时间/按钮互斥状态)
+
+== 用户点击 [生成] (未锁定) ==
+
+U -> MW : clicked
+MW -> C : generateNewTicket()
+activate C
+alt 当前已锁定
+    C -> C : 拒绝生成 (return)\n(按钮禁用只是辅助, 此处判定权威)
+else 未锁定
+    C -> E : generateBatch(GROUP_COUNT = 5)
+    activate E
+    E -> E : std::shuffle(QRandomGenerator::global())\n对 iota 号码池洗牌
+    E --> C : QVector<LottoResult>
+    deactivate E
+    C -> C : 更新 m_ticket\n(时间戳 UTC→本地, setLocked(false))
+    C -> MW : emit ticketChanged(ticket)
+    MW -> MW : onTicketChanged() 渲染 5 组号码
+end
+deactivate C
+
+== 用户点击 [锁定 / 解锁] ==
+
+U -> MW : clicked
+MW -> C : toggleLock()
+activate C
+C -> C : setLocked(!m_ticket.isLocked())
+alt 状态未变化 (守卫)
+    C -> C : return (不重复保存)
+else 状态变化
+    C -> R : save(ticket)
+    R -> R : 锁定时写全量 + sync()\n未锁定仅写 isLocked=false
+    C -> MW : emit ticketChanged(ticket)
+    MW -> MW : onTicketChanged() 按钮互斥更新
+end
+deactivate C
+
+@enduml

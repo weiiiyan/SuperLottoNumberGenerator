@@ -17,6 +17,8 @@
 #include "mainwindow.h"
 #include "lottocontroller.h"
 #include "lottoengine.h"
+#include "lottoresult.h"
+#include "lottopresenter.h"
 #include "qsettingsrepository.h"
 
 class TestMainWindow : public QObject
@@ -32,6 +34,7 @@ private:
     MainWindow *m_window = nullptr;
 
     /// 重建完整装配: 全新 controller + 指向同一临时文件的仓储
+    /// 与生产一致: load() 由组合根(此处为夹具)调用, 而非视图构造触发
     MainWindow* makeWindow()
     {
         delete m_window;
@@ -45,7 +48,8 @@ private:
         m_engine = new LottoEngine;
         m_controller = new LottoController(m_repo, m_engine);
         m_window = new MainWindow(m_controller);
-        QTest::qWait(50);   // 等 controller->load() 的 singleShot(0) 异步恢复
+        m_controller->load();   // 用例启动: 排定异步恢复
+        QTest::qWait(50);       // 等 controller->load() 的 singleShot(0) 异步恢复
         return m_window;
     }
 
@@ -160,8 +164,8 @@ private slots:
                 int num = label->text().toInt(&ok);
                 QVERIFY2(ok, QString("前区标签 %1_%2 不是有效数字: '%3'")
                                  .arg(g).arg(i).arg(label->text()).toUtf8());
-                QVERIFY2(num >= 1 && num <= 35,
-                         QString("前区号码 %1 超出 [1,35]").arg(num).toUtf8());
+                QVERIFY2(num >= LottoResult::FRONT_MIN && num <= LottoResult::FRONT_MAX,
+                         QString("前区号码 %1 超出范围").arg(num).toUtf8());
                 QCOMPARE(label->text().size(), 2);  // 零填充两位
             }
             for (int i = 0; i < MainWindow::BACK_COUNT; i++) {
@@ -171,8 +175,8 @@ private slots:
                 int num = label->text().toInt(&ok);
                 QVERIFY2(ok, QString("后区标签 %1_%2 不是有效数字: '%3'")
                                  .arg(g).arg(i).arg(label->text()).toUtf8());
-                QVERIFY2(num >= 1 && num <= 12,
-                         QString("后区号码 %1 超出 [1,12]").arg(num).toUtf8());
+                QVERIFY2(num >= LottoResult::BACK_MIN && num <= LottoResult::BACK_MAX,
+                         QString("后区号码 %1 超出范围").arg(num).toUtf8());
                 QCOMPARE(label->text().size(), 2);
             }
         }
@@ -199,7 +203,7 @@ private slots:
 
         QVERIFY(btnLock()->isEnabled());
         QVERIFY(!btnLock()->isChecked());
-        QCOMPARE(btnLock()->text(), QString("🔓 锁定号码"));
+        QCOMPARE(btnLock()->text(), QString::fromUtf8(LottoPresenter::LOCK_TEXT_UNLOCKED));
     }
 
     // ── 场景 4: 锁定 / 解锁流程 ──
@@ -213,13 +217,13 @@ private slots:
         // ── 锁定 ──
         QTest::mouseClick(btnLock(), Qt::LeftButton);
         QVERIFY(btnLock()->isChecked());
-        QCOMPARE(btnLock()->text(), QString("🔒 解锁生成"));
+        QCOMPARE(btnLock()->text(), QString::fromUtf8(LottoPresenter::LOCK_TEXT_LOCKED));
         QVERIFY(!btnGenerate()->isEnabled());
 
         // ── 解锁 ──
         QTest::mouseClick(btnLock(), Qt::LeftButton);
         QVERIFY(!btnLock()->isChecked());
-        QCOMPARE(btnLock()->text(), QString("🔓 锁定号码"));
+        QCOMPARE(btnLock()->text(), QString::fromUtf8(LottoPresenter::LOCK_TEXT_UNLOCKED));
         QVERIFY(btnGenerate()->isEnabled());
     }
 
@@ -267,7 +271,7 @@ private slots:
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
 
         QString text = timeLabel()->text();
-        QVERIFY2(text.contains("🕐 生成时间："),
+        QVERIFY2(text.contains(QString::fromUtf8(LottoPresenter::TIME_PREFIX)),
                  QString("时间标签内容异常: '%1'").arg(text).toUtf8());
 
         QRegularExpression re(R"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})");
@@ -300,7 +304,7 @@ private slots:
 
         // ─ Step 2: 验证锁定状态恢复 ─
         QVERIFY2(btnLock()->isChecked(), "重建窗口后锁定按钮应为选中状态");
-        QCOMPARE(btnLock()->text(), QString("🔒 解锁生成"));
+        QCOMPARE(btnLock()->text(), QString::fromUtf8(LottoPresenter::LOCK_TEXT_LOCKED));
         QVERIFY(!btnGenerate()->isEnabled());
 
         // ─ Step 3: 验证号码恢复 ─
@@ -314,7 +318,7 @@ private slots:
 
         // ─ Step 4: 验证时间标签恢复(格式为 yyyy-MM-dd HH:mm:ss) ─
         QString text = timeLabel()->text();
-        QVERIFY2(text.contains("🕐 生成时间："),
+        QVERIFY2(text.contains(QString::fromUtf8(LottoPresenter::TIME_PREFIX)),
                  QString("时间标签内容异常: '%1'").arg(text).toUtf8());
         QRegularExpression re(R"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})");
         QVERIFY2(re.match(text).hasMatch(),
@@ -332,7 +336,8 @@ private slots:
 
         QVERIFY(!btnLock()->isEnabled());
         QVERIFY(!btnLock()->isChecked());
-        QCOMPARE(frontLabel(0, 0)->text(), QString("?"));   // 号码标签保持占位符
+        QCOMPARE(frontLabel(0, 0)->text(),
+                 QString::fromUtf8(LottoPresenter::NUMBER_PLACEHOLDER));   // 号码标签保持占位符
     }
 
     // ── 场景 9: resize 布局自适应不崩溃 ──
