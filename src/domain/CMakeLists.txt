@@ -1,7 +1,7 @@
 # 领域核心库: 实体 + 领域服务(仅依赖 Qt::Core)
 
 add_library(lotto_core STATIC
-    lottoresult.h
+    lottogroup.h
     lottoengine.h lottoengine.cpp
     lottoticket.h lottoticket.cpp
 )

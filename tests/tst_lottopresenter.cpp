@@ -18,14 +18,14 @@ private:
                                   bool locked = false,
                                   const QDateTime &time = QDateTime())
     {
-        QVector<LottoResult> groups;
+        QVector<LottoGroup> groups;
         for (int g = 0; g < groupCount; ++g) {
             QVector<int> front, back;
-            for (int i = 0; i < LottoResult::FRONT_COUNT; ++i)
-                front << g * LottoResult::FRONT_COUNT + i + 1;
-            for (int i = 0; i < LottoResult::BACK_COUNT; ++i)
-                back << g * LottoResult::BACK_COUNT + i + 1;
-            groups.append(LottoResult(front, back));
+            for (int i = 0; i < LottoGroup::FRONT_COUNT; ++i)
+                front << g * LottoGroup::FRONT_COUNT + i + 1;
+            for (int i = 0; i < LottoGroup::BACK_COUNT; ++i)
+                back << g * LottoGroup::BACK_COUNT + i + 1;
+            groups.append(LottoGroup(front, back));
         }
         return LottoTicket(groups, time, locked);
     }
@@ -40,7 +40,7 @@ private slots:
 
         QCOMPARE(state.groups.size(), LottoTicket::GROUP_COUNT);
         for (const QStringList &row : state.groups) {
-            QCOMPARE(row.size(), LottoResult::FRONT_COUNT + LottoResult::BACK_COUNT);
+            QCOMPARE(row.size(), LottoGroup::FRONT_COUNT + LottoGroup::BACK_COUNT);
             for (const QString &text : row)
                 QCOMPARE(text, QString::fromUtf8(LottoPresenter::NUMBER_PLACEHOLDER));
         }
@@ -61,17 +61,17 @@ private slots:
 
         // 组 0 前区: 1-5; 后区: 1-2 → 均应零填充
         const QStringList &row0 = state.groups.at(0);
-        for (int i = 0; i < LottoResult::FRONT_COUNT; ++i)
+        for (int i = 0; i < LottoGroup::FRONT_COUNT; ++i)
             QCOMPARE(row0.at(i), QString::number(i + 1).rightJustified(2, '0'));
-        for (int i = 0; i < LottoResult::BACK_COUNT; ++i)
-            QCOMPARE(row0.at(LottoResult::FRONT_COUNT + i),
+        for (int i = 0; i < LottoGroup::BACK_COUNT; ++i)
+            QCOMPARE(row0.at(LottoGroup::FRONT_COUNT + i),
                      QString::number(i + 1).rightJustified(2, '0'));
     }
 
     void partialGroup_shouldFillMissingWithPlaceholder()
     {
         qDebug() << "验证缺项号码显示占位符(容错不完整票据)";
-        QVector<LottoResult> groups(1, LottoResult());   // 1 组, 号码全空
+        QVector<LottoGroup> groups(1, LottoGroup());   // 1 组, 号码全空
         const LottoViewState state = LottoPresenter::present(
             LottoTicket(groups, QDateTime(), false));
 

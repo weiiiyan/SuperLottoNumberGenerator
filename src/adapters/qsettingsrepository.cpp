@@ -43,11 +43,11 @@ void QSettingsTicketRepository::clear()
     m_settings->sync();
 }
 
-void QSettingsTicketRepository::flatten(const QVector<LottoResult> &groups,
+void QSettingsTicketRepository::flatten(const QVector<LottoGroup> &groups,
                                         QVariantList &frontList,
                                         QVariantList &backList) const
 {
-    for (const LottoResult &result : groups) {
+    for (const LottoGroup &result : groups) {
         for (int number : result.front)
             frontList << number;
         for (int number : result.back)
@@ -55,12 +55,12 @@ void QSettingsTicketRepository::flatten(const QVector<LottoResult> &groups,
     }
 }
 
-QVector<LottoResult> QSettingsTicketRepository::unflatten(const QVariantList &frontList,
+QVector<LottoGroup> QSettingsTicketRepository::unflatten(const QVariantList &frontList,
                                                           const QVariantList &backList) const
 {
-    QVector<LottoResult> groups;
+    QVector<LottoGroup> groups;
     for (int g = 0; g < LottoTicket::GROUP_COUNT; ++g) {
-        LottoResult result;
+        LottoGroup result;
         for (int i = 0; i < LottoTicket::FRONT_COUNT; ++i) {
             const int idx = g * LottoTicket::FRONT_COUNT + i;
             if (idx < frontList.size())

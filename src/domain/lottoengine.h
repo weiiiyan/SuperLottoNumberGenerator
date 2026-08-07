@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QVector>
 
-#include "lottoresult.h"
+#include "lottogroup.h"
 
 /*!
  * \brief LottoEngine 使用 QRandomGenerator 生成随机大乐透号码
@@ -16,9 +16,9 @@ public:
     explicit LottoEngine(QObject *parent = nullptr);
 
     /*! 生成一组随机号码 */
-    LottoResult generate() const;
+    LottoGroup generate() const;
     /*! 批量生成 \a count 组随机号码 */
-    QVector<LottoResult> generateBatch(int count) const;
+    QVector<LottoGroup> generateBatch(int count) const;
 };
 
 #endif // LOTTOENGINE_H

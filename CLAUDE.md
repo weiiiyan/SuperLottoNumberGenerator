@@ -61,6 +61,8 @@ tests/           → 5 个测试 target
 
 与《架构整洁之道》洋葱图的映射：`domain`=业务实体（Entities）、`application`=用例（Use Cases）、`adapters`+`app` 内的展示器=接口适配器层（Interface Adapters，存储侧/展示侧两个端口）、`app` 的 MainWindow/QSS=框架与驱动程序（Frameworks & Drivers）、`main.cpp`=Main 组件（洋葱图外）。
 
+**为何按层封装而非按用例/功能划分目录（有意权衡）**：第 21 章"尖叫的架构"主张顶层目录反映用例（如 `patients/`、`diagnoses/`），第 34 章也指出按层封装（Package by Layer）的隐患——不同业务领域的分层代码看起来惊人相似，无法展现领域信息。本项目仍按层划分，理由：(1) 本系统只有**一个用例**（生成/锁定/恢复一注大乐透号码），用例即系统本身，层目录只是洋葱壳，不会被误读为别的系统；(2) "尖叫"由类名承担——全项目 `Lotto*` 前缀（`LottoGroup`/`LottoTicket`/`LottoEngine`/`LottoInteractor`/`LottoPresenter`），新程序员打开任何文件都知道这是什么系统；(3) 本项目用于教学，目录与洋葱图一一对应本身就是教学目标。**触发条件**：若未来出现第二个可区分用例（历史记录、统计分析、多玩法等），层目录将开始埋没用例，届时应按用例纵向切分——每个用例一个组件，自带交互器/展示器/仓储端口（参考第 33 章案例分析），而不是继续在层内堆叠。
+
 **展示器为何在 `app/` 而非 `adapters/` 或 `application/`（有意权衡）**：按洋葱图展示器属接口适配器层，与 QSettings 仓储同层对称（用例层两侧的输出/输入端口），因此不放 `application/`（用例层不做任何 I/O 格式适配）。物理上放 `app/` 而非 `adapters/` 是因为它与谦卑视图配对、共享展示词汇（按钮文字/时间前缀），同库内聚；真正约束（展示器不依赖 Widget、依赖只指向内层）已守住，目录归属只是组织方式——属不完全边界（ch24）。若未来出现多视图/展示器膨胀，应把展示器独立为 `adapters/presenter/` 或单独组件。
 
 跨层数据只传 `LottoTicket`（值类型）：`MainWindow`（框架层）→ `LottoInteractor`（用例层）→ `TicketRepository` 接口（用例层）→ `QSettingsTicketRepository`（adapters 层）。
@@ -69,8 +71,8 @@ tests/           → 5 个测试 target
 
 ### 核心领域：[src/domain/](src/domain/)
 
-- `LottoResult`（[lottoresult.h](src/domain/lottoresult.h)）— 纯数据 struct，两个已排序向量：`front`（5 个号码，范围 1–35）和 `back`（2 个号码，范围 1–12）。**组级游戏规则常量** `FRONT_COUNT`/`BACK_COUNT`/`FRONT_MIN`/`FRONT_MAX`/`BACK_MIN`/`BACK_MAX` 定义于此（全项目唯一来源）。通过 `Q_DECLARE_METATYPE` 注册为 Qt 元类型。
-- `LottoTicket`（[lottoticket.h](src/domain/lottoticket.h)）— 领域实体：5 组号码 + `QDateTime` 生成时间戳 + 锁定标志。票据级常量 `GROUP_COUNT` 定义于此；`FRONT_COUNT`/`BACK_COUNT` 为 `LottoResult::*` 的别名（组级规则唯一来源是 LottoResult）。
+- `LottoGroup`（[lottogroup.h](src/domain/lottogroup.h)）— 纯数据 struct，两个已排序向量：`front`（5 个号码，范围 1–35）和 `back`（2 个号码，范围 1–12）。**组级游戏规则常量** `FRONT_COUNT`/`BACK_COUNT`/`FRONT_MIN`/`FRONT_MAX`/`BACK_MIN`/`BACK_MAX` 定义于此（全项目唯一来源）。通过 `Q_DECLARE_METATYPE` 注册为 Qt 元类型。
+- `LottoTicket`（[lottoticket.h](src/domain/lottoticket.h)）— 领域实体：5 组号码 + `QDateTime` 生成时间戳 + 锁定标志。票据级常量 `GROUP_COUNT` 定义于此；`FRONT_COUNT`/`BACK_COUNT` 为 `LottoGroup::*` 的别名（组级规则唯一来源是 LottoGroup）。
 - `LottoEngine`（[lottoengine.h](src/domain/lottoengine.h)）— 领域服务：使用 `std::shuffle` 对 `std::iota` 填充的号码池随机洗牌，随机引擎为 `QRandomGenerator::global()`。不使用 `rand()`，不手动 seed。
 
 ### 用例层：[src/application/lottointeractor.h](src/application/lottointeractor.h)
@@ -104,7 +106,7 @@ UI **完全通过代码构建**于 `MainWindow::init()` 中。`.ui` 文件仅为
 - 从容器的实际宽度反推，`std::clamp` 在 `LABEL_MIN_SIZE_PORTRAIT`(22px) 到 `LABEL_MAX_SIZE`(44px) 之间，乘以 `LABEL_ROW_WIDTH_FRACTION`(0.94) 安全系数消化内边距误差
 - 字号 = 标签尺寸的 50%，不窄于 10px
 
-所有布局尺寸常量定义在 [mainwindow.h](src/app/mainwindow.h) 的 `public` 区：`WIDTH_TIER_*`、`LABEL_*`。彩票格式常量（`GROUP_COUNT` 等）为 `LottoResult::*`/`LottoTicket::*` 的别名，实际定义于领域层。
+所有布局尺寸常量定义在 [mainwindow.h](src/app/mainwindow.h) 的 `public` 区：`WIDTH_TIER_*`、`LABEL_*`。彩票格式常量（`GROUP_COUNT` 等）为 `LottoGroup::*`/`LottoTicket::*` 的别名，实际定义于领域层。
 
 #### 号码显示格式
 

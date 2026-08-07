@@ -26,11 +26,13 @@ src/app/main.cpp → 组合根: 装配具体依赖(唯一接触 QSettings 具体
 
 | 洋葱图层 | 目录 | 内容 |
 | --- | --- | --- |
-| 业务实体(Entities) | src/domain/ | LottoResult/LottoTicket/LottoEngine |
+| 业务实体(Entities) | src/domain/ | LottoGroup/LottoTicket/LottoEngine |
 | 用例(Use Cases) | src/application/ | LottoInteractor + TicketRepository 端口 |
 | 接口适配器(Interface Adapters) | src/adapters/(存储侧) + app 内展示器(展示侧) | QSettingsTicketRepository、LottoPresenter |
 | 框架与驱动(Frameworks & Drivers) | src/app/ | MainWindow(谦卑视图)/QSS/qrc |
 | Main 组件(洋葱外) | src/app/main.cpp | 装配具体依赖 |
+
+**为何按层封装而非按用例/功能划分目录(有意权衡)**:第 21 章"尖叫的架构"主张顶层目录反映用例(如 `patients/`、`diagnoses/`);第 34 章也指出按层封装的隐患——不同业务领域的分层代码看起来惊人相似,无法展现领域信息。本项目仍按层划分,理由:(1) 本系统只有**一个用例**(生成/锁定/恢复一注大乐透号码),用例即系统本身,层目录只是洋葱壳;(2) "尖叫"由类名承担——全项目 `Lotto*` 前缀(LottoGroup/LottoTicket/LottoEngine/LottoInteractor/LottoPresenter),打开任何文件都知道这是什么系统;(3) 本项目用于教学,目录与洋葱图一一对应本身就是教学目标。**触发条件**:出现第二个可区分用例(历史记录/统计分析/多玩法等)时,层目录将开始埋没用例,应改为按用例纵向切分——每用例一个组件,自带交互器/展示器/仓储端口(参考第 33 章案例分析)。详见 CLAUDE.md。
 
 **展示器为何在 app/ 而非 adapters/ 或 application/(有意权衡)**:按洋葱图展示器属接口适配器层,与仓储同层对称(用例层展示/存储两个输出端口),不放 application/(用例层不做 I/O 格式适配)。物理放 app/ 是因为与谦卑视图配对、共享展示词汇(按钮文字/时间前缀),同库内聚;真正约束(展示器不依赖 Widget、依赖只指向内层)已守住,目录归属只是组织方式——不完全边界(ch24)。多视图/展示器膨胀时应独立为 adapters/presenter/ 或单独组件。
 
@@ -40,8 +42,8 @@ src/app/main.cpp → 组合根: 装配具体依赖(唯一接触 QSettings 具体
 
 ### 领域层(domain)
 
-- `LottoResult` — 单组号码(前区 5 个 [1,35] + 后区 2 个 [1,12],已排序);组级游戏规则常量 `FRONT_COUNT`/`BACK_COUNT`/`FRONT_MIN`/`FRONT_MAX`/`BACK_MIN`/`BACK_MAX` 定义于此(全项目唯一来源)
-- `LottoTicket` — 领域实体:5 组号码 + 生成时间 + 锁定标志;票据级常量 `GROUP_COUNT` 定义于此(`FRONT_COUNT`/`BACK_COUNT` 为 `LottoResult::*` 别名);`hasNumbers()`/`isValid()` 校验在此定义
+- `LottoGroup` — 单组号码(前区 5 个 [1,35] + 后区 2 个 [1,12],已排序);组级游戏规则常量 `FRONT_COUNT`/`BACK_COUNT`/`FRONT_MIN`/`FRONT_MAX`/`BACK_MIN`/`BACK_MAX` 定义于此(全项目唯一来源)
+- `LottoTicket` — 领域实体:5 组号码 + 生成时间 + 锁定标志;票据级常量 `GROUP_COUNT` 定义于此(`FRONT_COUNT`/`BACK_COUNT` 为 `LottoGroup::*` 别名);`hasNumbers()`/`isValid()` 校验在此定义
 - `LottoEngine` — 领域服务:随机生成号码(QRandomGenerator 洗牌,无状态)
 
 ### 用例层(application)

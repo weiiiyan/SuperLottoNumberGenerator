@@ -5,7 +5,7 @@
 #include <QMetaType>
 #include <QVector>
 
-#include "lottoresult.h"
+#include "lottogroup.h"
 
 /*!
  * \brief LottoTicket 保存一期完整的大乐透票据(5 组号码 + 生成时间 + 锁定标志)
@@ -16,10 +16,10 @@
 class LottoTicket
 {
 public:
-    // 游戏规则常量: 注数(票据级); 组级规则(每注个数/号码范围)定义于 LottoResult
+    // 游戏规则常量: 注数(票据级); 组级规则(每注个数/号码范围)定义于 LottoGroup
     static constexpr int GROUP_COUNT = 5;
-    static constexpr int FRONT_COUNT = LottoResult::FRONT_COUNT;
-    static constexpr int BACK_COUNT  = LottoResult::BACK_COUNT;
+    static constexpr int FRONT_COUNT = LottoGroup::FRONT_COUNT;
+    static constexpr int BACK_COUNT  = LottoGroup::BACK_COUNT;
 
     LottoTicket();   /*!< 默认构造: 空号码, 无效时间, 未锁定 */
     /*!
@@ -28,16 +28,16 @@ public:
      * \param generateTime 生成时间(本地时间)
      * \param isLocked 是否已锁定
      */
-    LottoTicket(const QVector<LottoResult> &groups,
+    LottoTicket(const QVector<LottoGroup> &groups,
                 const QDateTime &generateTime = QDateTime(),
                 bool isLocked = false);
 
     /*! 返回全部组(只读) */
-    const QVector<LottoResult> &groups() const;
+    const QVector<LottoGroup> &groups() const;
     /*! 设置全部组 */
-    void setGroups(const QVector<LottoResult> &groups);
+    void setGroups(const QVector<LottoGroup> &groups);
     /*! 返回第 \a index 组号码 */
-    LottoResult groupAt(int index) const;
+    LottoGroup groupAt(int index) const;
 
     /*! 返回生成时间戳(本地时间) */
     QDateTime generateTime() const;
@@ -73,7 +73,7 @@ public:
     bool operator==(const LottoTicket &other) const;
 
 private:
-    QVector<LottoResult> m_groups;  /*!< 5 组号码 */
+    QVector<LottoGroup> m_groups;  /*!< 5 组号码 */
     QDateTime m_generateTime;       /*!< 生成时间戳 */
     bool m_isLocked = false;        /*!< 锁定标志 */
 };

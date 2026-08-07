@@ -37,33 +37,33 @@ private:
     /// 构造一组固定号码, 供确定性断言使用(号码均合法: 前区 1-25, 后区 1-10)
     static LottoTicket makeFixedTicket()
     {
-        QVector<LottoResult> groups;
+        QVector<LottoGroup> groups;
         for (int g = 0; g < LottoTicket::GROUP_COUNT; ++g) {
             QVector<int> front, back;
             for (int i = 0; i < LottoTicket::FRONT_COUNT; ++i)
                 front << g * LottoTicket::FRONT_COUNT + i + 1;
             for (int i = 0; i < LottoTicket::BACK_COUNT; ++i)
                 back << g * LottoTicket::BACK_COUNT + i + 1;
-            groups.append(LottoResult(front, back));
+            groups.append(LottoGroup(front, back));
         }
         return LottoTicket(groups, QDateTime::fromString("2026-01-01 12:00:00",
                                                          "yyyy-MM-dd HH:mm:ss"), true);
     }
 
     /// 校验一组号码是否合法(数量/范围/升序)
-    static bool isValidGroup(const LottoResult &result)
+    static bool isValidGroup(const LottoGroup &result)
     {
-        if (result.front.size() != LottoResult::FRONT_COUNT
-            || result.back.size() != LottoResult::BACK_COUNT)
+        if (result.front.size() != LottoGroup::FRONT_COUNT
+            || result.back.size() != LottoGroup::BACK_COUNT)
             return false;
         for (int i = 0; i < result.front.size(); ++i) {
-            if (result.front[i] < LottoResult::FRONT_MIN || result.front[i] > LottoResult::FRONT_MAX)
+            if (result.front[i] < LottoGroup::FRONT_MIN || result.front[i] > LottoGroup::FRONT_MAX)
                 return false;
             if (i > 0 && result.front[i] <= result.front[i - 1])
                 return false;
         }
         for (int i = 0; i < result.back.size(); ++i) {
-            if (result.back[i] < LottoResult::BACK_MIN || result.back[i] > LottoResult::BACK_MAX)
+            if (result.back[i] < LottoGroup::BACK_MIN || result.back[i] > LottoGroup::BACK_MAX)
                 return false;
             if (i > 0 && result.back[i] <= result.back[i - 1])
                 return false;
@@ -96,7 +96,7 @@ private slots:
 
         const LottoTicket ticket = m_controller->currentTicket();
         QCOMPARE(ticket.groups().size(), LottoTicket::GROUP_COUNT);
-        for (const LottoResult &result : ticket.groups())
+        for (const LottoGroup &result : ticket.groups())
             QVERIFY2(isValidGroup(result), "生成的号码应合法(数量/范围/升序)");
         QVERIFY(ticket.generateTime().isValid());
         QVERIFY(!ticket.isLocked());

@@ -29,10 +29,10 @@ public:
 
 private:
     /*! 将 5 组号码展平为前区/后区两个扁平 int 列表 */
-    void flatten(const QVector<LottoResult> &groups,
+    void flatten(const QVector<LottoGroup> &groups,
                  QVariantList &frontList, QVariantList &backList) const;
     /*! 将扁平列表还原为 5 组号码, 缺项位置留空(容错旧数据) */
-    QVector<LottoResult> unflatten(const QVariantList &frontList,
+    QVector<LottoGroup> unflatten(const QVariantList &frontList,
                                    const QVariantList &backList) const;
     /*!
      * \brief 解析 generateTime 字符串

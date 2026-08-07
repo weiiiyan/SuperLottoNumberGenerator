@@ -4,7 +4,7 @@ LottoTicket::LottoTicket()
 {
 }
 
-LottoTicket::LottoTicket(const QVector<LottoResult> &groups,
+LottoTicket::LottoTicket(const QVector<LottoGroup> &groups,
                          const QDateTime &generateTime, bool isLocked)
     : m_groups(groups)
     , m_generateTime(generateTime)
@@ -12,19 +12,19 @@ LottoTicket::LottoTicket(const QVector<LottoResult> &groups,
 {
 }
 
-const QVector<LottoResult> &LottoTicket::groups() const
+const QVector<LottoGroup> &LottoTicket::groups() const
 {
     return m_groups;
 }
 
-void LottoTicket::setGroups(const QVector<LottoResult> &groups)
+void LottoTicket::setGroups(const QVector<LottoGroup> &groups)
 {
     m_groups = groups;
 }
 
-LottoResult LottoTicket::groupAt(int index) const
+LottoGroup LottoTicket::groupAt(int index) const
 {
-    return (index >= 0 && index < m_groups.size()) ? m_groups[index] : LottoResult();
+    return (index >= 0 && index < m_groups.size()) ? m_groups[index] : LottoGroup();
 }
 
 QDateTime LottoTicket::generateTime() const
@@ -49,7 +49,7 @@ void LottoTicket::setLocked(bool locked)
 
 bool LottoTicket::hasNumbers() const
 {
-    for (const LottoResult &result : m_groups) {
+    for (const LottoGroup &result : m_groups) {
         if (!result.front.isEmpty() || !result.back.isEmpty())
             return true;
     }
@@ -61,17 +61,17 @@ bool LottoTicket::isValid() const
     if (m_groups.size() != GROUP_COUNT)
         return false;
 
-    for (const LottoResult &result : m_groups) {
+    for (const LottoGroup &result : m_groups) {
         if (result.front.size() != FRONT_COUNT || result.back.size() != BACK_COUNT)
             return false;
         for (int i = 0; i < FRONT_COUNT; ++i) {
-            if (result.front[i] < LottoResult::FRONT_MIN || result.front[i] > LottoResult::FRONT_MAX)
+            if (result.front[i] < LottoGroup::FRONT_MIN || result.front[i] > LottoGroup::FRONT_MAX)
                 return false;
             if (i > 0 && result.front[i] <= result.front[i - 1])
                 return false;
         }
         for (int i = 0; i < BACK_COUNT; ++i) {
-            if (result.back[i] < LottoResult::BACK_MIN || result.back[i] > LottoResult::BACK_MAX)
+            if (result.back[i] < LottoGroup::BACK_MIN || result.back[i] > LottoGroup::BACK_MAX)
                 return false;
             if (i > 0 && result.back[i] <= result.back[i - 1])
                 return false;

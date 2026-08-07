@@ -6,13 +6,13 @@ LottoViewState LottoPresenter::present(const LottoTicket &ticket)
 
     // 每组: 前区 FRONT_COUNT 个 + 后区 BACK_COUNT 个展示文本, 缺项填占位符
     for (int g = 0; g < LottoTicket::GROUP_COUNT; ++g) {
-        const LottoResult result = ticket.groupAt(g);
+        const LottoGroup result = ticket.groupAt(g);
         QStringList row;
-        for (int i = 0; i < LottoResult::FRONT_COUNT; ++i) {
+        for (int i = 0; i < LottoGroup::FRONT_COUNT; ++i) {
             row << (i < result.front.size() ? formatNumber(result.front.at(i))
                                             : QString::fromUtf8(NUMBER_PLACEHOLDER));
         }
-        for (int i = 0; i < LottoResult::BACK_COUNT; ++i) {
+        for (int i = 0; i < LottoGroup::BACK_COUNT; ++i) {
             row << (i < result.back.size() ? formatNumber(result.back.at(i))
                                            : QString::fromUtf8(NUMBER_PLACEHOLDER));
         }

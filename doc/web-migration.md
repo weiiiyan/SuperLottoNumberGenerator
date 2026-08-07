@@ -36,7 +36,7 @@
 
 | 组件 | 现状 | Web 化后 | 动作 |
 | --- | --- | --- | --- |
-| src/domain/(LottoResult/Ticket/Engine) | 领域层 | 后台, 原样保留 | 不动 |
+| src/domain/(LottoGroup/Ticket/Engine) | 领域层 | 后台, 原样保留 | 不动 |
 | LottoInteractor(用例) | 用例层 | 后台, 原样保留 | 不动 |
 | TicketRepository(端口) | 用例层 | 后台, 原样保留 | 不动 |
 | MainWindow + QSS + qrc | 桌面谦卑视图 | 前端 HTML/JS(新的谦卑视图, 只渲染 JSON/转发点击) | 替换 |

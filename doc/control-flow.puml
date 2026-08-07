@@ -40,7 +40,7 @@ else 未锁定
     C -> E : generateBatch(GROUP_COUNT = 5)
     activate E
     E -> E : std::shuffle(QRandomGenerator::global())\n对 iota 号码池洗牌
-    E --> C : QVector<LottoResult>
+    E --> C : QVector<LottoGroup>
     deactivate E
     C -> C : 更新 m_ticket\n(时间戳 UTC→本地, setLocked(false))
     C -> MW : emit ticketChanged(ticket)

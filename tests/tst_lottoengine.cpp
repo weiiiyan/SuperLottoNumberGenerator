@@ -18,19 +18,19 @@ class TestLottoEngine : public QObject
 private:
     LottoEngine *engine = nullptr;
 
-    /// 验证单个 LottoResult 满足所有约束（数量、范围、排序、唯一性）
-    static void verifySingleResult(const LottoResult &r)
+    /// 验证单个 LottoGroup 满足所有约束（数量、范围、排序、唯一性）
+    static void verifySingleResult(const LottoGroup &r)
     {
         // 数量
-        QCOMPARE(r.front.size(), LottoResult::FRONT_COUNT);
-        QCOMPARE(r.back.size(), LottoResult::BACK_COUNT);
+        QCOMPARE(r.front.size(), LottoGroup::FRONT_COUNT);
+        QCOMPARE(r.back.size(), LottoGroup::BACK_COUNT);
 
         // 范围
         QVERIFY(std::all_of(r.front.cbegin(), r.front.cend(), [](int n) {
-            return n >= LottoResult::FRONT_MIN && n <= LottoResult::FRONT_MAX;
+            return n >= LottoGroup::FRONT_MIN && n <= LottoGroup::FRONT_MAX;
         }));
         QVERIFY(std::all_of(r.back.cbegin(), r.back.cend(), [](int n) {
-            return n >= LottoResult::BACK_MIN && n <= LottoResult::BACK_MAX;
+            return n >= LottoGroup::BACK_MIN && n <= LottoGroup::BACK_MAX;
         }));
 
         // 排序
@@ -39,9 +39,9 @@ private:
 
         // 唯一性
         QSet<int> fSet(r.front.cbegin(), r.front.cend());
-        QCOMPARE(fSet.size(), LottoResult::FRONT_COUNT);
+        QCOMPARE(fSet.size(), LottoGroup::FRONT_COUNT);
         QSet<int> bSet(r.back.cbegin(), r.back.cend());
-        QCOMPARE(bSet.size(), LottoResult::BACK_COUNT);
+        QCOMPARE(bSet.size(), LottoGroup::BACK_COUNT);
     }
 
 private slots:
@@ -62,15 +62,15 @@ private slots:
     void generate_shouldReturn5FrontNumbers()
     {
         qDebug() << "验证 generate() 返回 5 个前区号码";
-        LottoResult r = engine->generate();
-        QCOMPARE(r.front.size(), LottoResult::FRONT_COUNT);
+        LottoGroup r = engine->generate();
+        QCOMPARE(r.front.size(), LottoGroup::FRONT_COUNT);
     }
 
     void generate_shouldReturn2BackNumbers()
     {
         qDebug() << "验证 generate() 返回 2 个后区号码";
-        LottoResult r = engine->generate();
-        QCOMPARE(r.back.size(), LottoResult::BACK_COUNT);
+        LottoGroup r = engine->generate();
+        QCOMPARE(r.back.size(), LottoGroup::BACK_COUNT);
     }
 
         // generate() — 值域正确性
@@ -80,9 +80,9 @@ private slots:
         qDebug() << "验证前区号码均在范围内（100 次）";
         // 多次验证以增加置信度
         for (int iter = 0; iter < 100; ++iter) {
-            LottoResult r = engine->generate();
+            LottoGroup r = engine->generate();
             for (int n : r.front) {
-                QVERIFY2(n >= LottoResult::FRONT_MIN && n <= LottoResult::FRONT_MAX,
+                QVERIFY2(n >= LottoGroup::FRONT_MIN && n <= LottoGroup::FRONT_MAX,
                          QString("前区号码 %1 超出范围").arg(n).toUtf8());
             }
         }
@@ -92,9 +92,9 @@ private slots:
     {
         qDebug() << "验证后区号码均在范围内（100 次）";
         for (int iter = 0; iter < 100; ++iter) {
-            LottoResult r = engine->generate();
+            LottoGroup r = engine->generate();
             for (int n : r.back) {
-                QVERIFY2(n >= LottoResult::BACK_MIN && n <= LottoResult::BACK_MAX,
+                QVERIFY2(n >= LottoGroup::BACK_MIN && n <= LottoGroup::BACK_MAX,
                          QString("后区号码 %1 超出范围").arg(n).toUtf8());
             }
         }
@@ -106,7 +106,7 @@ private slots:
     {
         qDebug() << "验证前区号码按升序排列（100 次）";
         for (int iter = 0; iter < 100; ++iter) {
-            LottoResult r = engine->generate();
+            LottoGroup r = engine->generate();
             QVERIFY2(std::is_sorted(r.front.begin(), r.front.end()), "前区号码未按升序排列");
         }
     }
@@ -115,7 +115,7 @@ private slots:
     {
         qDebug() << "验证后区号码按升序排列（100 次）";
         for (int iter = 0; iter < 100; ++iter) {
-            LottoResult r = engine->generate();
+            LottoGroup r = engine->generate();
             QVERIFY2(std::is_sorted(r.back.begin(), r.back.end()), "后区号码未按升序排列");
         }
     }
@@ -126,7 +126,7 @@ private slots:
     {
         qDebug() << "验证前区号码无重复（100 次）";
         for (int iter = 0; iter < 100; ++iter) {
-            LottoResult r = engine->generate();
+            LottoGroup r = engine->generate();
             QSet<int> seen;
             for (int n : r.front) {
                 QVERIFY2(!seen.contains(n), QString("前区号码 %1 重复出现").arg(n).toUtf8());
@@ -139,7 +139,7 @@ private slots:
     {
         qDebug() << "验证后区号码无重复（100 次）";
         for (int iter = 0; iter < 100; ++iter) {
-            LottoResult r = engine->generate();
+            LottoGroup r = engine->generate();
             QSet<int> seen;
             for (int n : r.back) {
                 QVERIFY2(!seen.contains(n), QString("后区号码 %1 重复出现").arg(n).toUtf8());
@@ -161,7 +161,7 @@ private slots:
     void generateBatch_countZero_shouldReturnEmpty()
     {
         qDebug() << "验证 generateBatch(0) 返回空结果";
-        QVector<LottoResult> results = engine->generateBatch(0);
+        QVector<LottoGroup> results = engine->generateBatch(0);
         QCOMPARE(results.size(), 0);
     }
 
@@ -169,7 +169,7 @@ private slots:
     {
         qDebug() << "验证 generateBatch(负数) 返回空结果";
         // 负数应被视为无效输入，返回空结果
-        QVector<LottoResult> results = engine->generateBatch(-1);
+        QVector<LottoGroup> results = engine->generateBatch(-1);
         QCOMPARE(results.size(), 0);
 
         results = engine->generateBatch(-100);
@@ -179,7 +179,7 @@ private slots:
     void generateBatch_countOne_shouldReturnOneResult()
     {
         qDebug() << "验证 generateBatch(1) 返回 1 个有效结果";
-        QVector<LottoResult> results = engine->generateBatch(1);
+        QVector<LottoGroup> results = engine->generateBatch(1);
         QCOMPARE(results.size(), 1);
         verifySingleResult(results[0]);
     }
@@ -188,7 +188,7 @@ private slots:
     {
         qDebug() << "验证 generateBatch(10) 返回正确数量";
         constexpr int expected = 10;
-        QVector<LottoResult> results = engine->generateBatch(expected);
+        QVector<LottoGroup> results = engine->generateBatch(expected);
         QCOMPARE(results.size(), expected);
     }
 
@@ -196,7 +196,7 @@ private slots:
     {
         qDebug() << "验证 generateBatch(50) 所有结果均有效";
         constexpr int count = 50;
-        QVector<LottoResult> results = engine->generateBatch(count);
+        QVector<LottoGroup> results = engine->generateBatch(count);
         QCOMPARE(results.size(), count);
 
         for (int i = 0; i < count; ++i)
@@ -208,7 +208,7 @@ private slots:
         qDebug() << "验证 generateBatch(1000) 大批量不崩溃且数量正确";
         // 大批量测试：确保性能和内存合理
         constexpr int count = 1000;
-        QVector<LottoResult> results = engine->generateBatch(count);
+        QVector<LottoGroup> results = engine->generateBatch(count);
         QCOMPARE(results.size(), count);
     }
 
@@ -219,7 +219,7 @@ private slots:
         qDebug() << "验证连续 100 次生成不全相同（随机性检查）";
         // 连续 100 次调用，应该至少产生 2 种不同的结果
         constexpr int rounds = 100;
-        QVector<LottoResult> results = engine->generateBatch(rounds);
+        QVector<LottoGroup> results = engine->generateBatch(rounds);
 
         bool hasDifference = false;
         for (int i = 1; i < results.size() && !hasDifference; ++i) {
@@ -236,29 +236,29 @@ private slots:
         // 生成大量号码，验证每个号码至少出现过一次
         // 样本量足够大使得 "某个号码从未出现" 的概率极低（<< 10^-300）
         constexpr int sampleSize = 5000;
-        QVector<LottoResult> results = engine->generateBatch(sampleSize);
+        QVector<LottoGroup> results = engine->generateBatch(sampleSize);
 
         // 前区统计
-        QVector<int> frontCount(LottoResult::FRONT_MAX + 1, 0);  // 索引 0 不用
+        QVector<int> frontCount(LottoGroup::FRONT_MAX + 1, 0);  // 索引 0 不用
         for (const auto &r : results) {
             for (int n : r.front) {
                 frontCount[n]++;
             }
         }
-        for (int i = LottoResult::FRONT_MIN; i <= LottoResult::FRONT_MAX; ++i) {
+        for (int i = LottoGroup::FRONT_MIN; i <= LottoGroup::FRONT_MAX; ++i) {
             QVERIFY2(frontCount[i] > 0,
                      QString("前区号码 %1 在 %2 次生成中从未出现")
                          .arg(i).arg(sampleSize).toUtf8());
         }
 
         // 后区统计
-        QVector<int> backCount(LottoResult::BACK_MAX + 1, 0);
+        QVector<int> backCount(LottoGroup::BACK_MAX + 1, 0);
         for (const auto &r : results) {
             for (int n : r.back) {
                 backCount[n]++;
             }
         }
-        for (int i = LottoResult::BACK_MIN; i <= LottoResult::BACK_MAX; ++i) {
+        for (int i = LottoGroup::BACK_MIN; i <= LottoGroup::BACK_MAX; ++i) {
             QVERIFY2(backCount[i] > 0,
                      QString("后区号码 %1 在 %2 次生成中从未出现")
                          .arg(i).arg(sampleSize).toUtf8());
@@ -271,9 +271,9 @@ private slots:
         // 验证 LottoEngine 可以在没有 init 准备的情况下工作
         //（测试引擎的无状态特性）
         LottoEngine standaloneEngine;
-        LottoResult r = standaloneEngine.generate();
-        QCOMPARE(r.front.size(), LottoResult::FRONT_COUNT);
-        QCOMPARE(r.back.size(), LottoResult::BACK_COUNT);
+        LottoGroup r = standaloneEngine.generate();
+        QCOMPARE(r.front.size(), LottoGroup::FRONT_COUNT);
+        QCOMPARE(r.back.size(), LottoGroup::BACK_COUNT);
     }
 };
 

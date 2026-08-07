@@ -21,12 +21,12 @@ legend top right
 endlegend
 
 package "领域层 src/domain/ — lotto_core" as domain #FEF2E0 {
-  component [LottoResult\n«值类型: 单组号码»] as LottoResult
+  component [LottoGroup\n«值类型: 单组号码»] as LottoGroup
   component [LottoTicket\n«实体: 5 组+时间+锁»] as LottoTicket
   component [LottoEngine\n«领域服务: 随机生成»] as LottoEngine
 
-  LottoTicket ..> LottoResult : 包含 5 组
-  LottoEngine ..> LottoResult : generate()
+  LottoTicket ..> LottoGroup : 包含 5 组
+  LottoEngine ..> LottoGroup : generate()
 }
 
 package "用例层 src/application/ — lotto_application" as application #F2E8F8 {

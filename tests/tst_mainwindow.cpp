@@ -17,7 +17,7 @@
 #include "mainwindow.h"
 #include "lottointeractor.h"
 #include "lottoengine.h"
-#include "lottoresult.h"
+#include "lottogroup.h"
 #include "lottopresenter.h"
 #include "qsettingsrepository.h"
 
@@ -164,7 +164,7 @@ private slots:
                 int num = label->text().toInt(&ok);
                 QVERIFY2(ok, QString("前区标签 %1_%2 不是有效数字: '%3'")
                                  .arg(g).arg(i).arg(label->text()).toUtf8());
-                QVERIFY2(num >= LottoResult::FRONT_MIN && num <= LottoResult::FRONT_MAX,
+                QVERIFY2(num >= LottoGroup::FRONT_MIN && num <= LottoGroup::FRONT_MAX,
                          QString("前区号码 %1 超出范围").arg(num).toUtf8());
                 QCOMPARE(label->text().size(), 2);  // 零填充两位
             }
@@ -175,7 +175,7 @@ private slots:
                 int num = label->text().toInt(&ok);
                 QVERIFY2(ok, QString("后区标签 %1_%2 不是有效数字: '%3'")
                                  .arg(g).arg(i).arg(label->text()).toUtf8());
-                QVERIFY2(num >= LottoResult::BACK_MIN && num <= LottoResult::BACK_MAX,
+                QVERIFY2(num >= LottoGroup::BACK_MIN && num <= LottoGroup::BACK_MAX,
                          QString("后区号码 %1 超出范围").arg(num).toUtf8());
                 QCOMPARE(label->text().size(), 2);
             }
