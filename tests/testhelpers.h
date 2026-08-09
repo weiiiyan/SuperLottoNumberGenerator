@@ -7,6 +7,8 @@
 #include <QDateTime>
 #include <QVector>
 
+#include "lottoengine.h"
+#include "lottoinputboundary.h"
 #include "lottopresenterport.h"
 #include "lottoticket.h"
 #include "ticketrepository.h"
@@ -35,6 +37,47 @@ public:
 
     void present(const LottoTicket &ticket) override { presented.append(ticket); }
     void clear() { presented.clear(); }
+};
+
+/*! 记录调用次数的输入边界替身: 供断言"外部输入 → 用例调用"的翻译 */
+class FakeInputBoundary : public LottoInputBoundary
+{
+public:
+    int generateCalls   = 0;   /*!< generateNewTicket() 调用次数 */
+    int toggleLockCalls = 0;   /*!< toggleLock() 调用次数 */
+    int setLockedCalls  = 0;   /*!< setLocked() 调用次数 */
+    int loadCalls       = 0;   /*!< load() 调用次数 */
+
+    void generateNewTicket() override { ++generateCalls; }
+    void toggleLock() override { ++toggleLockCalls; }
+    void setLocked(bool) override { ++setLockedCalls; }
+    void load() override { ++loadCalls; }
+};
+
+/*! 返回固定号码的引擎替身: 供用例层确定性编排测试(不依赖真实随机性) */
+class FakeLottoEngine : public LottoEngine
+{
+public:
+    explicit FakeLottoEngine(const QVector<LottoResult> &fixed = QVector<LottoResult>())
+        : m_fixed(fixed) {}
+
+    /*! generate(): 返回第一组固定号码(无固定号码时返回空组) */
+    LottoResult generate() const override
+    {
+        return m_fixed.isEmpty() ? LottoResult() : m_fixed.first();
+    }
+
+    /*! generateBatch(): 返回 \a count 组固定号码, 固定号码不足时循环复用 */
+    QVector<LottoResult> generateBatch(int count) const override
+    {
+        QVector<LottoResult> out;
+        for (int i = 0; i < count; ++i)
+            out.append(m_fixed.isEmpty() ? LottoResult() : m_fixed.at(i % m_fixed.size()));
+        return out;
+    }
+
+private:
+    QVector<LottoResult> m_fixed;   /*!< 固定返回的号码 */
 };
 
 /*! 构造固定递增号码的票据(号码均在合法范围) */

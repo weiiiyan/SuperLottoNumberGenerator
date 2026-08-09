@@ -16,9 +16,9 @@ public:
     explicit LottoEngine(QObject *parent = nullptr);
 
     /*! 生成一组随机号码 */
-    LottoResult generate() const;
+    virtual LottoResult generate() const;
     /*! 批量生成 \a count 组随机号码 */
-    QVector<LottoResult> generateBatch(int count) const;
+    virtual QVector<LottoResult> generateBatch(int count) const;
 };
 
 #endif // LOTTOENGINE_H

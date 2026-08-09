@@ -1,12 +1,12 @@
 // LottoInteractor 应用层逻辑单元测试
-// 通过注入内存 FakeTicketRepository / FakePresenterPort, 无需 GUI 与真实文件
-// 即可验证状态机与"经输出端口推送状态"的编排
+// 通过注入内存 FakeTicketRepository / FakePresenterPort 与固定号码引擎
+// FakeLottoEngine, 无需 GUI/真实随机性即可确定性验证状态机与
+// "经输出端口推送状态"的编排
 
 #include <QTest>
 
 #include <QDebug>
 
-#include "lottoengine.h"
 #include "lottointeractor.h"
 
 #include "testhelpers.h"
@@ -18,35 +18,20 @@ class TestLottoInteractor : public QObject
 private:
     FakeTicketRepository *m_repo = nullptr;
     FakePresenterPort *m_presenter = nullptr;
-    LottoEngine *m_engine = nullptr;
+    FakeLottoEngine *m_engine = nullptr;
     LottoInteractor *m_controller = nullptr;
 
-    /// 构造一组固定号码, 供确定性断言使用(号码均合法: 前区 1-25, 后区 1-10)
+    /// 构造确定性固定号码(5 组, 组 g 前区 5g+1..5g+5、后区 2g+1..2g+2)
+    static QVector<LottoResult> fixedGroups()
+    {
+        return makeTicket(LottoTicket::GROUP_COUNT).groups();
+    }
+
+    /// 构造一组固定票据, 供恢复断言使用(号码/时间/锁定已知)
     static LottoTicket makeFixedTicket()
     {
         return makeTicket(LottoTicket::GROUP_COUNT, true,
                           QDateTime::fromString("2026-01-01 12:00:00", "yyyy-MM-dd HH:mm:ss"));
-    }
-
-    /// 校验一组号码是否合法(数量/范围/升序)
-    static bool isValidGroup(const LottoResult &result)
-    {
-        if (result.front.size() != LottoResult::FRONT_COUNT
-            || result.back.size() != LottoResult::BACK_COUNT)
-            return false;
-        for (int i = 0; i < result.front.size(); ++i) {
-            if (result.front[i] < LottoResult::FRONT_MIN || result.front[i] > LottoResult::FRONT_MAX)
-                return false;
-            if (i > 0 && result.front[i] <= result.front[i - 1])
-                return false;
-        }
-        for (int i = 0; i < result.back.size(); ++i) {
-            if (result.back[i] < LottoResult::BACK_MIN || result.back[i] > LottoResult::BACK_MAX)
-                return false;
-            if (i > 0 && result.back[i] <= result.back[i - 1])
-                return false;
-        }
-        return true;
     }
 
 private slots:
@@ -54,7 +39,7 @@ private slots:
     {
         m_repo = new FakeTicketRepository;
         m_presenter = new FakePresenterPort;
-        m_engine = new LottoEngine;
+        m_engine = new FakeLottoEngine(fixedGroups());   // 固定号码, 断言精确化
         m_controller = new LottoInteractor(m_repo, m_engine, m_presenter);
     }
 
@@ -68,33 +53,22 @@ private slots:
 
     // ── 生成 ──
 
-    void generateNewTicket_shouldProduceValidTicket()
+    void generateNewTicket_shouldWriteEngineOutputToTicket()
     {
         m_controller->generateNewTicket();
 
         const LottoTicket ticket = m_controller->currentTicket();
-        QCOMPARE(ticket.groups().size(), LottoTicket::GROUP_COUNT);
-        for (const LottoResult &result : ticket.groups())
-            QVERIFY2(isValidGroup(result), "生成的号码应合法(数量/范围/升序)");
+        QCOMPARE(ticket.groups(), fixedGroups());           // 引擎固定输出原样写入票据
         QVERIFY(ticket.generateTime().isValid());
         QVERIFY(!ticket.isLocked());
-        QCOMPARE(m_presenter->presentCount(), 1);   // 经输出端口推送一次
+        QCOMPARE(m_presenter->presentCount(), 1);           // 经输出端口推送一次
+        QCOMPARE(m_presenter->presented.last(), ticket);    // 推送的即当前票据
     }
 
     void generateNewTicket_shouldNotSave()
     {
         m_controller->generateNewTicket();
         QCOMPARE(m_repo->saveCount(), 0);   // 生成本身不落盘, 仅锁定/解锁时保存
-    }
-
-    void generateNewTicket_shouldClearPreviousLock()
-    {
-        m_controller->setLocked(true);
-        m_controller->setLocked(false);
-        m_controller->generateNewTicket();
-
-        QVERIFY(!m_controller->currentTicket().isLocked());
-        QVERIFY(m_controller->currentTicket().generateTime().isValid());
     }
 
     void generateNewTicket_whenLocked_shouldBeNoop()

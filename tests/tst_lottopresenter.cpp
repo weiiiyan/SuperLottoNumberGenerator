@@ -1,7 +1,7 @@
 // LottoPresenter 输出侧适配器(展示器)单元测试
 // 验证展示推导(号码格式化/占位符/按钮互斥状态/时间显示格式)
-// 与输出端口桥接(用例经 LottoPresenterPort.present() 推送 → viewStateChanged 信号)
-// 不依赖 GUI, 可在桌面端独立运行
+// 与输出端口桥接(present() → viewStateChanged 信号)
+// 不依赖 GUI 与用例/引擎实现, 可独立运行
 
 #include <QTest>
 #include <QSignalSpy>
@@ -9,8 +9,6 @@
 #include <QDebug>
 
 #include "lottopresenter.h"
-#include "lottoengine.h"
-#include "lottointeractor.h"
 
 #include "testhelpers.h"
 
@@ -19,30 +17,20 @@ class TestLottoPresenter : public QObject
     Q_OBJECT
 
 private:
-    FakeTicketRepository *m_repo = nullptr;
-    LottoEngine *m_engine = nullptr;
-    LottoInteractor *m_interactor = nullptr;
     LottoPresenter *m_presenter = nullptr;
     QSignalSpy *m_spy = nullptr;
 
 private slots:
-    // 桥接测试夹具: 真实交互器注入输出端口 = 展示器
     void init()
     {
-        m_repo = new FakeTicketRepository;
-        m_engine = new LottoEngine;
         m_presenter = new LottoPresenter;
-        m_interactor = new LottoInteractor(m_repo, m_engine, m_presenter);
         m_spy = new QSignalSpy(m_presenter, &LottoPresenter::viewStateChanged);
     }
 
     void cleanup()
     {
         delete m_spy;
-        delete m_interactor;
         delete m_presenter;
-        delete m_engine;
-        delete m_repo;
     }
 
     // 输出端口桥接: 用例经 present() 推送 → viewStateChanged 信号
@@ -50,20 +38,8 @@ private slots:
     void present_shouldEmitViewState()
     {
         qDebug() << "验证作为输出端口被调用时重发 viewStateChanged";
-        m_presenter->present(makeTicket());
-
-        QCOMPARE(m_spy->count(), 1);
-        const LottoViewState state = qvariant_cast<LottoViewState>(m_spy->at(0).at(0));
-        QCOMPARE(state.groups.size(), LottoTicket::GROUP_COUNT);
-        QVERIFY(state.lockButtonEnabled);          // 含号码后可锁定
-        QCOMPARE(state.lockButtonText,
-                 QString::fromUtf8(LottoPresenter::LOCK_TEXT_UNLOCKED));
-    }
-
-    void generate_shouldEmitViewState()
-    {
-        qDebug() << "验证用例生成后经输出端口推送 viewStateChanged";
-        m_interactor->generateNewTicket();
+        m_presenter->present(makeTicket(LottoTicket::GROUP_COUNT, false,
+                                        QDateTime(QDate(2026, 1, 1), QTime(12, 0, 0))));
 
         QCOMPARE(m_spy->count(), 1);
         const LottoViewState state = qvariant_cast<LottoViewState>(m_spy->at(0).at(0));
@@ -75,13 +51,10 @@ private slots:
                     QString::fromUtf8(LottoPresenter::TIME_PLACEHOLDER)));  // 有效时间
     }
 
-    void setLocked_shouldEmitLockedViewState()
+    void presentLockedTicket_shouldEmitLockedViewState()
     {
-        qDebug() << "验证锁定后展示器重发锁定状态";
-        m_interactor->generateNewTicket();
-        m_spy->clear();
-
-        m_interactor->setLocked(true);
+        qDebug() << "验证 present(锁定票据) 重发锁定状态";
+        m_presenter->present(makeTicket(LottoTicket::GROUP_COUNT, true, QDateTime()));
 
         QCOMPARE(m_spy->count(), 1);
         const LottoViewState state = qvariant_cast<LottoViewState>(m_spy->at(0).at(0));
@@ -117,12 +90,15 @@ private slots:
         qDebug() << "验证号码零填充两位(如 3 → '03')";
         const LottoViewState state = LottoPresenter::buildViewState(makeTicket());
 
-        // 组 0 前区: 1-5; 后区: 1-2 → 均应零填充
+        // 组 0 前区为 1-5、后区为 1-2, 断言字面值(不用被测 formatNumber 作期望, 避免循环断言)
         const QStringList &row0 = state.groups.at(0);
-        for (int i = 0; i < LottoResult::FRONT_COUNT; ++i)
-            QCOMPARE(row0.at(i), LottoPresenter::formatNumber(i + 1));
-        for (int i = 0; i < LottoResult::BACK_COUNT; ++i)
-            QCOMPARE(row0.at(LottoResult::FRONT_COUNT + i), LottoPresenter::formatNumber(i + 1));
+        QCOMPARE(row0.at(0), QStringLiteral("01"));
+        QCOMPARE(row0.at(1), QStringLiteral("02"));
+        QCOMPARE(row0.at(2), QStringLiteral("03"));
+        QCOMPARE(row0.at(3), QStringLiteral("04"));
+        QCOMPARE(row0.at(4), QStringLiteral("05"));
+        QCOMPARE(row0.at(LottoResult::FRONT_COUNT + 0), QStringLiteral("01"));
+        QCOMPARE(row0.at(LottoResult::FRONT_COUNT + 1), QStringLiteral("02"));
     }
 
     void partialGroup_shouldFillMissingWithPlaceholder()

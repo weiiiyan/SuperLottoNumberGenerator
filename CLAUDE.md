@@ -42,6 +42,18 @@ ctest --test-dir build/Desktop_Qt_6_11_1_MinGW_64_bit-Debug --output-on-failure
 
 测试 target 链接各层库（`lotto_core` / `lotto_application` / `lotto_adapters` / `lotto_app`），不手工编译被测源码。Android 构建自动跳过测试。
 
+#### 各层测试的替身策略（与下游实现解耦）
+
+每个测试 target 只测本层行为，**跨层协作者一律注入接口替身**（见 [tests/testhelpers.h](tests/testhelpers.h)），使缺陷能精确定位到某一层——下游模块行为变化不再连带本层测试变红：
+
+- `LottoControllerTest`（输入侧适配器）注入 `FakeInputBoundary`，只断言"点击 → 用例调用"的翻译，不装配真交互器/引擎
+- `LottoInteractorTest`（用例层）注入 `FakeTicketRepository` + `FakePresenterPort` + `FakeLottoEngine`，断言编排（引擎输出写入票据 / 锁定守卫 / 状态变化保存 / 经输出端口推送）；号码合法性属引擎契约，由 `LottoEngineTest` 承担
+- `LottoPresenterTest`（输出侧适配器）只装配 presenter + `QSignalSpy`，直接 `present(票据) → viewStateChanged` 断言，不依赖用例/引擎
+- `LottoEngineTest`（领域层）纯逻辑，无替身
+- `MainWindowTest` 是唯一的集成测试：真实装配全链（真交互器/引擎/仓储 + 同一临时文件），验证信号管线、布局与持久化 round-trip
+
+配套：`LottoEngine::generate/generateBatch` 为 `virtual`，供 `FakeLottoEngine` 继承覆写返回固定号码——用例层断言从"号码看起来合法"变为精确确定性的"引擎输出原样写入票据"。
+
 ## 架构
 
 **SuperLottoNumberGenerator** — 基于 Qt 6 Widgets 的大乐透随机号码生成器，同时面向桌面端与 Android。
@@ -74,7 +86,7 @@ tests/           → 6 个测试 target
 
 **锁定标志为何随实体存储（有意权衡）**：按整洁架构 ch20 定义，`isLocked` 属"因自动化而生的"应用特定规则——现实彩票无锁定概念（买票即固定），严格应归用例层；"锁定时拒绝生成"的判定也确已位于 `LottoInteractor::generateNewTicket()`。物理上随 `LottoTicket` 存储是为了保持跨层传输唯一值类型载体，避免 save/渲染时拼装「票据 + 锁标志」；实体仅持有数据、不含锁定逻辑，污染限于数据层面。
 
-- `LottoEngine`（[lottoengine.h](src/domain/lottoengine.h)）— 领域服务：使用 `std::shuffle` 对 `std::iota` 填充的号码池随机洗牌，随机引擎为 `QRandomGenerator::global()`。不使用 `rand()`，不手动 seed。
+- `LottoEngine`（[lottoengine.h](src/domain/lottoengine.h)）— 领域服务：使用 `std::shuffle` 对 `std::iota` 填充的号码池随机洗牌，随机引擎为 `QRandomGenerator::global()`。不使用 `rand()`，不手动 seed。`generate()`/`generateBatch()` 为 `virtual`，供测试替身 `FakeLottoEngine`（[tests/testhelpers.h](tests/testhelpers.h)）覆写返回固定号码。
 
 ### 用例层：[src/application/lottointeractor.h](src/application/lottointeractor.h)
 
