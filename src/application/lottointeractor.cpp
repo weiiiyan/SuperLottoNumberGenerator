@@ -4,13 +4,15 @@
 #include <QTimer>
 
 #include "lottoengine.h"
+#include "lottopresenterport.h"
 #include "ticketrepository.h"
 
 LottoInteractor::LottoInteractor(TicketRepository *repository, LottoEngine *engine,
-                                 QObject *parent)
+                                 LottoPresenterPort *presenter, QObject *parent)
     : QObject(parent)
     , m_repository(repository)
     , m_engine(engine)
+    , m_presenter(presenter)
 {
 }
 
@@ -23,7 +25,8 @@ void LottoInteractor::generateNewTicket()
     m_ticket.setGroups(m_engine->generateBatch(LottoTicket::GROUP_COUNT));
     m_ticket.setGenerateTime(QDateTime::currentDateTimeUtc().toLocalTime());
     m_ticket.setLocked(false);
-    emit ticketChanged(m_ticket);
+    if (m_presenter)
+        m_presenter->present(m_ticket);
 }
 
 void LottoInteractor::toggleLock()
@@ -39,7 +42,8 @@ void LottoInteractor::setLocked(bool locked)
 
     m_ticket.setLocked(locked);
     m_repository->save(m_ticket);
-    emit ticketChanged(m_ticket);
+    if (m_presenter)
+        m_presenter->present(m_ticket);
 }
 
 void LottoInteractor::load()
@@ -47,7 +51,8 @@ void LottoInteractor::load()
     // 异步恢复, 避免阻塞 Android 启动
     QTimer::singleShot(0, this, [this] {
         m_ticket = m_repository->load();
-        emit ticketChanged(m_ticket);
+        if (m_presenter)
+            m_presenter->present(m_ticket);
     });
 }
 

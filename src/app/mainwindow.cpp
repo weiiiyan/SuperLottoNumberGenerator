@@ -15,7 +15,7 @@
 
 #include <algorithm>
 
-#include "lottointeractor.h"
+#include "lottocontroller.h"
 #include "lottopresenter.h"
 
 // 工具函数
@@ -43,10 +43,12 @@ static void spacingForWidth(int availableWidth, int &outSpacing, int &outSeparat
 
 // 构造 / 析构
 
-MainWindow::MainWindow(LottoInteractor *controller, QWidget *parent)
+MainWindow::MainWindow(LottoController *controller, LottoPresenter *presenter,
+                       QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , m_controller(controller)
+    , m_presenter(presenter)
 {
     init();
 }
@@ -58,10 +60,13 @@ MainWindow::~MainWindow()
 
 // 状态渲染(视图唯一渲染入口: 消费展示状态, 机械写入控件, 不做任何推导)
 
-void MainWindow::onTicketChanged(const LottoTicket &ticket)
+void MainWindow::onViewStateChanged(const LottoViewState &state)
 {
-    const LottoViewState state = LottoPresenter::present(ticket);
+    applyState(state);
+}
 
+void MainWindow::applyState(const LottoViewState &state)
+{
     for (int g = 0; g < GROUP_COUNT; g++) {
         const QStringList &row = state.groups.at(g);
         for (int i = 0; i < FRONT_COUNT; i++)
@@ -242,10 +247,8 @@ void MainWindow::init()
     // 主布局
     m_mainLayout = new QVBoxLayout(ui->centralwidget);
 
-    // 时间标签(初始文本来自展示器常量, 与 onTicketChanged 渲染一致)
-    m_timeLabel = new QLabel(QString::fromUtf8(LottoPresenter::TIME_PREFIX)
-                                 + QString::fromUtf8(LottoPresenter::TIME_PLACEHOLDER),
-                             ui->centralwidget);
+    // 时间标签(初始文本由 applyState(initialState()) 填充, 与 onViewStateChanged 渲染一致)
+    m_timeLabel = new QLabel(QString(), ui->centralwidget);
     m_timeLabel->setObjectName("timeLabel");
     m_timeLabel->setAlignment(Qt::AlignCenter);
     m_timeLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -262,8 +265,7 @@ void MainWindow::init()
     auto createLabels = [&](const QString &prefix, const QString &area, int count,
                              QLabel *out[], int group) {
         for (int i = 0; i < count; i++) {
-            out[i] = new QLabel(QString::fromUtf8(LottoPresenter::NUMBER_PLACEHOLDER),
-                                ui->centralwidget);
+            out[i] = new QLabel(QString(), ui->centralwidget);   // 文本由 applyState 填充
             out[i]->setObjectName(QString("%1_%2_%3").arg(prefix).arg(group).arg(i));
             out[i]->setFixedSize(m_labelWidth, m_labelWidth);
             out[i]->setAlignment(Qt::AlignCenter);
@@ -299,18 +301,20 @@ void MainWindow::init()
     m_groupsLayout = new QVBoxLayout(m_groupsContainer);
     m_groupsLayout->setContentsMargins(0, 0, 0, 0);
 
-    // 按钮
-    m_btnGenerate = new QPushButton("🎲 生成号码", ui->centralwidget);
+    // 按钮(文字/启用状态由 applyState 填充, 空票据初始: 锁定禁用)
+    m_btnGenerate = new QPushButton(QString::fromUtf8(LottoPresenter::GENERATE_TEXT),
+                                    ui->centralwidget);
     m_btnGenerate->setObjectName("btnGenerate");
 
-    m_btnLock = new QPushButton(QString::fromUtf8(LottoPresenter::LOCK_TEXT_UNLOCKED),
-                                ui->centralwidget);
+    m_btnLock = new QPushButton(QString(), ui->centralwidget);
     m_btnLock->setObjectName("btnLock");
     m_btnLock->setCheckable(true);
-    m_btnLock->setEnabled(false);
 
     // 构建竖屏布局
     buildLayout();
+
+    // 初始渲染: 消费展示器的初始展示状态(空票据占位符)
+    applyState(LottoPresenter::initialState());
 
     // 统一样式表
     QFile qss(":/style.qss");
@@ -321,10 +325,13 @@ void MainWindow::init()
                    << "(静态库资源需在入口调用 Q_INIT_RESOURCE)";
     }
 
-    // 信号连接: 用户动作转发给控制器, 状态变化由 ticketChanged 信号回推
-    connect(m_btnGenerate, &QPushButton::clicked, this, [this]{ m_controller->generateNewTicket(); });
-    connect(m_btnLock,     &QPushButton::clicked, this, [this]{ m_controller->toggleLock(); });
-    connect(m_controller, &LottoInteractor::ticketChanged, this, &MainWindow::onTicketChanged);
+    // 信号连接: 按钮点击转发给输入侧适配器, 状态变化由输出侧适配器 viewStateChanged 信号回推
+    connect(m_btnGenerate, &QPushButton::clicked,
+            m_controller, &LottoController::onGenerateRequested);
+    connect(m_btnLock, &QPushButton::clicked,
+            m_controller, &LottoController::onLockRequested);
+    connect(m_presenter, &LottoPresenter::viewStateChanged,
+            this, &MainWindow::onViewStateChanged);
 
     // 布局防抖定时器(解决 Android resizeEvent 自激震荡)
     m_layoutDebounceTimer = new QTimer(this);

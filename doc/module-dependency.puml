@@ -17,7 +17,8 @@ legend top right
   ==图例==
   <size:10><i>虚线箭头 = 依赖 / 实现 / 调用方向</i></size>
   <size:10><i>依赖只指向内层: app → adapters → application → domain</i></size>
-  <size:10><i>跨层数据载体: LottoTicket (值类型)</i></size>
+  <size:10><i>存储/用例间数据载体: LottoTicket (值类型)</i></size>
+  <size:10><i>展示侧数据载体: LottoViewState (视图只感知它)</i></size>
 endlegend
 
 package "领域层 src/domain/ — lotto_core" as domain #FEF2E0 {
@@ -30,30 +31,36 @@ package "领域层 src/domain/ — lotto_core" as domain #FEF2E0 {
 }
 
 package "用例层 src/application/ — lotto_application" as application #F2E8F8 {
-  component [LottoInteractor\n«用例交互器: 唯一状态源»] as Controller
-  interface "TicketRepository\n«用例层持久化接口 DIP 端口»" as TicketRepository
+  component [LottoInteractor\n«用例交互器: 唯一状态源, 实现输入边界»] as Interactor
+  interface "LottoInputBoundary\n«输入边界: Controller 依赖»" as InputBoundary
+  interface "LottoPresenterPort\n«输出边界: Presenter 实现»" as PresenterPort
+  interface "TicketRepository\n«持久化端口: QSettingsRepo 实现»" as TicketRepository
 
-  Controller ..> TicketRepository : 依赖抽象, 不触碰具体仓储
-  Controller ..> LottoEngine : 调用领域服务 generateBatch()
-  Controller --> LottoTicket : 持有 m_ticket (唯一状态源)
+  Interactor ..|> InputBoundary : implements
+  Interactor ..> PresenterPort : 状态变化后 present(ticket)
+  Interactor ..> TicketRepository : 依赖抽象, 不触碰具体仓储
+  Interactor ..> LottoEngine : 调用领域服务 generateBatch()
+  Interactor --> LottoTicket : 持有 m_ticket (唯一状态源)
 }
 
-package "适配器层 src/adapters/ — lotto_adapters" as adapters #E0F0E0 {
-  component [QSettingsTicketRepository\n«QSettings INI 实现»] as QSettingsRepo
+package "接口适配器层 src/adapters/ — lotto_adapters" as adapters #E0F0E0 {
+  component [QSettingsTicketRepository\n«存储侧: QSettings INI 实现»] as QSettingsRepo
+  component [LottoController\n«输入侧: 事件→用例翻译»] as Controller
+  component [LottoPresenter\n«输出侧: 用例状态→展示状态»] as Presenter
 
   QSettingsRepo ..|> TicketRepository : implements
   QSettingsRepo ..> LottoTicket : 展平/还原 号码与时间
+  Controller ..> InputBoundary : 翻译按钮点击为边界调用
+  Presenter ..|> PresenterPort : implements
+  Presenter ..> LottoTicket : buildViewState(ticket) 推导
 }
 
 package "视图层 src/app/ — lotto_app" as app #E0E8F8 {
-  component [LottoPresenter\n«展示侧适配器: 展示推导»] as Presenter
   component [MainWindow\n«谦卑视图: 纯渲染»] as MainWindow
   component [style.qss\n«Qt 资源 :/style.qss»] as Style
 
-  MainWindow ..> Presenter : 消费 LottoViewState
   MainWindow --> Controller : 按钮 clicked 转发动作
-  MainWindow ..> LottoTicket : ticketChanged 信号渲染
-  Presenter ..> LottoTicket : present(ticket)
+  MainWindow ..> Presenter : 消费 viewStateChanged(LottoViewState)
   MainWindow ..> Style : 加载 QSS
 }
 
@@ -62,7 +69,9 @@ package "组合根 src/app/main.cpp\n— SuperLottoNumberGenerator 可执行目�
   component [QSettings\n(SuperLottoNumberGenerator.ini)] as QSettings
 
   Main ..> QSettingsRepo : new(具体类) 唯一接触点
-  Main ..> Controller : new(&repository, &engine)
+  Main ..> Interactor : new(&repository, &engine, &presenter)
+  Main ..> Presenter : new 实现输出端口
+  Main ..> Controller : new(&interactor) 依赖输入边界
   Main ..> QSettings : new(路径, IniFormat)
 }
 
@@ -70,13 +79,15 @@ package "测试 tests/" as tests #F0F0F0 {
   component [LottoEngineTest] as T1
   component [LottoInteractorTest\n(注入内存 Fake 仓储, 无 GUI 依赖)] as T2
   component [QSettingsRepositoryTest\n(QTemporaryDir 隔离)] as T3
-  component [LottoPresenterTest\n(展示推导, 无 GUI 依赖)] as T4
+  component [LottoControllerTest\n(事件→用例翻译, 无 GUI 依赖)] as T6
+  component [LottoPresenterTest\n(展示推导 + 订阅桥接, 无 GUI 依赖)] as T4
   component [MainWindowTest\n(offscreen 集成)] as T5
 
   T1 ..> LottoEngine
-  T2 ..> Controller
+  T2 ..> Interactor
   T2 ..> TicketRepository : 构造注入 Fake
   T3 ..> QSettingsRepo
+  T6 ..> Controller
   T4 ..> Presenter
   T5 ..> MainWindow
 }
@@ -84,7 +95,7 @@ package "测试 tests/" as tests #F0F0F0 {
 ' ── 层间依赖: 编译目标链接关系 ──
 application ..> domain : lotto_application → lotto_core (PUBLIC)
 adapters ..> application : lotto_adapters → lotto_application (PUBLIC)
-app ..> application : lotto_app → lotto_application (PUBLIC)
+app ..> adapters : lotto_app → lotto_adapters (PUBLIC)
 app ..> domain : lotto_app → lotto_core (PUBLIC)
 exe ..> app : exe → lotto_app
 exe ..> adapters : exe → lotto_adapters

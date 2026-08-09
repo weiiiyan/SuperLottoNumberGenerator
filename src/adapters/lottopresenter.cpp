@@ -1,6 +1,16 @@
 #include "lottopresenter.h"
 
-LottoViewState LottoPresenter::present(const LottoTicket &ticket)
+LottoPresenter::LottoPresenter(QObject *parent)
+    : QObject(parent)
+{
+}
+
+void LottoPresenter::present(const LottoTicket &ticket)
+{
+    emit viewStateChanged(buildViewState(ticket));
+}
+
+LottoViewState LottoPresenter::buildViewState(const LottoTicket &ticket)
 {
     LottoViewState state;
 
@@ -36,4 +46,9 @@ LottoViewState LottoPresenter::present(const LottoTicket &ticket)
     state.generateEnabled   = !ticket.isLocked();
 
     return state;
+}
+
+LottoViewState LottoPresenter::initialState()
+{
+    return buildViewState(LottoTicket());
 }

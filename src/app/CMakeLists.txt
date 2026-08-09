@@ -1,16 +1,16 @@
 # 视图层: lotto_app 静态库(谦卑视图)与可执行目标
-# 用例层(LottoInteractor)位于 src/application/lotto_application, 视图依赖其抽象接口
+# 输入/输出侧适配器(LottoController/LottoPresenter)位于 src/adapters/lotto_adapters,
+# 视图依赖其接口, 不再直接感知用例层实体
 # 拆分为库+薄 exe: 测试可链接库而非手工编译视图源码
 
 add_library(lotto_app STATIC
     mainwindow.h mainwindow.cpp
-    lottopresenter.h lottopresenter.cpp
     mainwindow.ui
     resources.qrc
 )
 
 target_include_directories(lotto_app PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(lotto_app PUBLIC lotto_application lotto_core
+target_link_libraries(lotto_app PUBLIC lotto_adapters lotto_core
     Qt${QT_VERSION_MAJOR}::Widgets)
 
 # ── 可执行目标(Qt6 / Qt5 双路径, Android manifest 只在 exe)──

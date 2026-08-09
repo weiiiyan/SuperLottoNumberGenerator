@@ -18,6 +18,7 @@
 #include "lottointeractor.h"
 #include "lottoengine.h"
 #include "lottoresult.h"
+#include "lottocontroller.h"
 #include "lottopresenter.h"
 #include "qsettingsrepository.h"
 
@@ -30,15 +31,19 @@ private:
     QSettings *m_settings = nullptr;
     QSettingsTicketRepository *m_repo = nullptr;
     LottoEngine *m_engine = nullptr;
-    LottoInteractor *m_controller = nullptr;
+    LottoInteractor *m_interactor = nullptr;
+    LottoController *m_controller = nullptr;
+    LottoPresenter *m_presenter = nullptr;
     MainWindow *m_window = nullptr;
 
-    /// 重建完整装配: 全新 controller + 指向同一临时文件的仓储
+    /// 重建完整装配: 全新 交互器 + 输入/输出适配器 + 指向同一临时文件的仓储
     /// 与生产一致: load() 由组合根(此处为夹具)调用, 而非视图构造触发
     MainWindow* makeWindow()
     {
         delete m_window;
+        delete m_presenter;
         delete m_controller;
+        delete m_interactor;
         delete m_engine;
         delete m_repo;
         delete m_settings;
@@ -46,10 +51,12 @@ private:
         m_settings = new QSettings(m_dir.filePath("test.ini"), QSettings::IniFormat);
         m_repo = new QSettingsTicketRepository(m_settings);
         m_engine = new LottoEngine;
-        m_controller = new LottoInteractor(m_repo, m_engine);
-        m_window = new MainWindow(m_controller);
-        m_controller->load();   // 用例启动: 排定异步恢复
-        QTest::qWait(50);       // 等 controller->load() 的 singleShot(0) 异步恢复
+        m_presenter = new LottoPresenter;               // 输出侧: 实现输出端口
+        m_interactor = new LottoInteractor(m_repo, m_engine, m_presenter);
+        m_controller = new LottoController(m_interactor);   // 输入侧: 翻译按钮点击
+        m_window = new MainWindow(m_controller, m_presenter);
+        m_interactor->load();   // 用例启动: 排定异步恢复
+        QTest::qWait(50);       // 等 interactor->load() 的 singleShot(0) 异步恢复
         return m_window;
     }
 
@@ -96,7 +103,9 @@ private slots:
     void cleanupTestCase()
     {
         delete m_window;
+        delete m_presenter;
         delete m_controller;
+        delete m_interactor;
         delete m_engine;
         delete m_repo;
         delete m_settings;

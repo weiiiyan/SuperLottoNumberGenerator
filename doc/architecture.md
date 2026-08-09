@@ -15,8 +15,9 @@
 ```text
 src/domain/      → lotto_core 库: 实体 + 领域服务(仅 Qt::Core)
 src/application/ → lotto_application 库: 用例交互器 + 用例层持久化接口(仅 Qt::Core)
-src/adapters/    → lotto_adapters 库: 持久化实现(仅 Qt::Core)
-src/app/         → lotto_app 库: 谦卑视图(Qt::Widgets)
+src/adapters/    → lotto_adapters 库: 接口适配器层(仅 Qt::Core)
+                   存储侧 QSettingsTicketRepository + 输入侧 LottoController + 输出侧 LottoPresenter
+src/app/         → lotto_app 库: 谦卑视图 MainWindow(Qt::Widgets), 不含展示推导
 src/app/main.cpp → 组合根: 装配具体依赖(唯一接触 QSettings 具体类的点)
 ```
 
@@ -28,11 +29,11 @@ src/app/main.cpp → 组合根: 装配具体依赖(唯一接触 QSettings 具体
 | --- | --- | --- |
 | 业务实体(Entities) | src/domain/ | LottoResult/LottoTicket/LottoEngine |
 | 用例(Use Cases) | src/application/ | LottoInteractor + TicketRepository 端口 |
-| 接口适配器(Interface Adapters) | src/adapters/(存储侧) + app 内展示器(展示侧) | QSettingsTicketRepository、LottoPresenter |
+| 接口适配器(Interface Adapters) | src/adapters/ | QSettingsTicketRepository(存储)、LottoController(输入)、LottoPresenter(输出) |
 | 框架与驱动(Frameworks & Drivers) | src/app/ | MainWindow(谦卑视图)/QSS/qrc |
 | Main 组件(洋葱外) | src/app/main.cpp | 装配具体依赖 |
 
-**展示器为何在 app/ 而非 adapters/ 或 application/(有意权衡)**:按洋葱图展示器属接口适配器层,与仓储同层对称(用例层展示/存储两个输出端口),不放 application/(用例层不做 I/O 格式适配)。物理放 app/ 是因为与谦卑视图配对、共享展示词汇(按钮文字/时间前缀),同库内聚;真正约束(展示器不依赖 Widget、依赖只指向内层)已守住,目录归属只是组织方式——不完全边界(ch24)。多视图/展示器膨胀时应独立为 adapters/presenter/ 或单独组件。
+**输入/输出侧适配器为何统一归入 adapters/**:按洋葱图 Controller(输入侧)与 Presenter(输出侧)都是接口适配器,与存储侧 Gateway 同层对称,因此统一物理上放 src/adapters/,src/app/ 只保留框架与驱动。曾有意让展示器与谦卑视图同库配对(ch24 不完全边界),本次已按"严格整洁架构"收口:适配器不依赖 Widget、依赖只指向内层的约束由库边界强制,视图与适配器解耦后各自可独立测试与替换。
 
 领域层使用 Qt::Core 类型(QDateTime/QVector/QObject)是有意权衡:本项目以 Qt 为应用语言,不追求与框架无关的纯领域,但绝不依赖任何 UI/存储框架。
 
@@ -46,40 +47,51 @@ src/app/main.cpp → 组合根: 装配具体依赖(唯一接触 QSettings 具体
 
 ### 用例层(application)
 
-- `LottoInteractor` — 用例交互器(use case interactor),而非 MVC 控制器:不做输入/输出格式适配,只执行应用特定业务规则与编排。持有唯一状态源 `LottoTicket`;提供生成(锁定时拒绝)、锁定切换(状态守卫防重复保存)、异步恢复(`load()` 由组合根在窗口构造后调用,视图不驱动用例启动);通过唯一信号 `ticketChanged` 推送状态。仅依赖 Qt::Core,不接触任何 UI/存储具体类
-  - **书中 Controller 角色说明(有意权衡)**:书图 22.2 中 Controller(接口适配器层)与 UseCaseInteractor(用例层)是两个角色,前者把外部输入打包成 InputData。本项目输入是按钮 click,转发仅一行 lambda 无翻译逻辑,**输入侧适配器被谦卑视图 MainWindow 吸收**,未独立建类;输出侧才有可测试逻辑,单独提取为 LottoPresenter。判定层归属的标准是职责与依赖方向而非名称。未来若出现需解析的表单输入,应引入真正的输入侧适配器(Controller)
-- `TicketRepository` — 用例层持久化接口(纯抽象,DIP 端口):端口归用例层所有,由适配器层实现
+- `LottoInteractor` — 用例交互器(use case interactor),而非 MVC 控制器:不做输入/输出格式适配,只执行应用特定业务规则与编排。持有唯一状态源 `LottoTicket`;提供生成(锁定时拒绝)、锁定切换(状态守卫防重复保存)、异步恢复(`load()` 由组合根在窗口构造后调用,视图不驱动用例启动)。实现输入边界 `LottoInputBoundary`,状态变化后经输出边界 `LottoPresenterPort::present()` 把票据推送给出输出适配器——**用 DIP 端口主动调用,而非 Qt 信号广播**。仅依赖 Qt::Core,不接触任何 UI/存储具体类
+  - **Controller 与 Interactor 的角色分离(已落实)**:书图 22.2 中 Controller(接口适配器层)与 UseCaseInteractor(用例层)是两个角色,前者把外部输入打包成 InputData,后者执行业务编排。本项目 `LottoController`(输入侧适配器)依赖用例层输入边界 `LottoInputBoundary`(由交互器实现),把按钮点击翻译为边界调用;`LottoInteractor` 保持零 I/O 格式适配。锁定时拒绝生成等应用规则仍在用例层(按钮禁用只是辅助,用例层判定权威),Controller 不重复业务规则
+- `TicketRepository` — 用例层持久化接口(纯抽象,DIP 端口):`save/load/clear`,由适配器层实现
+- `LottoPresenterPort` — 用例层输出边界端口(纯抽象,DIP 端口):`present(LottoTicket)`,由展示器实现,交互器在状态变化后调用
+- `LottoInputBoundary` — 用例层输入边界接口(纯抽象):`generateNewTicket/toggleLock/setLocked/load`,由交互器实现,Controller 依赖
 
 ### 适配器层(adapters)
 
 - `QSettingsTicketRepository` — TicketRepository 的 QSettings 实现。键名与旧版本兼容;时间存 ISO 字符串,读取时兼容旧版显示格式;锁定时写全量,未锁定仅写标志
+- `LottoController` — 输入侧适配器(控制器):依赖 `LottoInputBoundary`,把外部输入翻译为用例调用。`onGenerateRequested → generateNewTicket()`、`onLockRequested → toggleLock()`,不含业务判断。不依赖任何 Widget,可独立测试
+- `LottoPresenter` — 输出侧适配器(展示器,谦卑对象模式):实现输出边界 `LottoPresenterPort`,交互器调用 `present(LottoTicket)` 时经静态纯函数 `buildViewState(LottoTicket) → LottoViewState`(号码格式化/占位符/按钮互斥状态/时间显示格式)推导并重发 `viewStateChanged(LottoViewState)` 信号,不依赖任何 Widget。UI 展示字符串及视图结构常量单来源;`LottoViewState` 已注册 Qt 元类型
 
 ### 视图层(app)
 
-- `LottoPresenter` — 展示器(谦卑对象模式):所有可测试的展示推导集中于此,`present(LottoTicket) → LottoViewState`(号码格式化/占位符/按钮互斥状态/时间显示格式),不依赖任何 Widget。UI 展示字符串常量单来源
-- `MainWindow` — 谦卑视图:只消费 `LottoViewState` 做机械控件写入,按钮动作转发给控制器,不做业务判断与展示推导。布局计算与 50ms 防抖(Android resizeEvent 自激震荡)保留在此
-- `main.cpp` — 组合根:装配具体依赖(唯一接触 QSettings 具体类的点),启动用例(`controller.load()`),栈分配,移交控制权
+- `MainWindow` — 谦卑视图:只消费 `viewStateChanged(LottoViewState)` 做机械控件写入(`onViewStateChanged → applyState`),按钮点击转发给 `LottoController`,不感知 `LottoTicket`/`LottoInteractor`,不做业务判断与展示推导。布局计算与 50ms 防抖(Android resizeEvent 自激震荡)保留在此
+- `main.cpp` — 组合根:装配具体依赖(唯一接触 QSettings 具体类的点),装配顺序为 仓储/引擎 → 输出适配器(实现输出端口) → 交互器(注入输出端口) → 输入适配器(依赖输入边界) → 视图,启动用例(`interactor.load()`),栈分配,移交控制权
 
 ## 数据流
 
 ```text
-用户点击(生成/锁定) → LottoInteractor 用例 → 状态变化 → ticketChanged 信号
-                                                          ↓
-                                MainWindow 纯渲染(号码/时间/按钮互斥)
-                                                          ↑
-        QSettingsTicketRepository(仅锁定/解锁时读写, 恢复时异步加载)
+用户点击(生成/锁定) → MainWindow → LottoController(输入侧适配器)
+    ──经 LottoInputBoundary──► LottoInteractor 用例
+                                                      ↓ 状态变化
+                              present(ticket) 经 LottoPresenterPort(输出边界)
+                                                      ↓
+                              LottoPresenter(输出侧适配器) buildViewState() 推导
+                                                      ↓
+                                        viewStateChanged(LottoViewState)
+                                                      ↓
+                                        MainWindow 纯渲染(号码/时间/按钮互斥)
+                                                      ↑
+        QSettingsTicketRepository(仅锁定/解锁时读写, 恢复时异步加载, 加载结果经 presenter 适配)
 ```
 
-跨层数据只传 `LottoTicket` 值类型,不传递 widget 或存储内部结构。
+跨层只传 `LottoTicket` 值类型(存储/用例间)与 `LottoViewState`(展示侧);**视图只感知 `LottoViewState`,不感知领域实体**,也不传递 widget 或存储内部结构。
 
 ## 测试
 
-五个测试 target 链接各层库,不手工编译被测源码:
+六个测试 target 链接各层库,不手工编译被测源码:
 
 | target | 覆盖 |
 | --- | --- |
 | LottoEngineTest | 引擎随机性/边界/分布 |
-| LottoInteractorTest | 状态机(注入内存 Fake 仓储,无 GUI 依赖) |
+| LottoInteractorTest | 状态机 + 输出端口推送(注入 Fake 仓储/Fake 输出端口,无 GUI 依赖) |
 | QSettingsRepositoryTest | 持久化 round-trip 与旧 INI 兼容 |
-| LottoPresenterTest | 展示推导(格式化/占位符/按钮互斥/时间格式,无 GUI 依赖) |
+| LottoControllerTest | 输入侧翻译(点击 → 用例调用,用例守卫仍生效,无 GUI 依赖) |
+| LottoPresenterTest | 展示推导 + 输出端口桥接(经 present() 推送 → viewStateChanged,无 GUI 依赖) |
 | MainWindowTest | GUI 集成(注入式夹具,offscreen) |

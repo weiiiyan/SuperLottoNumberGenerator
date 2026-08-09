@@ -71,9 +71,15 @@ if(NOT ANDROID)
     register_lotto_test(QSettingsRepositoryTest QSettingsRepositoryTest)
     message(STATUS "测试目标 QSettingsRepositoryTest 已创建")
 
-    # ── 视图层: 展示器测试(纯展示推导, 无 GUI 依赖)──
+    # ── 适配器层: 输入侧控制器测试(事件→用例翻译, 注入内存仓储, 无 GUI 依赖)──
+    add_lotto_test(LottoControllerTest tst_lottocontroller.cpp)
+    target_link_libraries(LottoControllerTest PRIVATE lotto_adapters lotto_application lotto_core)
+    register_lotto_test(LottoControllerTest LottoControllerTest)
+    message(STATUS "测试目标 LottoControllerTest 已创建")
+
+    # ── 适配器层: 输出侧展示器测试(纯展示推导 + 订阅桥接, 无 GUI 依赖)──
     add_lotto_test(LottoPresenterTest tst_lottopresenter.cpp)
-    target_link_libraries(LottoPresenterTest PRIVATE lotto_app lotto_core)
+    target_link_libraries(LottoPresenterTest PRIVATE lotto_adapters lotto_application lotto_core)
     register_lotto_test(LottoPresenterTest LottoPresenterTest)
     message(STATUS "测试目标 LottoPresenterTest 已创建")
 
