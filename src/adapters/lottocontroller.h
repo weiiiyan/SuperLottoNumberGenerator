@@ -20,7 +20,7 @@ class LottoController : public QObject
 public:
     /*!
      * \brief 构造输入侧适配器
-     * \param interactor 输入边界(由用例交互器实现, 不持有所有权)
+     * \param interactor 输入边界(由用例交互器实现, 不持有所有权, 须非空)
      * \param parent QObject 父对象
      */
     explicit LottoController(LottoInputBoundary *interactor, QObject *parent = nullptr);

@@ -10,12 +10,10 @@ LottoController::LottoController(LottoInputBoundary *interactor, QObject *parent
 
 void LottoController::onGenerateRequested()
 {
-    if (m_interactor)
-        m_interactor->generateNewTicket();
+    m_interactor->generateNewTicket();
 }
 
 void LottoController::onLockRequested()
 {
-    if (m_interactor)
-        m_interactor->toggleLock();
+    m_interactor->toggleLock();
 }

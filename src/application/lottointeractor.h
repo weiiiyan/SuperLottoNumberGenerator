@@ -17,7 +17,8 @@ class LottoPresenterPort;
  * 状态变化守卫)与用例编排。实现输入边界 LottoInputBoundary(供 Controller
  * 调用), 通过输出边界 LottoPresenterPort 把状态推送给出输出适配器。
  * 持久化依赖 TicketRepository 抽象。本类不持有 repository/engine/presenter
- * 所有权, 生命周期由组合根保证。
+ * 所有权, 生命周期由组合根保证, 三者均须非空。装配错误将直接崩溃暴露,
+ * 而非静默失效。
  */
 class LottoInteractor : public QObject, public LottoInputBoundary
 {

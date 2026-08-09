@@ -6,36 +6,10 @@
 
 #include <QDebug>
 
-#include "lottointeractor.h"
 #include "lottoengine.h"
-#include "lottopresenterport.h"
-#include "ticketrepository.h"
+#include "lottointeractor.h"
 
-/*! 内存版票据仓储: 记录每次保存的票据, 可预设加载结果 */
-class FakeTicketRepository : public TicketRepository
-{
-public:
-    LottoTicket loadResult;              /*!< 预设的 load 返回值 */
-    QVector<LottoTicket> savedTickets;   /*!< 历次 save 的票据 */
-
-    int saveCount() const { return savedTickets.size(); }
-
-    void save(const LottoTicket &ticket) override { savedTickets.append(ticket); }
-    LottoTicket load() override { return loadResult; }
-    void clear() override { savedTickets.clear(); }
-};
-
-/*! 内存版输出边界端口: 记录每次 present() 的票据, 供断言"状态已推送" */
-class FakePresenterPort : public LottoPresenterPort
-{
-public:
-    QVector<LottoTicket> presented;   /*!< 历次 present() 的票据 */
-
-    int presentCount() const { return presented.size(); }
-
-    void present(const LottoTicket &ticket) override { presented.append(ticket); }
-    void clear() { presented.clear(); }
-};
+#include "testhelpers.h"
 
 class TestLottoInteractor : public QObject
 {
@@ -50,17 +24,8 @@ private:
     /// 构造一组固定号码, 供确定性断言使用(号码均合法: 前区 1-25, 后区 1-10)
     static LottoTicket makeFixedTicket()
     {
-        QVector<LottoResult> groups;
-        for (int g = 0; g < LottoTicket::GROUP_COUNT; ++g) {
-            QVector<int> front, back;
-            for (int i = 0; i < LottoTicket::FRONT_COUNT; ++i)
-                front << g * LottoTicket::FRONT_COUNT + i + 1;
-            for (int i = 0; i < LottoTicket::BACK_COUNT; ++i)
-                back << g * LottoTicket::BACK_COUNT + i + 1;
-            groups.append(LottoResult(front, back));
-        }
-        return LottoTicket(groups, QDateTime::fromString("2026-01-01 12:00:00",
-                                                         "yyyy-MM-dd HH:mm:ss"), true);
+        return makeTicket(LottoTicket::GROUP_COUNT, true,
+                          QDateTime::fromString("2026-01-01 12:00:00", "yyyy-MM-dd HH:mm:ss"));
     }
 
     /// 校验一组号码是否合法(数量/范围/升序)
@@ -238,6 +203,34 @@ private slots:
         QVERIFY(m_controller->currentTicket().groups().isEmpty());
         QVERIFY(!m_controller->currentTicket().isLocked());
         QCOMPARE(m_presenter->presentCount(), 1);
+    }
+
+    // 锁定守卫: 空票据不允许锁定
+
+    void setLocked_whenEmptyTicket_shouldBeNoop()
+    {
+        // 空票据(无号码)不允许锁定: 用例层守卫, 防止锁定空号码
+        m_controller->setLocked(true);
+
+        QVERIFY(!m_controller->currentTicket().isLocked());
+        QCOMPARE(m_repo->saveCount(), 0);
+        QCOMPARE(m_presenter->presentCount(), 0);
+    }
+
+    void load_whenLockedButEmpty_shouldRecoverToUnlocked()
+    {
+        // 损坏数据(locked + 空号码)在恢复时解除锁定, 避免 UI 死锁
+        QVector<LottoResult> groups;
+        for (int g = 0; g < LottoTicket::GROUP_COUNT; ++g)
+            groups.append(LottoResult());
+        m_repo->loadResult = LottoTicket(groups, QDateTime(), true);
+        m_presenter->clear();
+
+        m_controller->load();
+        QTest::qWait(10);
+
+        QVERIFY(!m_controller->currentTicket().isLocked());
+        QCOMPARE(m_presenter->presented.last().isLocked(), false);
     }
 };
 

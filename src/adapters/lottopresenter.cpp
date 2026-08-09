@@ -1,8 +1,12 @@
 #include "lottopresenter.h"
 
+#include <QMetaType>
+
 LottoPresenter::LottoPresenter(QObject *parent)
     : QObject(parent)
 {
+    // Qt 5 下 QSignalSpy/排队连接需运行时注册自定义类型
+    qRegisterMetaType<LottoViewState>();
 }
 
 void LottoPresenter::present(const LottoTicket &ticket)

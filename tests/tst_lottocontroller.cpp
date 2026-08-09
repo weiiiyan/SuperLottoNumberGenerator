@@ -7,36 +7,10 @@
 #include <QDebug>
 
 #include "lottocontroller.h"
-#include "lottointeractor.h"
 #include "lottoengine.h"
-#include "lottopresenterport.h"
-#include "ticketrepository.h"
+#include "lottointeractor.h"
 
-/*! 内存版票据仓储: 记录每次保存的票据, 可预设加载结果 */
-class FakeTicketRepository : public TicketRepository
-{
-public:
-    LottoTicket loadResult;              /*!< 预设的 load 返回值 */
-    QVector<LottoTicket> savedTickets;   /*!< 历次 save 的票据 */
-
-    int saveCount() const { return savedTickets.size(); }
-
-    void save(const LottoTicket &ticket) override { savedTickets.append(ticket); }
-    LottoTicket load() override { return loadResult; }
-    void clear() override { savedTickets.clear(); }
-};
-
-/*! 内存版输出边界端口: 记录每次 present() 的票据 */
-class FakePresenterPort : public LottoPresenterPort
-{
-public:
-    QVector<LottoTicket> presented;   /*!< 历次 present() 的票据 */
-
-    int presentCount() const { return presented.size(); }
-
-    void present(const LottoTicket &ticket) override { presented.append(ticket); }
-    void clear() { presented.clear(); }
-};
+#include "testhelpers.h"
 
 class TestLottoController : public QObject
 {
@@ -68,7 +42,7 @@ private slots:
         delete m_repo;
     }
 
-    // ── 生成 ──
+    // 生成
 
     void onGenerateRequested_shouldInvokeGenerateUseCase()
     {
@@ -93,7 +67,7 @@ private slots:
         QCOMPARE(m_presenter->presentCount(), 0);         // 且未向输出端口推送
     }
 
-    // ── 锁定 ──
+    // 锁定
 
     void onLockRequested_shouldToggleAndSave()
     {

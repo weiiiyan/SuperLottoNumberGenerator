@@ -77,8 +77,8 @@ private:
     LottoController *m_controller = nullptr;  /*!< 输入侧适配器(不持有所有权) */
     LottoPresenter *m_presenter = nullptr;    /*!< 输出侧适配器(不持有所有权) */
 
-    QLabel       *m_frontLabels[GROUP_COUNT][FRONT_COUNT];
-    QLabel       *m_backLabels[GROUP_COUNT][BACK_COUNT];
+    QLabel       *m_frontLabels[GROUP_COUNT][FRONT_COUNT] = {};
+    QLabel       *m_backLabels[GROUP_COUNT][BACK_COUNT] = {};
     QLabel       *m_separators[GROUP_COUNT] = {};
     QLabel       *m_timeLabel;
     QPushButton  *m_btnGenerate;

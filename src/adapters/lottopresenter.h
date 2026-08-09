@@ -8,12 +8,6 @@
 
 #include "lottopresenterport.h"
 
-/// 号码格式化: 零填充两位数字(如 3 → "03"), 供展示器与测试复用
-inline QString formatNumber(int n)
-{
-    return QString::number(n).rightJustified(2, '0');
-}
-
 /*!
  * \brief LottoViewState 票据的视图展示状态(展示器输出, 与具体控件无关)
  */
@@ -43,6 +37,12 @@ class LottoPresenter : public QObject, public LottoPresenterPort
     Q_OBJECT
 public:
     explicit LottoPresenter(QObject *parent = nullptr);
+
+    /*! \brief 号码格式化: 零填充两位数字(如 3 → "03") */
+    static inline QString formatNumber(int n)
+    {
+        return QString::number(n).rightJustified(2, '0');
+    }
 
     // 视图展示字符串常量(单来源, 视图与测试引用同一来源)
     static constexpr const char *TIME_PREFIX        = "🕐 生成时间：";

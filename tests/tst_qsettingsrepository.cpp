@@ -9,6 +9,8 @@
 
 #include "qsettingsrepository.h"
 
+#include "testhelpers.h"
+
 class TestQSettingsRepository : public QObject
 {
     Q_OBJECT
@@ -21,16 +23,8 @@ private:
     /// 构造固定票据: 5 组合法号码 + 已知时间 + 锁定
     static LottoTicket makeFixedTicket()
     {
-        QVector<LottoResult> groups;
-        for (int g = 0; g < LottoTicket::GROUP_COUNT; ++g) {
-            QVector<int> front, back;
-            for (int i = 0; i < LottoTicket::FRONT_COUNT; ++i)
-                front << g * LottoTicket::FRONT_COUNT + i + 1;
-            for (int i = 0; i < LottoTicket::BACK_COUNT; ++i)
-                back << g * LottoTicket::BACK_COUNT + i + 1;
-            groups.append(LottoResult(front, back));
-        }
-        return LottoTicket(groups, QDateTime(QDate(2026, 1, 1), QTime(12, 30, 45)), true);
+        return makeTicket(LottoTicket::GROUP_COUNT, true,
+                          QDateTime(QDate(2026, 1, 1), QTime(12, 30, 45)));
     }
 
     /// 写入旧版格式数据(键与现版本相同, 时间字段为显示字符串)

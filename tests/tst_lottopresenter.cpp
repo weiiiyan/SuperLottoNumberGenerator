@@ -9,23 +9,10 @@
 #include <QDebug>
 
 #include "lottopresenter.h"
-#include "lottointeractor.h"
 #include "lottoengine.h"
-#include "ticketrepository.h"
+#include "lottointeractor.h"
 
-/*! 内存版票据仓储: 记录每次保存的票据, 可预设加载结果 */
-class FakeTicketRepository : public TicketRepository
-{
-public:
-    LottoTicket loadResult;              /*!< 预设的 load 返回值 */
-    QVector<LottoTicket> savedTickets;   /*!< 历次 save 的票据 */
-
-    int saveCount() const { return savedTickets.size(); }
-
-    void save(const LottoTicket &ticket) override { savedTickets.append(ticket); }
-    LottoTicket load() override { return loadResult; }
-    void clear() override { savedTickets.clear(); }
-};
+#include "testhelpers.h"
 
 class TestLottoPresenter : public QObject
 {
@@ -37,23 +24,6 @@ private:
     LottoInteractor *m_interactor = nullptr;
     LottoPresenter *m_presenter = nullptr;
     QSignalSpy *m_spy = nullptr;
-
-    /// 构造指定组数的票据(每组号码依次递增, 供确定性断言)
-    static LottoTicket makeTicket(int groupCount = LottoTicket::GROUP_COUNT,
-                                  bool locked = false,
-                                  const QDateTime &time = QDateTime())
-    {
-        QVector<LottoResult> groups;
-        for (int g = 0; g < groupCount; ++g) {
-            QVector<int> front, back;
-            for (int i = 0; i < LottoResult::FRONT_COUNT; ++i)
-                front << g * LottoResult::FRONT_COUNT + i + 1;
-            for (int i = 0; i < LottoResult::BACK_COUNT; ++i)
-                back << g * LottoResult::BACK_COUNT + i + 1;
-            groups.append(LottoResult(front, back));
-        }
-        return LottoTicket(groups, time, locked);
-    }
 
 private slots:
     // 桥接测试夹具: 真实交互器注入输出端口 = 展示器
@@ -75,7 +45,7 @@ private slots:
         delete m_repo;
     }
 
-    // ── 输出端口桥接: 用例经 present() 推送 → viewStateChanged 信号 ──
+    // 输出端口桥接: 用例经 present() 推送 → viewStateChanged 信号
 
     void present_shouldEmitViewState()
     {
@@ -150,10 +120,9 @@ private slots:
         // 组 0 前区: 1-5; 后区: 1-2 → 均应零填充
         const QStringList &row0 = state.groups.at(0);
         for (int i = 0; i < LottoResult::FRONT_COUNT; ++i)
-            QCOMPARE(row0.at(i), QString::number(i + 1).rightJustified(2, '0'));
+            QCOMPARE(row0.at(i), LottoPresenter::formatNumber(i + 1));
         for (int i = 0; i < LottoResult::BACK_COUNT; ++i)
-            QCOMPARE(row0.at(LottoResult::FRONT_COUNT + i),
-                     QString::number(i + 1).rightJustified(2, '0'));
+            QCOMPARE(row0.at(LottoResult::FRONT_COUNT + i), LottoPresenter::formatNumber(i + 1));
     }
 
     void partialGroup_shouldFillMissingWithPlaceholder()
@@ -174,7 +143,8 @@ private slots:
     void unlocked_shouldEnableGenerateAndAllowLock()
     {
         qDebug() << "验证未锁定票据: 锁定按钮可用, 生成可用";
-        const LottoViewState state = LottoPresenter::buildViewState(makeTicket(1, false, QDateTime()));
+        const LottoViewState state =
+            LottoPresenter::buildViewState(makeTicket(1, false, QDateTime()));
 
         QVERIFY(state.lockButtonEnabled);
         QVERIFY(!state.lockButtonChecked);
@@ -185,7 +155,8 @@ private slots:
     void locked_shouldDisableGenerateAndShowUnlockText()
     {
         qDebug() << "验证锁定票据: 锁定按钮选中, 生成禁用";
-        const LottoViewState state = LottoPresenter::buildViewState(makeTicket(1, true, QDateTime()));
+        const LottoViewState state =
+            LottoPresenter::buildViewState(makeTicket(1, true, QDateTime()));
 
         QVERIFY(state.lockButtonEnabled);
         QVERIFY(state.lockButtonChecked);
@@ -198,8 +169,9 @@ private slots:
     void validTime_shouldFormatDisplayText()
     {
         qDebug() << "验证有效时间按固定格式显示";
-        const QDateTime time = QDateTime::fromString("2026-01-01 12:00:00",
-                                                     QString::fromUtf8(LottoPresenter::TIME_FORMAT));
+        const QDateTime time =
+            QDateTime::fromString("2026-01-01 12:00:00",
+                                  QString::fromUtf8(LottoPresenter::TIME_FORMAT));
         const LottoViewState state = LottoPresenter::buildViewState(makeTicket(1, false, time));
 
         QCOMPARE(state.timeText, QString::fromUtf8(LottoPresenter::TIME_PREFIX)
@@ -209,7 +181,8 @@ private slots:
     void invalidTime_shouldRenderTimePlaceholder()
     {
         qDebug() << "验证无效时间显示占位文本";
-        const LottoViewState state = LottoPresenter::buildViewState(makeTicket(1, false, QDateTime()));
+        const LottoViewState state =
+            LottoPresenter::buildViewState(makeTicket(1, false, QDateTime()));
 
         QCOMPARE(state.timeText, QString::fromUtf8(LottoPresenter::TIME_PREFIX)
                                      + QString::fromUtf8(LottoPresenter::TIME_PLACEHOLDER));

@@ -67,12 +67,18 @@ void MainWindow::onViewStateChanged(const LottoViewState &state)
 
 void MainWindow::applyState(const LottoViewState &state)
 {
+    // 防御: 对异常展示状态做边界保护, 避免越界访问
+    if (state.groups.size() < GROUP_COUNT)
+        return;
+
     for (int g = 0; g < GROUP_COUNT; g++) {
         const QStringList &row = state.groups.at(g);
         for (int i = 0; i < FRONT_COUNT; i++)
-            m_frontLabels[g][i]->setText(row.at(i));
+            if (i < row.size())
+                m_frontLabels[g][i]->setText(row.at(i));
         for (int i = 0; i < BACK_COUNT; i++)
-            m_backLabels[g][i]->setText(row.at(FRONT_COUNT + i));
+            if (FRONT_COUNT + i < row.size())
+                m_backLabels[g][i]->setText(row.at(FRONT_COUNT + i));
     }
     m_timeLabel->setText(state.timeText);
     m_btnLock->setEnabled(state.lockButtonEnabled);
