@@ -1,6 +1,20 @@
 #include "lottopresenter.h"
 
-LottoViewState LottoPresenter::present(const LottoTicket &ticket)
+#include <QMetaType>
+
+LottoPresenter::LottoPresenter(QObject *parent)
+    : QObject(parent)
+{
+    // Qt 5 下 QSignalSpy/排队连接需运行时注册自定义类型
+    qRegisterMetaType<LottoViewState>();
+}
+
+void LottoPresenter::present(const LottoTicket &ticket)
+{
+    emit viewStateChanged(buildViewState(ticket));
+}
+
+LottoViewState LottoPresenter::buildViewState(const LottoTicket &ticket)
 {
     LottoViewState state;
 
@@ -36,4 +50,9 @@ LottoViewState LottoPresenter::present(const LottoTicket &ticket)
     state.generateEnabled   = !ticket.isLocked();
 
     return state;
+}
+
+LottoViewState LottoPresenter::initialState()
+{
+    return buildViewState(LottoTicket());
 }

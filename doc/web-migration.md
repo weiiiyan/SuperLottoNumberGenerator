@@ -9,7 +9,7 @@
 划线的位置**不在"显示"那里,而在用例边界**。Web 只是换了一组 I/O 插件:
 
 - **永不动(策略核心)**: 领域层 + 用例层 + TicketRepository 端口
-- **必须换(展示通道)**: 桌面视图/Presenter → 前端 + JSON 序列化 + Web Controller
+- **必须换(展示通道)**: 桌面 视图+Controller/Presenter → 前端 + JSON 序列化 + Web Controller
 - **可选换(存储通道)**: QSettings 仓储 → 数据库仓储(取决于部署形态,与 Web 无关)
 
 ## 两条正交的 I/O 通道
@@ -17,7 +17,7 @@
 ```
 ┌────────────────────────────────────────────────────────────┐
 │  展示通道(换不换取决于显示方式)                                │
-│  桌面: MainWindow + LottoPresenter                           │
+│  桌面: MainWindow + LottoController + LottoPresenter           │
 │  Web:  前端 HTML/JS + JSON Presenter + Web Controller          │
 └────────────────────────────────────────────────────────────┘
                 LottoInteractor(用例) / TicketRepository(端口)
@@ -40,19 +40,19 @@
 | LottoInteractor(用例) | 用例层 | 后台, 原样保留 | 不动 |
 | TicketRepository(端口) | 用例层 | 后台, 原样保留 | 不动 |
 | MainWindow + QSS + qrc | 桌面谦卑视图 | 前端 HTML/JS(新的谦卑视图, 只渲染 JSON/转发点击) | 替换 |
-| LottoPresenter | 展示侧适配器 | JSON Presenter(序列化 LottoTicket → JSON) | 替换 |
-| Web Controller(REST 端点) | 不存在 | 输入侧适配器(解析 HTTP 请求 → 用例调用) | 新增 |
+| LottoPresenter | 输出侧适配器 | JSON Presenter(序列化 LottoTicket → JSON) | 替换 |
+| LottoController | 输入侧适配器 | Web Controller(解析 HTTP 请求 → 用例调用) | 替换 |
 | QSettingsTicketRepository | 存储适配器 | 数据库仓储(多用户/并发时才需要) | 可选换 |
 | main.cpp(组合根) | 桌面装配 | HTTP 服务器装配 + DB 连接 | 替换 |
 
-## 输入侧: Web Controller 登场
+## 输入侧: Web Controller 替换桌面 LottoController
 
-桌面时代输入是按钮 click,转发仅一行 lambda 无翻译逻辑,输入侧适配器被谦卑视图
-吸收(见 architecture.md 用例层说明)。Web 化后 HTTP 请求需要解析(路径/方法/JSON
-体),此时才需要真正的输入侧适配器:
+桌面版已引入输入侧适配器 `LottoController`(按钮点击 → 用例调用),把输入翻译从
+谦卑视图剥离(见 architecture.md 用例层说明)。Web 化后 HTTP 请求需要解析(路径/
+方法/JSON 体),翻译逻辑升级为 Web Controller,用例端口不变:
 
 ```
-桌面: MainWindow 按钮 clicked ──一行 lambda──► generateNewTicket()
+桌面: MainWindow 按钮 clicked ──► LottoController ──► generateNewTicket()/toggleLock()
 Web:  POST /api/tickets/generate ──解析请求──► Web Controller ──► generateNewTicket()
       POST /api/tickets/lock     ──解析请求──► Web Controller ──► toggleLock()
 ```
@@ -69,9 +69,11 @@ Web:  JSON Presenter ──► { front:[...], back:[...], locked:true, time:"ISO
 
 ## 两个关键决策点
 
-### 1. ticketChanged 信号消失
+### 1. 输出侧信号链在 Web 端换形态
 
-Qt 信号是进程内通知,跨网络不存在,三种替代:
+桌面版用例状态经输出边界 `LottoPresenterPort::present(LottoTicket)` 由输出侧
+适配器 LottoPresenter 接收,重发 `viewStateChanged(LottoViewState)` 供视图渲染。
+跨网络后该"推送"通道需换形态,三种替代:
 
 - **请求-响应**(简单路径):POST generate → 响应直接返回新票据 JSON;状态由服务端
   持有,每会话一个 interactor 实例

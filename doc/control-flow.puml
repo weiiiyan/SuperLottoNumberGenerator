@@ -8,13 +8,15 @@ title SuperLottoNumberGenerator 控制流图
 actor 用户 as U
 participant "main()\n(组合根)" as Main
 participant "MainWindow\n(谦卑视图)" as MW
+participant "LottoController\n(输入侧适配器)" as Ctrl
 participant "LottoInteractor\n(用例交互器)" as C
 participant "LottoEngine\n(领域服务)" as E
-participant "QSettingsTicketRepository\n(适配器)" as R
-participant "LottoPresenter\n(展示侧适配器)" as P
+participant "QSettingsTicketRepository\n(存储侧适配器)" as R
+participant "LottoPresenter\n(输出侧适配器)" as P
 
-note over C : 持有唯一状态源 m_ticket (LottoTicket 值类型)\n跨层只传 LottoTicket, 不传 widget/存储内部结构
-note over P : present() 推导展示状态 (不依赖 Widget)\nMainWindow 只做机械控件写入
+note over C : 持有唯一状态源 m_ticket (LottoTicket 值类型)\n存储/用例间只传 LottoTicket\n实现输入边界 LottoInputBoundary, 经输出边界 LottoPresenterPort 推送
+note over Ctrl : 依赖 LottoInputBoundary, 把 UI 事件翻译为用例调用 (不含业务判断)
+note over P : 实现 LottoPresenterPort, present() 推导展示状态\n重发 viewStateChanged (LottoViewState)\n视图只感知 LottoViewState, 不感知领域实体
 
 == 启动: 异步恢复 (main() 装配后调用 load(), 视图不驱动用例) ==
 
@@ -23,16 +25,17 @@ activate C
 C -> C : QTimer::singleShot(0, ...)\n不阻塞 Android 启动
 C -> R : load()
 R --> C : LottoTicket\n(未锁定 → 默认票: 空号码/无效时间)
-C -> MW : emit ticketChanged(ticket)
+C -> P : present(ticket) 经输出端口 LottoPresenterPort
 deactivate C
-MW -> P : present(ticket)
-P --> MW : LottoViewState\n(号码文本/时间/按钮互斥)
-MW -> MW : onTicketChanged() 机械写入控件
+P -> P : present() override\nbuildViewState(ticket) 推导
+P -> MW : emit viewStateChanged(LottoViewState)
+MW -> MW : onViewStateChanged() 机械写入控件
 
 == 用户点击 [生成] (未锁定) ==
 
 U -> MW : clicked
-MW -> C : generateNewTicket()
+MW -> Ctrl : onGenerateRequested()
+Ctrl -> C : generateNewTicket()
 activate C
 alt 当前已锁定
     C -> C : 拒绝生成 (return)\n(按钮禁用只是辅助, 此处判定权威)
@@ -43,17 +46,18 @@ else 未锁定
     E --> C : QVector<LottoGroup>
     deactivate E
     C -> C : 更新 m_ticket\n(时间戳 UTC→本地, setLocked(false))
-    C -> MW : emit ticketChanged(ticket)
-    MW -> P : present(ticket)
-    P --> MW : LottoViewState\n(5 组号码文本)
-    MW -> MW : onTicketChanged() 写入标签
+    C -> P : present(ticket) 经输出端口 LottoPresenterPort
+    P -> P : buildViewState(ticket) 推导
+    P -> MW : emit viewStateChanged(LottoViewState)\n(5 组号码文本)
+    MW -> MW : onViewStateChanged() 写入标签
 end
 deactivate C
 
 == 用户点击 [锁定 / 解锁] ==
 
 U -> MW : clicked
-MW -> C : toggleLock()
+MW -> Ctrl : onLockRequested()
+Ctrl -> C : toggleLock()
 activate C
 C -> C : setLocked(!m_ticket.isLocked())
 alt 状态未变化 (守卫)
@@ -61,10 +65,10 @@ alt 状态未变化 (守卫)
 else 状态变化
     C -> R : save(ticket)
     R -> R : 锁定时写全量 + sync()\n未锁定仅写 isLocked=false
-    C -> MW : emit ticketChanged(ticket)
-    MW -> P : present(ticket)
-    P --> MW : LottoViewState\n(按钮文字/互斥状态)
-    MW -> MW : onTicketChanged() 更新按钮
+    C -> P : present(ticket) 经输出端口 LottoPresenterPort
+    P -> P : buildViewState(ticket) 推导
+    P -> MW : emit viewStateChanged(LottoViewState)\n(按钮文字/互斥状态)
+    MW -> MW : onViewStateChanged() 更新按钮
 end
 deactivate C
 

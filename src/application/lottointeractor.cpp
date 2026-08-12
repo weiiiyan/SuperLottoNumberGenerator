@@ -4,13 +4,15 @@
 #include <QTimer>
 
 #include "lottoengine.h"
+#include "lottopresenterport.h"
 #include "ticketrepository.h"
 
 LottoInteractor::LottoInteractor(TicketRepository *repository, LottoEngine *engine,
-                                 QObject *parent)
+                                 LottoPresenterPort *presenter, QObject *parent)
     : QObject(parent)
     , m_repository(repository)
     , m_engine(engine)
+    , m_presenter(presenter)
 {
 }
 
@@ -23,7 +25,7 @@ void LottoInteractor::generateNewTicket()
     m_ticket.setGroups(m_engine->generateBatch(LottoTicket::GROUP_COUNT));
     m_ticket.setGenerateTime(QDateTime::currentDateTimeUtc().toLocalTime());
     m_ticket.setLocked(false);
-    emit ticketChanged(m_ticket);
+    m_presenter->present(m_ticket);
 }
 
 void LottoInteractor::toggleLock()
@@ -37,9 +39,14 @@ void LottoInteractor::setLocked(bool locked)
     if (m_ticket.isLocked() == locked)
         return;
 
+    // 含号码才可锁定(视图禁用按钮只是辅助, 此处判定权威):
+    // 防止 "locked + 空号码" 进入无可恢复的视图死锁状态
+    if (locked && !m_ticket.hasNumbers())
+        return;
+
     m_ticket.setLocked(locked);
     m_repository->save(m_ticket);
-    emit ticketChanged(m_ticket);
+    m_presenter->present(m_ticket);
 }
 
 void LottoInteractor::load()
@@ -47,7 +54,10 @@ void LottoInteractor::load()
     // 异步恢复, 避免阻塞 Android 启动
     QTimer::singleShot(0, this, [this] {
         m_ticket = m_repository->load();
-        emit ticketChanged(m_ticket);
+        // 恢复 "锁定但空号码" 的损坏数据时解除锁定, 避免视图死锁
+        if (m_ticket.isLocked() && !m_ticket.hasNumbers())
+            m_ticket.setLocked(false);
+        m_presenter->present(m_ticket);
     });
 }
 

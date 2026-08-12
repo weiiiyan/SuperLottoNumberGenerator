@@ -1,9 +1,12 @@
 # 用例层库: 应用特定业务逻辑(仅依赖 Qt::Core)
-# LottoInteractor 在此实现用例编排与业务规则;
-# TicketRepository 持久化端口(DIP)由用例层定义, 适配器层实现
+# LottoInteractor 在此实现用例编排与业务规则, 并实现输入边界 LottoInputBoundary;
+# 三个 DIP 端口归用例层所有, 由适配器层实现:
+#   TicketRepository(存储) / LottoPresenterPort(输出) / LottoInputBoundary(输入)
 
 add_library(lotto_application STATIC
+    lottoinputboundary.h
     lottointeractor.h lottointeractor.cpp
+    lottopresenterport.h
     ticketrepository.h
 )
 
