@@ -73,6 +73,9 @@ tests/           → 5 个测试 target
 
 - `LottoGroup`（[lottogroup.h](src/domain/lottogroup.h)）— 纯数据 struct，两个已排序向量：`front`（5 个号码，范围 1–35）和 `back`（2 个号码，范围 1–12）。**组级游戏规则常量** `FRONT_COUNT`/`BACK_COUNT`/`FRONT_MIN`/`FRONT_MAX`/`BACK_MIN`/`BACK_MAX` 定义于此（全项目唯一来源）。通过 `Q_DECLARE_METATYPE` 注册为 Qt 元类型。
 - `LottoTicket`（[lottoticket.h](src/domain/lottoticket.h)）— 领域实体：5 组号码 + `QDateTime` 生成时间戳 + 锁定标志。票据级常量 `GROUP_COUNT` 定义于此；`FRONT_COUNT`/`BACK_COUNT` 为 `LottoGroup::*` 的别名（组级规则唯一来源是 LottoGroup）。
+
+**锁定标志为何随实体存储（有意权衡）**：按整洁架构 ch20 定义，`isLocked` 属"因自动化而生的"应用特定规则——现实彩票无锁定概念（买票即固定），严格应归用例层；"锁定时拒绝生成"的判定也确已位于 `LottoInteractor::generateNewTicket()`。物理上随 `LottoTicket` 存储是为了保持跨层传输唯一值类型载体，避免 save/渲染时拼装「票据 + 锁标志」；实体仅持有数据、不含锁定逻辑，污染限于数据层面。
+
 - `LottoEngine`（[lottoengine.h](src/domain/lottoengine.h)）— 领域服务：使用 `std::shuffle` 对 `std::iota` 填充的号码池随机洗牌，随机引擎为 `QRandomGenerator::global()`。不使用 `rand()`，不手动 seed。
 
 ### 用例层：[src/application/lottointeractor.h](src/application/lottointeractor.h)
