@@ -1,4 +1,4 @@
-#include "lottostylecatalog.h"
+#include "maincatalog.h"
 
 #include <QtGlobal>
 
@@ -7,7 +7,7 @@
 #include "neumorphic/lottoneumorphicview.h"
 #endif
 
-QVector<LottoStyleDefinition> lottoStyleCatalog()
+QVector<LottoStyleDefinition> buildStyleCatalog()
 {
     QVector<LottoStyleDefinition> catalog;
 

@@ -1,6 +1,7 @@
 #include "lottoclassicview.h"
 
 #include <QActionGroup>
+#include <QResource>
 #include <QApplication>
 #include <QDebug>
 #include <QFile>
@@ -55,6 +56,8 @@ LottoClassicView::LottoClassicView(LottoStyleHost *host, QWidget *parent)
     : LottoView(parent)
     , m_host(host)
 {
+    // 本组件的 qrc 由自己负责初始化: 静态库资源不经外部入口也不会被丢弃
+    Q_INIT_RESOURCE(resources);
     setObjectName(QStringLiteral("classicRoot"));
     initUi();
 }

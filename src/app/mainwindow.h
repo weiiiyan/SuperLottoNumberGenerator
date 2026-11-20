@@ -33,14 +33,14 @@ public:
      * \param controller 输入侧适配器(不持有所有权)
      * \param presenter 输出侧适配器(不持有所有权)
      * \param store 风格偏好端口(不持有所有权)
-     * \param catalog 风格目录(默认取应用目录, 测试可注入假目录)
+     * \param catalog 风格目录(由 Main 或测试注入)
      * \param initialState 初始展示状态(由 Main 提供)
      * \param parent 父窗口
      */
     MainWindow(LottoController *controller, LottoPresenter *presenter,
                LottoStyleStore *store,
-               QVector<LottoStyleDefinition> catalog = lottoStyleCatalog(),
-               const LottoViewState &initialState = LottoViewState(),
+               QVector<LottoStyleDefinition> catalog,
+               const LottoViewState &initialState,
                QWidget *parent = nullptr);
     ~MainWindow() override;
 

@@ -21,11 +21,6 @@ struct LottoStyleDefinition {
     std::function<LottoView *(LottoStyleHost *, QWidget *)> create;  /*!< 视图工厂 */
 };
 
-/*!
- * \brief 应用风格目录: 顺序即展示顺序, 首项为默认风格
- *
- * 新增风格只需在此追加一条(并在视图中实现 LottoView)。
- */
-QVector<LottoStyleDefinition> lottoStyleCatalog();
+// 具体目录的构造属于 Main 的职责(ch26): 见 src/app/maincatalog.h。
 
 #endif // LOTTOSTYLECATALOG_H

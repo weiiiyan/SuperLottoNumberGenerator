@@ -98,9 +98,15 @@ if(NOT ANDROID)
     register_lotto_test(LottoUiTest LottoUiTest -platform offscreen)
     message(STATUS "测试目标 LottoUiTest 已创建")
 
+    # ── UI 层: 核心库链接隔离(不链接任何风格)──
+    add_lotto_test(LottoUiIsolationTest tst_uiisolation.cpp)
+    target_link_libraries(LottoUiIsolationTest PRIVATE lotto_ui)
+    register_lotto_test(LottoUiIsolationTest LottoUiIsolationTest -platform offscreen)
+    message(STATUS "测试目标 LottoUiIsolationTest 已创建")
+
     # ── UI 层: 经典视图单元测试 ──
     add_lotto_test(LottoClassicViewTest tst_lottoclassicview.cpp)
-    target_link_libraries(LottoClassicViewTest PRIVATE lotto_ui)
+    target_link_libraries(LottoClassicViewTest PRIVATE lotto_ui_classic)
     register_lotto_test(LottoClassicViewTest LottoClassicViewTest -platform offscreen)
     message(STATUS "测试目标 LottoClassicViewTest 已创建")
 
@@ -115,7 +121,7 @@ if(NOT ANDROID)
     if(TEST_QT_MAJOR GREATER_EQUAL 6)
         find_package(Qt${TEST_QT_MAJOR} REQUIRED COMPONENTS QuickWidgets)
         add_lotto_test(LottoNeumorphicViewTest tst_lottoneumorphicview.cpp)
-        target_link_libraries(LottoNeumorphicViewTest PRIVATE lotto_ui
+        target_link_libraries(LottoNeumorphicViewTest PRIVATE lotto_ui_neumorphic
             Qt${TEST_QT_MAJOR}::QuickWidgets)
         register_lotto_test(LottoNeumorphicViewTest LottoNeumorphicViewTest -platform offscreen)
         message(STATUS "测试目标 LottoNeumorphicViewTest 已创建")
@@ -125,7 +131,7 @@ if(NOT ANDROID)
     if(TEST_QT_MAJOR GREATER_EQUAL 6)
         find_package(Qt${TEST_QT_MAJOR} REQUIRED COMPONENTS QuickWidgets)
         add_lotto_test(LottoQmlSmokeTest tst_lottoqmlsmoke.cpp)
-        target_link_libraries(LottoQmlSmokeTest PRIVATE lotto_ui
+        target_link_libraries(LottoQmlSmokeTest PRIVATE lotto_ui_neumorphic
             Qt${TEST_QT_MAJOR}::QuickWidgets)
         register_lotto_test(LottoQmlSmokeTest LottoQmlSmokeTest -platform offscreen)
         message(STATUS "测试目标 LottoQmlSmokeTest 已创建")

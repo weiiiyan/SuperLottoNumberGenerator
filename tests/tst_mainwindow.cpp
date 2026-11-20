@@ -22,6 +22,7 @@
 #include "lottointeractor.h"
 #include "lottopresenter.h"
 #include "lottostylecatalog.h"
+#include "maincatalog.h"
 #include "lottoviewshell.h"
 #include "mainwindow.h"
 #include "qsettingsrepository.h"
@@ -353,7 +354,7 @@ private slots:
     void realCatalog_neuomorphicEntryCanBeActivated()
     {
         qDebug() << "验证真实目录可切换到新拟物视图(未接入或 Quick 不可用时跳过)";
-        const auto catalog = lottoStyleCatalog();
+        const auto catalog = buildStyleCatalog();
         bool hasNeumorphic = false;
         for (const LottoStyleDefinition &definition : catalog) {
             if (definition.info.id == QStringLiteral("neumorphic"))

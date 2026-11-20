@@ -1,11 +1,11 @@
 #include <QApplication>
-#include <QResource>
 #include <QSettings>
 
 #include "lottointeractor.h"
 #include "lottoengine.h"
 #include "lottocontroller.h"
 #include "lottopresenter.h"
+#include "maincatalog.h"
 #include "mainwindow.h"
 #include "qsettingsrepository.h"
 #include "qsettingsstylestore.h"
@@ -20,10 +20,6 @@
  */
 int main(int argc, char *argv[])
 {
-    // 静态库中的 qrc 资源需显式初始化: 链接器会丢弃未被引用的 qrc 对象,
-    // 不调用则 :/classic/style.qss 在运行时不存在
-    Q_INIT_RESOURCE(resources);
-
     QApplication a(argc, argv);
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
@@ -36,7 +32,7 @@ int main(int argc, char *argv[])
     LottoController controller(&interactor);                    // 输入侧适配器: 依赖输入边界
     const LottoViewState seed = LottoPresenter::initialState();
     MainWindow window(&controller, &presenter, &styleStore,
-                      lottoStyleCatalog(), seed);
+                      buildStyleCatalog(), seed);
     // 用例启动由组合根发起(视图不驱动用例): 异步恢复, 不阻塞 Android 启动
     interactor.load();
     window.showMaximized();

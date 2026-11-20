@@ -110,12 +110,16 @@ private slots:
         QVERIFY(!menu->actions().at(0)->isChecked());
     }
 
-    void catalogShouldContainClassic()
+    void classicViewCanBeRegisteredInACatalog()
     {
-        qDebug() << "验证风格目录首项为经典视图";
-        const auto catalog = lottoStyleCatalog();
-        QVERIFY(!catalog.isEmpty());
-        QCOMPARE(catalog.first().info.id, QStringLiteral("classic"));
+        qDebug() << "验证经典视图可注册进风格目录";
+        LottoStyleDefinition definition{
+            {QStringLiteral("classic"), QStringLiteral("经典")},
+            [](LottoStyleHost *host, QWidget *parent) -> LottoView * {
+                return new LottoClassicView(host, parent);
+            }};
+        QCOMPARE(definition.info.id, QStringLiteral("classic"));
+        QVERIFY(static_cast<bool>(definition.create));
     }
 };
 

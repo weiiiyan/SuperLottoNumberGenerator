@@ -6,11 +6,15 @@
 add_library(lotto_app STATIC
     mainwindow.h mainwindow.cpp
     mainwindow.ui
+    maincatalog.h maincatalog.cpp
 )
 
 target_include_directories(lotto_app PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(lotto_app PUBLIC lotto_ui lotto_adapters lotto_core
+target_link_libraries(lotto_app PUBLIC lotto_ui lotto_ui_classic lotto_adapters lotto_core
     Qt${QT_VERSION_MAJOR}::Widgets)
+if(QT_VERSION_MAJOR GREATER_EQUAL 6)
+    target_link_libraries(lotto_app PUBLIC lotto_ui_neumorphic)
+endif()
 
 # ── 可执行目标(Qt6 / Qt5 双路径, Android manifest 只在 exe)──
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
