@@ -98,6 +98,13 @@ if(NOT ANDROID)
     register_lotto_test(LottoUiTest LottoUiTest -platform offscreen)
     message(STATUS "测试目标 LottoUiTest 已创建")
 
+    # ── UI 层: 视图宿主单元测试(假目录, 无 QML 依赖)──
+    add_lotto_test(LottoViewShellTest tst_lottoviewshell.cpp)
+    target_link_libraries(LottoViewShellTest PRIVATE
+        lotto_ui lotto_adapters lotto_application lotto_core)
+    register_lotto_test(LottoViewShellTest LottoViewShellTest -platform offscreen)
+    message(STATUS "测试目标 LottoViewShellTest 已创建")
+
     # ── UI 层: 静态库 QML 模块冒烟(Qt6 专属)──
     if(TEST_QT_MAJOR GREATER_EQUAL 6)
         find_package(Qt${TEST_QT_MAJOR} REQUIRED COMPONENTS QuickWidgets)

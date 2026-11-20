@@ -7,6 +7,8 @@ add_library(lotto_ui STATIC
     lottostylehost.h
     lottostylestore.h
     qsettingsstylestore.h qsettingsstylestore.cpp
+    lottostylecatalog.h
+    lottoviewshell.h lottoviewshell.cpp
 )
 
 target_include_directories(lotto_ui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
