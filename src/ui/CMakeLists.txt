@@ -7,8 +7,10 @@ add_library(lotto_ui STATIC
     lottostylehost.h
     lottostylestore.h
     qsettingsstylestore.h qsettingsstylestore.cpp
-    lottostylecatalog.h
+    lottostylecatalog.h lottostylecatalog.cpp
     lottoviewshell.h lottoviewshell.cpp
+    classic/lottoclassicview.h classic/lottoclassicview.cpp
+    classic/resources.qrc
 )
 
 target_include_directories(lotto_ui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -19,6 +21,7 @@ target_link_libraries(lotto_ui PUBLIC lotto_adapters
 if(QT_VERSION_MAJOR GREATER_EQUAL 6)
     find_package(Qt6 REQUIRED COMPONENTS Qml QuickWidgets)
 
+    # 经典视图的样式表资源前缀为 /classic/
     # 静态库 QML 模块: 生成的 qrc/qmldir 需在链接期保留(见 lottoview.cpp 的注册调用)
     qt_add_qml_module(lotto_ui
         URI LottoUi

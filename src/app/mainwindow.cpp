@@ -323,7 +323,7 @@ void MainWindow::init()
     applyState(LottoPresenter::initialState());
 
     // 统一样式表
-    QFile qss(":/style.qss");
+    QFile qss(":/classic/style.qss");
     if (qss.open(QFile::ReadOnly | QFile::Text)) {
         setStyleSheet(qss.readAll());
     } else {

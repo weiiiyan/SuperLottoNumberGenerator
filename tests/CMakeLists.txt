@@ -98,6 +98,12 @@ if(NOT ANDROID)
     register_lotto_test(LottoUiTest LottoUiTest -platform offscreen)
     message(STATUS "测试目标 LottoUiTest 已创建")
 
+    # ── UI 层: 经典视图单元测试 ──
+    add_lotto_test(LottoClassicViewTest tst_lottoclassicview.cpp)
+    target_link_libraries(LottoClassicViewTest PRIVATE lotto_ui)
+    register_lotto_test(LottoClassicViewTest LottoClassicViewTest -platform offscreen)
+    message(STATUS "测试目标 LottoClassicViewTest 已创建")
+
     # ── UI 层: 视图宿主单元测试(假目录, 无 QML 依赖)──
     add_lotto_test(LottoViewShellTest tst_lottoviewshell.cpp)
     target_link_libraries(LottoViewShellTest PRIVATE

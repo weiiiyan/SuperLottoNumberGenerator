@@ -6,11 +6,10 @@
 add_library(lotto_app STATIC
     mainwindow.h mainwindow.cpp
     mainwindow.ui
-    resources.qrc
 )
 
 target_include_directories(lotto_app PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(lotto_app PUBLIC lotto_adapters lotto_core
+target_link_libraries(lotto_app PUBLIC lotto_ui lotto_adapters lotto_core
     Qt${QT_VERSION_MAJOR}::Widgets)
 
 # ── 可执行目标(Qt6 / Qt5 双路径, Android manifest 只在 exe)──
