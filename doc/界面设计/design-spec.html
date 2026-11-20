@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>组件与配色规范 — 超级大乐透</title>
+<style>
+:root{
+  --bg:#0F1115;
+  --surface:#161A21;
+  --surface-2:#1C212A;
+  --fg:#E9ECF1;
+  --muted:#939CAB;
+  --border:rgba(255,255,255,.09);
+  --accent:#D8B26A;
+
+  --font-body:"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
+  --font-num:"Bahnschrift","DIN Alternate","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --font-mono:"Cascadia Mono","SFMono-Regular",Consolas,"Liberation Mono",monospace;
+}
+*{ box-sizing:border-box; }
+body{
+  margin:0;
+  background:
+    radial-gradient(90% 50% at 12% 0%, #1A1F27 0%, transparent 62%),
+    var(--bg);
+  color:var(--fg);
+  font-family:var(--font-body);
+  font-size:15px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{ max-width:1080px; margin:0 auto; padding:40px 28px 96px; }
+
+/* ---------- 顶栏 ---------- */
+header.doc{
+  display:flex; align-items:flex-end; justify-content:space-between;
+  gap:24px; flex-wrap:wrap;
+  padding-bottom:24px; border-bottom:1px solid var(--border);
+}
+.eyebrow{
+  font-family:var(--font-num);
+  font-size:11px; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--accent);
+  margin:0 0 10px;
+}
+h1{ margin:0; font-size:34px; line-height:1.15; letter-spacing:-.02em; font-weight:650; }
+.sub{ margin:10px 0 0; color:var(--muted); max-width:56ch; font-size:14px; }
+.docnav{ display:flex; gap:16px; font-size:12.5px; flex-wrap:wrap; }
+.docnav a{ color:var(--muted); text-decoration:none; border-bottom:1px solid transparent; padding-bottom:2px; }
+.docnav a:hover{ color:var(--fg); border-color:var(--accent); }
+.docnav a[aria-current]{ color:var(--fg); border-color:var(--accent); }
+
+/* ---------- 章节 ---------- */
+section{ margin-top:56px; }
+h2{
+  font-size:13px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent); font-weight:600;
+  margin:0 0 18px; padding-bottom:10px;
+  border-bottom:1px solid var(--border);
+}
+h3{ font-size:19px; margin:30px 0 10px; letter-spacing:-.01em; font-weight:600; }
+h4{ font-size:14px; margin:22px 0 8px; color:var(--fg); font-weight:600; letter-spacing:.02em; }
+p{ margin:10px 0; color:#C6CDD9; }
+p.lead{ color:var(--muted); font-size:14px; }
+ul,ol{ margin:10px 0; padding-left:20px; color:#C6CDD9; }
+li{ margin:5px 0; }
+code{
+  font-family:var(--font-mono); font-size:12.5px;
+  background:rgba(255,255,255,.06);
+  border:1px solid var(--border);
+  border-radius:4px; padding:1px 5px;
+  color:#EAE2D0;
+}
+strong{ color:#fff; font-weight:600; }
+
+/* ---------- 卡片 ---------- */
+.grid{ display:grid; gap:16px; }
+.g2{ grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
+.g3{ grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); }
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px;
+}
+.card h4{ margin-top:0; }
+.card .note{ font-size:13px; color:var(--muted); margin:6px 0 0; }
+
+/* ---------- 令牌表 ---------- */
+table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+th,td{ text-align:left; padding:9px 12px; border-bottom:1px solid var(--border); vertical-align:top; }
+th{
+  font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted); font-weight:600;
+}
+td:first-child{ white-space:nowrap; }
+td code{ white-space:nowrap; }
+tr:last-child td{ border-bottom:none; }
+.swatch{
+  display:inline-block; width:14px; height:14px; border-radius:3px;
+  vertical-align:-2px; margin-right:7px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.14);
+}
+.mono td:nth-child(2),.mono td:nth-child(3){ font-family:var(--font-mono); font-size:12px; color:#CFD6E2; }
+
+/* ---------- 布局示意 ---------- */
+.frame{
+  position:relative;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:var(--surface);
+  padding:14px;
+  overflow:hidden;
+}
+.wire{
+  display:flex; flex-direction:column;
+  height:520px;
+  border:1px dashed rgba(216,178,106,.4);
+  border-radius:8px;
+  font-family:var(--font-mono);
+  font-size:10.5px;
+  color:#9AA4B4;
+  letter-spacing:.04em;
+}
+.wire > div{
+  display:flex; align-items:center; justify-content:center;
+  border-bottom:1px dashed rgba(255,255,255,.07);
+  position:relative;
+  flex:none;
+}
+.wire > div:last-child{ border-bottom:none; }
+.wire .h-top{ height:64px; color:#D8B26A; }
+.wire .h-meta{ height:40px; }
+.wire .h-rows{ flex:1 1 auto; color:#8FA0B8; }
+.wire .h-perf{ height:26px; color:#77808F; }
+.wire .h-foot{ height:44px; }
+.wire .h-actions{ height:72px; color:#D8B26A; }
+.wire .dim{
+  position:absolute; right:6px; top:50%; transform:translateY(-50%);
+  font-size:9.5px; color:#6E7889;
+}
+
+/* ---------- 号码球演示 ---------- */
+.demo{
+  display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+  padding:22px 18px; border-radius:12px;
+}
+.demo-ticket{
+  background:
+    repeating-linear-gradient(0deg, rgba(120,100,60,.03) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg,#FBF7EC,#F2EBDA);
+}
+.demo-neumo{
+  background:#E0E5EC;
+}
+.d-ball{
+  width:36px; height:36px; border-radius:50%;
+  display:grid; place-items:center;
+  font-family:var(--font-num); font-size:15px; font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+.demo-ticket .d-front{
+  color:#FFF8F4;
+  background:radial-gradient(125% 125% at 34% 22%,#E8434F 0%,#C1121F 52%,#8C0C16 100%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.26), inset 0 -7px 11px rgba(70,0,6,.28), 0 2px 3px rgba(28,27,25,.18);
+}
+.demo-ticket .d-back{
+  color:#FFF8F4;
+  background:radial-gradient(125% 125% at 34% 22%,#2E96CC 0%,#0B6FA4 52%,#064E75 100%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.26), inset 0 -7px 11px rgba(0,20,35,.28), 0 2px 3px rgba(28,27,25,.18);
+}
+.demo-neumo .d-front{
+  background:#E0E5EC; color:#C86A6A;
+  box-shadow:4px 4px 9px #A3B1C6, -4px -4px 9px #FFFFFF;
+}
+.demo-neumo .d-back{
+  background:#E0E5EC; color:#6A8FC8;
+  box-shadow:4px 4px 9px #A3B1C6, -4px -4px 9px #FFFFFF;
+}
+.demo .d-sep{
+  width:12px; text-align:center;
+  font-family:var(--font-num); font-size:13px; color:#9AA2AE;
+}
+.demo-ticket .d-sep{ color:#B0A692; }
+
+/* ---------- 按钮演示 ---------- */
+.btnrow{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.dbtn{
+  height:44px; padding:0 20px;
+  border-radius:10px; border:none;
+  font-family:var(--font-body); font-size:14.5px; font-weight:600; letter-spacing:.06em;
+  cursor:default;
+}
+.dbtn-ticket-primary{
+  color:#FFF6F2;
+  background:linear-gradient(180deg,#D01A27 0%,#C1121F 55%,#A80F1A 100%);
+  box-shadow:0 3px 0 #8C0C16, 0 10px 20px -8px rgba(193,18,31,.65);
+}
+.dbtn-ticket-ghost{
+  color:#1C1B19; background:transparent; border:1.5px solid #1C1B19;
+}
+.dbtn-ticket-ghost.on{ background:#1C1B19; color:#F7F2E6; }
+.dbtn-neumo{
+  color:#4A5568; background:#E0E5EC; height:44px;
+  box-shadow:5px 5px 12px #A3B1C6, -5px -5px 12px #FFFFFF;
+}
+.dbtn-neumo.sunk{
+  color:#C86A6A;
+  box-shadow:inset 3px 3px 8px #A3B1C6, inset -3px -3px 8px #FFFFFF;
+}
+
+/* ---------- 代码块 ---------- */
+pre{
+  margin:12px 0 0;
+  background:#11141A;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:16px 18px;
+  overflow-x:auto;
+  font-family:var(--font-mono);
+  font-size:12.5px;
+  line-height:1.7;
+  color:#C9D3E2;
+}
+pre .c{ color:#6C7787; }
+pre .k{ color:#D8B26A; }
+pre .s{ color:#8FBF9F; }
+
+/* ---------- 状态表 ---------- */
+.pill{
+  display:inline-block; padding:2px 8px; border-radius:99px;
+  font-size:11px; letter-spacing:.06em;
+  border:1px solid var(--border); color:var(--muted);
+}
+.pill.ok{ color:#8FBF9F; border-color:rgba(143,191,159,.35); }
+.pill.warn{ color:#D8B26A; border-color:rgba(216,178,106,.35); }
+
+footer.doc{
+  margin-top:72px; padding-top:22px;
+  border-top:1px solid var(--border);
+  font-size:12px; color:#6E7889;
+  display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="doc" data-od-id="doc-header">
+  <div>
+    <p class="eyebrow">SuperLotto · Design Contract</p>
+    <h1>组件与配色规范</h1>
+    <p class="sub">两套主题共用一套布局骨架，只替换视觉令牌。本页是给开发照着实现的唯一参照：尺寸、间距、状态、映射到 <code>classic/style.qss</code> 与 <code>LottoUi/*.qml</code> 的写法。</p>
+  </div>
+  <nav class="docnav" aria-label="设计文件">
+    <a href="index.html">总览</a>
+    <a href="classic-ticket.html">经典 · 票券</a>
+    <a href="neumorphic.html">新拟物</a>
+    <a href="design-spec.html" aria-current="page">组件规范</a>
+  </nav>
+</header>
+
+<!-- ========== 1. 共用布局 ========== -->
+<section data-od-id="section-layout">
+  <h2>01 · 共用布局骨架</h2>
+  <p class="lead">之前两套界面的问题不是配色，而是<strong>结构不同</strong>：经典版是 QWidget 竖排 + 角落菜单，新拟物版是 QML 的 <code>ColumnLayout</code> + 底部胶囊，标题位置、时间条位置、按钮顺序都不一样。使用者切换主题时等于换了一个应用。</p>
+  <p>现在统一为下面这一张骨架。两套主题<strong>行高、间距、控件顺序、点击区域全部一致</strong>，只允许改：背景、号码球外观、按钮质感、分隔线样式。</p>
+
+  <div class="grid g2" style="margin-top:22px">
+    <div class="frame">
+      <div class="wire" aria-hidden="true">
+        <div class="h-top">顶栏 · 品牌 + 版本 · 风格按钮<span class="dim">64</span></div>
+        <div class="h-meta">时间条 · 生成时间 + 值<span class="dim">40</span></div>
+        <div class="h-rows">号码区 · 5 行（每行 5 + 2）<span class="dim">flex</span></div>
+        <div class="h-perf">骑缝线（两侧半圆缺口）<span class="dim">26</span></div>
+        <div class="h-foot">票号 · 条形码 / 状态<span class="dim">44</span></div>
+        <div class="h-actions">锁定号码 · 生成号码<span class="dim">72</span></div>
+      </div>
+    </div>
+    <div>
+      <h4>骨架规则</h4>
+      <ul>
+        <li><strong>顺序固定</strong>：顶栏 → 时间条 → 号码区 → 骑缝线 → 票号 → 操作区。不允许在中间插入风格专属控件。</li>
+        <li><strong>号码区吸收余高</strong>：5 行等分剩余空间，单行最大 86px；窗口变矮时先压缩行高，再压缩间距，不出现滚动条。</li>
+        <li><strong>操作区贴底</strong>：占 72px 固定高度，<em>左锁定、右生成</em>，生成按钮更宽（比例 1 : 1.32）。</li>
+        <li><strong>风格入口唯一</strong>：右上角一个 32px 按钮，弹出底部抽屉。删除原先经典版的 <code>QToolButton</code> 菜单与新拟物版的底部胶囊两套入口。</li>
+      </ul>
+      <h4>尺寸令牌</h4>
+      <table class="mono">
+        <tr><td>画布</td><td>390 × 844</td><td>竖屏基准（Android）</td></tr>
+        <tr><td>安全边距</td><td>22 / 26 / 22</td><td>左右 / 上 / 下</td></tr>
+        <tr><td>号码球</td><td>36</td><td>球径，固定</td></tr>
+        <tr><td>球间距</td><td>5</td><td>行内 gap</td></tr>
+        <tr><td>行号列</td><td>18</td><td>01–05 序号</td></tr>
+        <tr><td>按钮高</td><td>52</td><td>触控 ≥ 44</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 2. 经典主题 ========== -->
+<section data-od-id="section-ticket">
+  <h2>02 · 经典主题 · 票券</h2>
+  <p class="lead">原来经典版的问题是"没设计感"：纯色红块按钮、圆角矩形号码、没有主次。新方向把它做成<strong>一张彩票票根</strong>——纸面、骑缝线、票号、锁定印章。号码球是绝对主角，其余元素全部退成细线。</p>
+
+  <h3>配色令牌</h3>
+  <table class="mono">
+    <thead><tr><th>令牌</th><th>值</th><th>用途</th></tr></thead>
+    <tbody>
+      <tr><td>背景底</td><td><span class="swatch" style="background:#E4DED1"></span>#E4DED1</td><td>应用外的展示底</td></tr>
+      <tr><td><code>--paper</code></td><td><span class="swatch" style="background:#F7F2E6"></span>#F7F2E6</td><td>票面主色</td></tr>
+      <tr><td><code>--ink</code></td><td><span class="swatch" style="background:#1C1B19"></span>#1C1B19</td><td>标题、边框、正文字</td></tr>
+      <tr><td><code>--ink-soft</code></td><td><span class="swatch" style="background:#6A655B"></span>#6A655B</td><td>标签、票号</td></tr>
+      <tr><td><code>--rule</code></td><td><span class="swatch" style="background:#D6CCB6"></span>#D6CCB6</td><td>虚线分隔</td></tr>
+      <tr><td><code>--front</code></td><td><span class="swatch" style="background:#C1121F"></span>#C1121F</td><td>前区球 / 主按钮</td></tr>
+      <tr><td><code>--back</code></td><td><span class="swatch" style="background:#0B6FA4"></span>#0B6FA4</td><td>后区球 / 焦点环</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:14px"><strong>克制要求</strong>：整屏红色只出现在三处——前区球、生成按钮、锁定印章。其余一律墨色与纸色。</p>
+
+  <h3>号码球</h3>
+  <div class="demo demo-ticket">
+    <span class="d-ball d-front">03</span>
+    <span class="d-ball d-front">11</span>
+    <span class="d-ball d-front">19</span>
+    <span class="d-ball d-front">28</span>
+    <span class="d-ball d-front">34</span>
+    <span class="d-sep">+</span>
+    <span class="d-ball d-back">04</span>
+    <span class="d-ball d-back">09</span>
+  </div>
+  <pre><span class="c">// classic/style.qss —— 号码球由属性选择器区分</span>
+QLabel[area=<span class="s">"front"</span>] {
+    color: #FFF8F4;
+    border: none;
+    border-radius: 18px;                <span class="c">/* 球径 36 → 半圆 */</span>
+    background: qradialgradient(cx:0.34, cy:0.22, radius:1.25,
+                stop:0 #E8434F, stop:0.52 #C1121F, stop:1 #8C0C16);
+}
+QLabel[area=<span class="s">"back"</span>] {
+    background: qradialgradient(cx:0.34, cy:0.22, radius:1.25,
+                stop:0 #2E96CC, stop:0.52 #0B6FA4, stop:1 #064E75);
+}</pre>
+  <p class="note" style="color:var(--muted);font-size:13px">Qt 的 QSS 不支持多重 inset 阴影。上侧高光用 <code>qradialgradient</code> 的浅色起点模拟，下侧暗部用渐变末端；如需更强的球感，改 <code>QLabel::paintEvent</code> 用 <code>QRadialGradient</code> 双点绘制。</p>
+
+  <h3>按钮</h3>
+  <div class="btnrow" style="margin-top:14px;padding:22px 18px;border-radius:12px;background:#F7F2E6">
+    <button class="dbtn dbtn-ticket-ghost" type="button">锁定号码</button>
+    <button class="dbtn dbtn-ticket-ghost on" type="button">解锁生成</button>
+    <button class="dbtn dbtn-ticket-primary" type="button">生成号码</button>
+  </div>
+  <table style="margin-top:18px">
+    <thead><tr><th>控件</th><th>默认</th><th>按下 / 选中</th><th>禁用</th></tr></thead>
+    <tbody>
+      <tr><td>锁定</td><td>透明底 + 1.5px 墨色描边</td><td>墨色填充、纸色字</td><td>透明，文字 <code>#8A8478</code></td></tr>
+      <tr><td>生成</td><td>红渐变 + 3px 底部硬阴影</td><td>下沉 2px，阴影收为 1px</td><td>灰纸底 <code>#D8D2C4</code>，无阴影</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ========== 3. 新拟物主题 ========== -->
+<section data-od-id="section-neumo">
+  <h2>03 · 新拟物主题（保持风格，只换骨架）</h2>
+  <p class="lead">新拟物风格本身保留：<code>#E0E5EC</code> 底色、左上亮影 / 右下暗影、按下内陷。改的只有结构——与经典版逐像素对齐。</p>
+
+  <h3>令牌（与 NeumoTheme.qml 一一对应）</h3>
+  <table class="mono">
+    <thead><tr><th>QML 属性</th><th>值</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>background</td><td><span class="swatch" style="background:#E0E5EC"></span>#E0E5EC</td><td>基底，也是所有面</td></tr>
+      <tr><td>lightShadow</td><td><span class="swatch" style="background:#FFFFFF"></span>#FFFFFF</td><td>左上光源</td></tr>
+      <tr><td>darkShadow</td><td><span class="swatch" style="background:#A3B1C6"></span>#A3B1C6</td><td>右下投影</td></tr>
+      <tr><td>facePressed</td><td><span class="swatch" style="background:#D6DCE5"></span>#D6DCE5</td><td>按下内陷面</td></tr>
+      <tr><td>text</td><td><span class="swatch" style="background:#4A5568"></span>#4A5568</td><td>主文字</td></tr>
+      <tr><td>textMuted</td><td><span class="swatch" style="background:#7A8699"></span>#7A8699</td><td>标签</td></tr>
+      <tr><td>frontColor</td><td><span class="swatch" style="background:#C86A6A"></span>#C86A6A</td><td>前区数字</td></tr>
+      <tr><td>backColor</td><td><span class="swatch" style="background:#6A8FC8"></span>#6A8FC8</td><td>后区数字</td></tr>
+      <tr><td>radius / shadowBlur / shadowOffset</td><td>16 / 12 / 5</td><td>现有取值，直接沿用</td></tr>
+    </tbody>
+  </table>
+
+  <h3>号码球</h3>
+  <div class="demo demo-neumo">
+    <span class="d-ball d-front">03</span>
+    <span class="d-ball d-front">11</span>
+    <span class="d-ball d-front">19</span>
+    <span class="d-ball d-front">28</span>
+    <span class="d-ball d-front">34</span>
+    <span class="d-sep">+</span>
+    <span class="d-ball d-back">04</span>
+    <span class="d-ball d-back">09</span>
+  </div>
+  <p class="note" style="color:var(--muted);font-size:13px">与现版 <code>NeumoBall.qml</code> 的关键差异：<strong>球面与背景同色</strong>，靠双向柔影浮起；数字用主题色而非白色。原版用 44px、本版统一 36px 以适应共用骨架。</p>
+
+  <h3>按钮</h3>
+  <div class="btnrow" style="margin-top:14px;padding:22px 18px;border-radius:12px;background:#E0E5EC">
+    <button class="dbtn dbtn-neumo" type="button">锁定号码</button>
+    <button class="dbtn dbtn-neumo sunk" type="button">解锁生成</button>
+    <button class="dbtn dbtn-neumo" type="button" style="min-width:170px">生成号码</button>
+  </div>
+
+  <h4 style="margin-top:26px">实现要点</h4>
+  <ul>
+    <li>删除 <code>NeumorphicView.qml</code> 底部的 <code>NeumoPill</code> 胶囊行，风格入口收到右上角按钮。</li>
+    <li>球径从 44 改为 36，<code>NeumoTicketRow</code> 的 <code>ballSize</code> 直接绑定骨架常量，不再按宽度反算（反算会导致与经典版行高不一致）。</li>
+    <li><code>RectangularShadow</code> 的 blur 在 36px 球上要到 8–9，否则阴影会糊在一起；<code>shadowOffset</code> 同步取 3。</li>
+    <li>分隔线用 1px 线性渐变（中间实、两端透明），替代硬线，符合柔面语言。</li>
+  </ul>
+</section>
+
+<!-- ========== 4. 状态 ========== -->
+<section data-od-id="section-states">
+  <h2>04 · 交互与状态</h2>
+  <table>
+    <thead><tr><th>状态</th><th>触发</th><th>生成按钮</th><th>锁定按钮</th><th>票号区</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill">初始</span></td><td>冷启动 / 无号码</td><td>可用，文案「生成号码」</td><td>禁用，文案「锁定号码」</td><td>提示「前区 1–35 · 后区 1–12」</td></tr>
+      <tr><td><span class="pill ok">已生成</span></td><td>点击生成</td><td>可用</td><td>可用</td><td>显示票号与条形码</td></tr>
+      <tr><td><span class="pill warn">已锁定</span></td><td>点击锁定</td><td>禁用；球不可再变</td><td>选中态，文案「解锁生成」</td><td>印章「已锁定」盖住提示</td></tr>
+    </tbody>
+  </table>
+  <h4>动效</h4>
+  <ul>
+    <li>换号时号码球逐个 <code>scale .72 → 1</code>，每球延迟 16ms，总时长 340ms，缓动 <code>cubic-bezier(.2,.85,.3,1.25)</code>。</li>
+    <li>锁定印章从 <code>rotate(-7deg)</code> 微放大淡入，220ms。</li>
+    <li>风格切换：旧界面快照淡出 240ms（沿用现有 <code>LottoStyleSwitchOverlay</code>，不需要改）。</li>
+    <li>系统开启「减少动态效果」时全部关闭。</li>
+  </ul>
+</section>
+
+<!-- ========== 5. 迁移清单 ========== -->
+<section data-od-id="section-migration">
+  <h2>05 · 改动清单</h2>
+  <div class="grid g2">
+    <div class="card">
+      <h4>经典主题（QWidget）</h4>
+      <ul>
+        <li><code>lottoclassicview.cpp</code>：<code>buildLayout()</code> 按新骨架重排——顶栏、时间条、票号行、操作区。</li>
+        <li>时间标签从两个拼接 Label（#timeLabel / #timeValueLabel）改为一行「标签 + 值」，去掉红色胶囊底。</li>
+        <li>号码球固定 36px，删除按屏幕宽度反算球径的逻辑（<code>updateLabelSizes</code> 里的 <code>LABEL_ROW_WIDTH_FRACTION</code> 分支）。</li>
+        <li>新增票号行与骑缝线（可用 <code>QFrame</code> + <code>paintEvent</code> 画半圆缺口）。</li>
+        <li>锁定/生成按钮顺序调整为「左锁定、右生成」，宽度比 1 : 1.32。</li>
+        <li><code>style.qss</code> 按本页令牌重写，删除 <code>#btnStyleSwitch</code> 菜单相关样式。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>新拟物主题（QML）</h4>
+      <ul>
+        <li><code>NeumorphicView.qml</code>：根 <code>ColumnLayout</code> 的 spacing 从 14 改为与经典版一致的 13 / 14 / 10 分段。</li>
+        <li>时间行 <code>NeumoValueRow</code> 改为整行两端对齐（标签左、值右）。</li>
+        <li><code>NeumoTicketRow.qml</code>：<code>ballSize</code> 固定 36，行高 <code>ballSize + 2 × 3</code>。</li>
+        <li>删除 <code>NeumoPill.qml</code> 的使用；保留文件或一并删除均可。</li>
+        <li>新增票号行与骑缝线（<code>Canvas</code> 画半圆，或两个圆形 <code>Rectangle</code> 叠在边界上）。</li>
+        <li><code>NeumoTheme.qml</code> 令牌值不变，仅补 <code>ballSize: 32</code> 常量。</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h4>共享层（建议）</h4>
+    <p>把骨架常量收到一个共享头文件，两套视图都引用，避免下次再漂移：</p>
+    <pre><span class="c">// src/ui/lottolayoutmetrics.h</span>
+<span class="k">namespace</span> LottoLayout {
+<span class="k">inline constexpr int</span> CanvasWidth  = 390;
+<span class="k">inline constexpr int</span> PadX         = 22;
+<span class="k">inline constexpr int</span> BallSize     = 36;
+<span class="k">inline constexpr int</span> BallGap      = 5;
+<span class="k">inline constexpr int</span> RowIndex     = 18;
+<span class="k">inline constexpr int</span> ActionHeight = 52;
+<span class="k">inline constexpr int</span> PerfHeight   = 26;
+}</pre>
+    <p class="note">QML 侧通过 <code>qmlRegisterUncreatableType</code> 或直接在 <code>NeumoTheme.qml</code> 里镜像同一组数值；两处数值若不一致，以本页为准。</p>
+  </div>
+</section>
+
+<!-- ========== 6. 排版 ========== -->
+<section data-od-id="section-type">
+  <h2>06 · 字体与排版</h2>
+  <table>
+    <thead><tr><th>角色</th><th>字号 / 字重 / 字距</th><th>字族</th></tr></thead>
+    <tbody>
+      <tr><td>应用名</td><td>18 / 700 / .03em</td><td>系统中文字族</td></tr>
+      <tr><td>时间值、票号</td><td>12.5 / 500 / .04em，表格数字</td><td>Bahnschrift / DIN</td></tr>
+      <tr><td>小标签（生成时间、行号）</td><td>10.5 / 500 / .16em</td><td>系统中文字族</td></tr>
+      <tr><td>号码球数字</td><td>14.5 / 700 / .01em，表格数字</td><td>Bahnschrift / DIN</td></tr>
+      <tr><td>按钮</td><td>15 / 600 / .06em</td><td>系统中文字族</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:14px">号码必须<strong>等宽数字</strong>（<code>font-variant-numeric: tabular-nums</code>；Qt 用 <code>QFont::setStyleStrategy</code> 或直接用 Bahnschrift），否则 01 与 11 宽度不同会让球内数字左右晃动。</p>
+</section>
+
+<footer class="doc">
+  <span>SuperLottoNumberGenerator · 界面设计 · 2026-11-20</span>
+  <span>输出目录：doc/界面设计</span>
+</footer>
+
+</div>
+</body>
+</html>
