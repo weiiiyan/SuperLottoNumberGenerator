@@ -38,6 +38,8 @@ if(QT_VERSION_MAJOR GREATER_EQUAL 6)
             LottoUi/NeumoButton.qml
             LottoUi/NeumoTicketRow.qml
             LottoUi/NeumoValueRow.qml
+            LottoUi/NeumoPill.qml
+            LottoUi/NeumoIcon.qml
             LottoUi/NeumorphicView.qml
     )
 

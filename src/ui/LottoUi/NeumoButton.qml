@@ -9,12 +9,13 @@ Item {
     property string text: ""
     property bool interactive: true
     property bool checked: false
+    property string iconKind: ""
     property bool down: mouseArea.pressed && control.interactive
     property bool sunk: down || checked
 
     signal clicked()
 
-    implicitWidth: Math.max(120, label.implicitWidth + 36)
+    implicitWidth: Math.max(120, content.implicitWidth + 36)
     implicitHeight: 44
 
     opacity: interactive ? 1.0 : 0.45
@@ -49,13 +50,25 @@ Item {
         radius: NeumoTheme.radius
         color: control.sunk ? NeumoTheme.facePressed : NeumoTheme.background
 
-        Text {
-            id: label
+        Row {
+            id: content
             anchors.centerIn: parent
-            text: control.text
-            color: NeumoTheme.text
-            font.pixelSize: 15
-            font.bold: control.checked
+            spacing: 8
+
+            NeumoIcon {
+                kind: control.iconKind
+                visible: control.iconKind !== ""
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            Text {
+                id: label
+                text: control.text
+                color: NeumoTheme.text
+                font.pixelSize: 15
+                font.bold: control.checked
+                anchors.verticalCenter: parent.verticalCenter
+            }
         }
     }
 

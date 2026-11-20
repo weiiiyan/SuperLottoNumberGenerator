@@ -50,33 +50,20 @@ Item {
                     value: root.timeValueText
                 }
 
-                Rectangle {
-                    Layout.preferredWidth: 34
+                NeumoButton {
+                    Layout.preferredWidth: 44
                     Layout.preferredHeight: 34
-                    radius: 17
-                    color: NeumoTheme.background
-                    border.color: NeumoTheme.darkShadow
-                    border.width: 1
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "◔"
-                        color: NeumoTheme.textMuted
-                        font.pixelSize: 14
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: {
-                            // 在可用风格中循环切换
-                            if (!root.styles || root.styles.length < 2)
+                    implicitHeight: 34
+                    iconKind: "style"
+                    onClicked: {
+                        // 在可用风格中循环切换
+                        if (!root.styles || root.styles.length < 2)
+                            return
+                        for (let i = 0; i < root.styles.length; ++i) {
+                            if (root.styles[i].id === root.currentStyleId) {
+                                const next = root.styles[(i + 1) % root.styles.length]
+                                root.requestStyleSwitch(next.id)
                                 return
-                            for (let i = 0; i < root.styles.length; ++i) {
-                                if (root.styles[i].id === root.currentStyleId) {
-                                    const next = root.styles[(i + 1) % root.styles.length]
-                                    root.requestStyleSwitch(next.id)
-                                    return
-                                }
                             }
                         }
                     }
@@ -107,16 +94,18 @@ Item {
                 Item { Layout.fillWidth: true }
 
                 NeumoButton {
-                    Layout.preferredWidth: 130
+                    Layout.preferredWidth: 140
                     text: root.lockButtonText
+                    iconKind: "lock"
                     interactive: root.lockButtonEnabled
                     checked: root.lockButtonChecked
                     onClicked: root.lockClicked()
                 }
 
                 NeumoButton {
-                    Layout.preferredWidth: 160
+                    Layout.preferredWidth: 170
                     text: root.generateButtonText
+                    iconKind: "generate"
                     interactive: root.generateEnabled
                     onClicked: root.generateClicked()
                 }
@@ -134,11 +123,9 @@ Item {
                 Repeater {
                     model: root.styles
 
-                    delegate: NeumoButton {
+                    delegate: NeumoPill {
                         text: modelData.displayName
-                        checked: modelData.id === root.currentStyleId
-                        implicitHeight: 34
-                        implicitWidth: Math.max(84, text.length * 16)
+                        current: modelData.id === root.currentStyleId
                         onClicked: root.requestStyleSwitch(modelData.id)
                     }
                 }

@@ -122,6 +122,22 @@ private slots:
         QCOMPARE(host.requested, QStringList{ QStringLiteral("classic") });
     }
 
+    void pillClickRequestsSwitch()
+    {
+        qDebug() << "验证风格胶囊点击请求切换(经 requestStyleSwitch 入口)";
+        FakeStyleHost host;
+        host.styles = { {QStringLiteral("classic"), QStringLiteral("经典")},
+                        {QStringLiteral("neumorphic"), QStringLiteral("新拟物")} };
+        host.currentId = QStringLiteral("neumorphic");
+        LottoNeumorphicView view(&host);
+        if (!waitReady(view))
+            QSKIP("当前平台 Quick 未能初始化");
+
+        QVERIFY(QMetaObject::invokeMethod(view.rootItem(), "requestStyleSwitch",
+                                          Q_ARG(QVariant, QStringLiteral("classic"))));
+        QCOMPARE(host.requested, QStringList{ QStringLiteral("classic") });
+    }
+
     void snapshotReturnsImage()
     {
         qDebug() << "验证快照返回非空图像";
