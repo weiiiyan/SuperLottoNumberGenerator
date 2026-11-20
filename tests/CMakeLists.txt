@@ -92,6 +92,12 @@ if(NOT ANDROID)
     register_lotto_test(MainWindowTest MainWindowTest -platform offscreen)
     message(STATUS "测试目标 MainWindowTest 已创建")
 
+    # ── UI 层: 端口与偏好存储单元测试 ──
+    add_lotto_test(LottoUiTest tst_lottoui.cpp)
+    target_link_libraries(LottoUiTest PRIVATE lotto_ui)
+    register_lotto_test(LottoUiTest LottoUiTest -platform offscreen)
+    message(STATUS "测试目标 LottoUiTest 已创建")
+
     # ── UI 层: 静态库 QML 模块冒烟(Qt6 专属)──
     if(TEST_QT_MAJOR GREATER_EQUAL 6)
         find_package(Qt${TEST_QT_MAJOR} REQUIRED COMPONENTS QuickWidgets)

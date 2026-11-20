@@ -2,7 +2,12 @@
 # 依赖只指向内层: app → ui → adapters
 # 经典视图为 Widgets 实现; 新拟物视图为 Qt6 QML 实现(QQuickWidget 承载)
 
-add_library(lotto_ui STATIC)
+add_library(lotto_ui STATIC
+    lottoview.h lottoview.cpp
+    lottostylehost.h
+    lottostylestore.h
+    qsettingsstylestore.h qsettingsstylestore.cpp
+)
 
 target_include_directories(lotto_ui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # Qt 依赖必须 PUBLIC: 静态库的 PRIVATE 链接不会向下游传递 Qt 头文件路径
