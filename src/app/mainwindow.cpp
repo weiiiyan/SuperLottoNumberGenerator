@@ -80,10 +80,11 @@ void MainWindow::applyState(const LottoViewState &state)
             if (FRONT_COUNT + i < row.size())
                 m_backLabels[g][i]->setText(row.at(FRONT_COUNT + i));
     }
-    m_timeLabel->setText(state.timeText);
+    m_timeLabel->setText(state.timeLabelText + state.timeValueText);
     m_btnLock->setEnabled(state.lockButtonEnabled);
     m_btnLock->setChecked(state.lockButtonChecked);
     m_btnLock->setText(state.lockButtonText);
+    m_btnGenerate->setText(state.generateButtonText);
     m_btnGenerate->setEnabled(state.generateEnabled);
 }
 
@@ -308,8 +309,7 @@ void MainWindow::init()
     m_groupsLayout->setContentsMargins(0, 0, 0, 0);
 
     // 按钮(文字/启用状态由 applyState 填充, 空票据初始: 锁定禁用)
-    m_btnGenerate = new QPushButton(QString::fromUtf8(LottoPresenter::GENERATE_TEXT),
-                                    ui->centralwidget);
+    m_btnGenerate = new QPushButton(QString(), ui->centralwidget);
     m_btnGenerate->setObjectName("btnGenerate");
 
     m_btnLock = new QPushButton(QString(), ui->centralwidget);

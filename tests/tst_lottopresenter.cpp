@@ -47,7 +47,9 @@ private slots:
         QVERIFY(state.lockButtonEnabled);          // 含号码后可锁定
         QCOMPARE(state.lockButtonText,
                  QString::fromUtf8(LottoPresenter::LOCK_TEXT_UNLOCKED));
-        QVERIFY(!state.timeText.contains(
+        QCOMPARE(state.timeLabelText,
+                 QString::fromUtf8(LottoPresenter::TIME_LABEL));
+        QVERIFY(!state.timeValueText.contains(
                     QString::fromUtf8(LottoPresenter::TIME_PLACEHOLDER)));  // 有效时间
     }
 
@@ -75,8 +77,9 @@ private slots:
             for (const QString &text : row)
                 QCOMPARE(text, QString::fromUtf8(LottoPresenter::NUMBER_PLACEHOLDER));
         }
-        QCOMPARE(state.timeText, QString::fromUtf8(LottoPresenter::TIME_PREFIX)
-                                     + QString::fromUtf8(LottoPresenter::TIME_PLACEHOLDER));
+        QCOMPARE(state.timeLabelText, QString::fromUtf8(LottoPresenter::TIME_LABEL));
+        QCOMPARE(state.timeValueText,
+                 QString::fromUtf8(LottoPresenter::TIME_PLACEHOLDER));
         QVERIFY(!state.lockButtonEnabled);
         QVERIFY(!state.lockButtonChecked);
         QCOMPARE(state.lockButtonText, QString::fromUtf8(LottoPresenter::LOCK_TEXT_UNLOCKED));
@@ -150,8 +153,40 @@ private slots:
                                   QString::fromUtf8(LottoPresenter::TIME_FORMAT));
         const LottoViewState state = LottoPresenter::buildViewState(makeTicket(1, false, time));
 
-        QCOMPARE(state.timeText, QString::fromUtf8(LottoPresenter::TIME_PREFIX)
-                                     + QString::fromLatin1("2026-01-01 12:00:00"));
+        QCOMPARE(state.timeLabelText, QString::fromUtf8(LottoPresenter::TIME_LABEL));
+        QCOMPARE(state.timeValueText, QString::fromLatin1("2026-01-01 12:00:00"));
+    }
+
+    // ── 文案契约: 无 emoji, 生成按钮文案随状态下发 ──
+
+    void constants_shouldNotContainEmoji()
+    {
+        const QVector<QString> texts = {
+            QString::fromUtf8(LottoPresenter::TIME_LABEL),
+            QString::fromUtf8(LottoPresenter::LOCK_TEXT_LOCKED),
+            QString::fromUtf8(LottoPresenter::LOCK_TEXT_UNLOCKED),
+            QString::fromUtf8(LottoPresenter::GENERATE_TEXT),
+        };
+        // 只拒绝真正的图标区段(杂项符号/装饰符/emoji), 中文全角标点不在其列
+        auto isIconChar = [](uint ucs4) {
+            return (ucs4 >= 0x1F000 && ucs4 <= 0x1FAFF)   // emoji / 符号图形
+                || (ucs4 >= 0x2600 && ucs4 <= 0x27BF)     // 杂项符号 / 装饰符
+                || (ucs4 >= 0x2B00 && ucs4 <= 0x2BFF)     // 杂项符号与箭头
+                || ucs4 == 0xFE0F;                        // 变体选择符
+        };
+        for (const QString &text : texts) {
+            const QVector<uint> cps = text.toUcs4();
+            for (const uint ucs4 : cps)
+                QVERIFY2(!isIconChar(ucs4),
+                         QString("文案含图标字符: '%1'").arg(text).toUtf8());
+        }
+    }
+
+    void state_shouldCarryGenerateButtonText()
+    {
+        const LottoViewState state = LottoPresenter::initialState();
+        QCOMPARE(state.generateButtonText,
+                 QString::fromUtf8(LottoPresenter::GENERATE_TEXT));
     }
 
     void invalidTime_shouldRenderTimePlaceholder()
@@ -160,8 +195,9 @@ private slots:
         const LottoViewState state =
             LottoPresenter::buildViewState(makeTicket(1, false, QDateTime()));
 
-        QCOMPARE(state.timeText, QString::fromUtf8(LottoPresenter::TIME_PREFIX)
-                                     + QString::fromUtf8(LottoPresenter::TIME_PLACEHOLDER));
+        QCOMPARE(state.timeLabelText, QString::fromUtf8(LottoPresenter::TIME_LABEL));
+        QCOMPARE(state.timeValueText,
+                 QString::fromUtf8(LottoPresenter::TIME_PLACEHOLDER));
     }
 };
 

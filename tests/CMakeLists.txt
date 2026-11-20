@@ -91,6 +91,16 @@ if(NOT ANDROID)
         Qt${TEST_QT_MAJOR}::Widgets)
     register_lotto_test(MainWindowTest MainWindowTest -platform offscreen)
     message(STATUS "测试目标 MainWindowTest 已创建")
+
+    # ── UI 层: 静态库 QML 模块冒烟(Qt6 专属)──
+    if(TEST_QT_MAJOR GREATER_EQUAL 6)
+        find_package(Qt${TEST_QT_MAJOR} REQUIRED COMPONENTS QuickWidgets)
+        add_lotto_test(LottoQmlSmokeTest tst_lottoqmlsmoke.cpp)
+        target_link_libraries(LottoQmlSmokeTest PRIVATE lotto_ui
+            Qt${TEST_QT_MAJOR}::QuickWidgets)
+        register_lotto_test(LottoQmlSmokeTest LottoQmlSmokeTest -platform offscreen)
+        message(STATUS "测试目标 LottoQmlSmokeTest 已创建")
+    endif()
 else()
     message(STATUS "跳过测试目标：当前为 Android 构建（测试仅支持桌面平台）")
 endif()

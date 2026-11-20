@@ -13,11 +13,13 @@
  */
 struct LottoViewState {
     QVector<QStringList> groups;       /*!< 每组展示文本: 前区 FRONT_COUNT 个 + 后区 BACK_COUNT 个, 缺项为占位符 */
-    QString timeText;                  /*!< 时间标签完整文本 */
+    QString timeLabelText;             /*!< 时间标签标题, 如 "生成时间：" */
+    QString timeValueText;             /*!< 时间值或占位, 如 "2026-01-01 08:00:00" */
+    QString generateButtonText;        /*!< 生成按钮文字 */
+    bool    generateEnabled    = true; /*!< 生成按钮可用性(锁定时禁用) */
     QString lockButtonText;            /*!< 锁定按钮文字 */
-    bool lockButtonEnabled = false;    /*!< 锁定按钮可用性(含号码才可锁定) */
-    bool lockButtonChecked  = false;   /*!< 锁定按钮选中状态 */
-    bool generateEnabled    = true;    /*!< 生成按钮可用性(锁定时禁用) */
+    bool    lockButtonEnabled  = false;/*!< 锁定按钮可用性(含号码才可锁定) */
+    bool    lockButtonChecked  = false;/*!< 锁定按钮选中状态 */
 };
 
 Q_DECLARE_METATYPE(LottoViewState)
@@ -45,13 +47,13 @@ public:
     }
 
     // 视图展示字符串常量(单来源, 视图与测试引用同一来源)
-    static constexpr const char *TIME_PREFIX        = "🕐 生成时间：";
+    static constexpr const char *TIME_LABEL         = "生成时间：";
     static constexpr const char *TIME_PLACEHOLDER   = "年-月-日 时:分:秒";
     static constexpr const char *TIME_FORMAT        = "yyyy-MM-dd HH:mm:ss";
-    static constexpr const char *LOCK_TEXT_LOCKED   = "🔒 解锁生成";
-    static constexpr const char *LOCK_TEXT_UNLOCKED = "🔓 锁定号码";
+    static constexpr const char *LOCK_TEXT_LOCKED   = "解锁生成";
+    static constexpr const char *LOCK_TEXT_UNLOCKED = "锁定号码";
     static constexpr const char *NUMBER_PLACEHOLDER = "?";
-    static constexpr const char *GENERATE_TEXT      = "🎲 生成号码";
+    static constexpr const char *GENERATE_TEXT      = "生成号码";
 
     // 视图结构常量(别名领域规则, 视图只依赖本层词汇而非领域实体)
     static constexpr int GROUP_COUNT = LottoTicket::GROUP_COUNT;

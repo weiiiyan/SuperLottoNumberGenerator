@@ -33,14 +33,12 @@ LottoViewState LottoPresenter::buildViewState(const LottoTicket &ticket)
         state.groups.append(row);
     }
 
-    // 时间标签: 有效时间按固定格式, 无效显示占位
+    // 时间: 标题与值分开下发, 由视图决定排版(有效时间按固定格式, 无效显示占位)
     const QDateTime time = ticket.generateTime();
-    if (time.isValid()) {
-        state.timeText = QString::fromUtf8(TIME_PREFIX)
-            + time.toString(QString::fromUtf8(TIME_FORMAT));
-    } else {
-        state.timeText = QString::fromUtf8(TIME_PREFIX) + QString::fromUtf8(TIME_PLACEHOLDER);
-    }
+    state.timeLabelText = QString::fromUtf8(TIME_LABEL);
+    state.timeValueText = time.isValid()
+        ? time.toString(QString::fromUtf8(TIME_FORMAT))
+        : QString::fromUtf8(TIME_PLACEHOLDER);
 
     // 按钮互斥状态与文字: 含号码才可锁定, 锁定时禁用生成
     state.lockButtonText = ticket.isLocked() ? QString::fromUtf8(LOCK_TEXT_LOCKED)
@@ -48,6 +46,7 @@ LottoViewState LottoPresenter::buildViewState(const LottoTicket &ticket)
     state.lockButtonEnabled = ticket.hasNumbers();
     state.lockButtonChecked = ticket.isLocked();
     state.generateEnabled   = !ticket.isLocked();
+    state.generateButtonText = QString::fromUtf8(GENERATE_TEXT);
 
     return state;
 }

@@ -280,7 +280,7 @@ private slots:
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
 
         QString text = timeLabel()->text();
-        QVERIFY2(text.contains(QString::fromUtf8(LottoPresenter::TIME_PREFIX)),
+        QVERIFY2(text.contains(QString::fromUtf8(LottoPresenter::TIME_LABEL)),
                  QString("时间标签内容异常: '%1'").arg(text).toUtf8());
 
         QRegularExpression re(R"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})");
@@ -327,7 +327,7 @@ private slots:
 
         // ─ Step 4: 验证时间标签恢复(格式为 yyyy-MM-dd HH:mm:ss) ─
         QString text = timeLabel()->text();
-        QVERIFY2(text.contains(QString::fromUtf8(LottoPresenter::TIME_PREFIX)),
+        QVERIFY2(text.contains(QString::fromUtf8(LottoPresenter::TIME_LABEL)),
                  QString("时间标签内容异常: '%1'").arg(text).toUtf8());
         QRegularExpression re(R"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})");
         QVERIFY2(re.match(text).hasMatch(),
