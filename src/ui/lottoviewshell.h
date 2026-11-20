@@ -10,8 +10,10 @@
 #include "lottostylestore.h"
 
 class LottoController;
+class LottoStyleSwitchOverlay;
 class LottoView;
 class QStackedWidget;
+class QVariantAnimation;
 
 /*!
  * \brief LottoViewShell 视图宿主: 承载可切换的风格视图
@@ -55,8 +57,13 @@ signals:
     /*! 目标视图缺失、工厂返回空或视图未就绪: 保持当前视图且不写偏好 */
     void styleSwitchFailed(const QString &styleId);
 
+protected:
+    void resizeEvent(QResizeEvent *event) override;
+
 private:
     void applySwitch(const QString &styleId);
+    void playTransition(const QPixmap &snapshot);
+    void finishTransition();
     LottoView *createView(const LottoStyleDefinition &definition);
     LottoView *findExistingView(const QString &styleId) const;
 
@@ -70,6 +77,10 @@ private:
     LottoViewState m_lastState;                /*!< 最近一次展示状态 */
     bool m_hasState = false;                   /*!< 是否已收到过展示状态 */
     int m_transitionMs = 200;                  /*!< 过渡时长 */
+
+    // 过渡状态(仅 transitionMs > 0 时使用)
+    QPointer<LottoStyleSwitchOverlay> m_overlay;   /*!< 当前过渡覆盖层 */
+    QPointer<QVariantAnimation> m_overlayAnimation;/*!< 覆盖层淡出动画 */
 };
 
 #endif // LOTTOVIEWSHELL_H

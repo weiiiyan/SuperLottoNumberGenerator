@@ -7,6 +7,7 @@
 
 #include "lottocontroller.h"
 #include "lottopresenter.h"
+#include "lottostyleswitchoverlay.h"
 #include "lottoviewshell.h"
 #include "testhelpers.h"
 #include "uitesthelpers.h"
@@ -180,6 +181,46 @@ private slots:
         m_shell->requestSwitchTo(QStringLiteral("b"));
         QTRY_COMPARE(m_shell->currentStyleId(), QStringLiteral("b"));
         QCOMPARE(static_cast<FakeLottoView *>(m_shell->currentView())->stateCount(), 0);
+    }
+
+    void zeroTransition_createsNoOverlay()
+    {
+        qDebug() << "验证 transitionMs=0 时不创建过渡覆盖层";
+        m_shell->requestSwitchTo(QStringLiteral("b"));
+        QTRY_COMPARE(m_shell->currentStyleId(), QStringLiteral("b"));
+        QVERIFY(m_shell->findChild<LottoStyleSwitchOverlay *>() == nullptr);
+    }
+
+    void fadeTransition_removesOverlayAfterwards()
+    {
+        qDebug() << "验证过渡覆盖层播放后自动销毁";
+        LottoViewShell shell(m_controller, m_presenter, m_store, makeCatalog(), 400);
+        shell.resize(400, 600);
+        shell.show();
+        QTest::qWait(10);
+        shell.requestSwitchTo(QStringLiteral("b"));
+        QTRY_COMPARE(shell.currentStyleId(), QStringLiteral("b"));
+        // 过渡期间必须有覆盖层; 否则"之后消失"的断言是自证的
+        QVERIFY(shell.findChild<LottoStyleSwitchOverlay *>() != nullptr);
+        QTRY_VERIFY_WITH_TIMEOUT(
+            shell.findChild<LottoStyleSwitchOverlay *>() == nullptr, 3000);
+    }
+
+    void rapidSwitches_leaveSingleOverlay()
+    {
+        qDebug() << "验证快速连续切换后不残留覆盖层且停在最后目标";
+        LottoViewShell shell(m_controller, m_presenter, m_store, makeCatalog(), 200);
+        shell.resize(400, 600);
+        shell.show();
+        QTest::qWait(10);
+        shell.requestSwitchTo(QStringLiteral("b"));
+        QTest::qWait(20);
+        shell.requestSwitchTo(QStringLiteral("a"));
+        QTest::qWait(20);
+        shell.requestSwitchTo(QStringLiteral("b"));
+        QTRY_VERIFY_WITH_TIMEOUT(
+            shell.findChild<LottoStyleSwitchOverlay *>() == nullptr, 4000);
+        QCOMPARE(shell.currentStyleId(), QStringLiteral("b"));
     }
 
     void sameStyleRequestIsIgnored()

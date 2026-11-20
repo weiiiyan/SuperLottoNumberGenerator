@@ -1,10 +1,13 @@
 #include "lottoviewshell.h"
 
 #include <QDebug>
+#include <QResizeEvent>
 #include <QStackedWidget>
 #include <QVBoxLayout>
+#include <QVariantAnimation>
 
 #include "lottocontroller.h"
+#include "lottostyleswitchoverlay.h"
 #include "lottostylestore.h"
 #include "lottoview.h"
 
@@ -133,6 +136,12 @@ void LottoViewShell::applySwitch(const QString &styleId)
     }
 
     LottoView *previous = m_currentView;
+
+    // 过渡起点: 旧视图快照(在隐藏旧视图之前抓取)
+    QPixmap previousSnapshot;
+    if (m_transitionMs > 0 && previous)
+        previousSnapshot = previous->snapshot();
+
     if (m_stack->indexOf(view) < 0)
         m_stack->addWidget(view);
 
@@ -149,6 +158,54 @@ void LottoViewShell::applySwitch(const QString &styleId)
 
     if (m_store)
         m_store->saveStyleId(styleId);
+
+    if (!previousSnapshot.isNull())
+        playTransition(previousSnapshot);
+}
+
+void LottoViewShell::playTransition(const QPixmap &snapshot)
+{
+    // 快速连续切换: 先结束上一次过渡, 保证同一时刻只有一个覆盖层
+    finishTransition();
+
+    m_overlay = new LottoStyleSwitchOverlay(snapshot, this);
+    m_overlay->show();
+
+    auto *animation = new QVariantAnimation(this);
+    animation->setDuration(m_transitionMs);
+    animation->setStartValue(1.0);
+    animation->setEndValue(0.0);
+    animation->setEasingCurve(QEasingCurve::InOutQuad);
+    connect(animation, &QVariantAnimation::valueChanged, this,
+            [this](const QVariant &value) {
+        if (m_overlay)
+            m_overlay->setOpacity(value.toReal());
+    });
+    connect(animation, &QVariantAnimation::finished, this,
+            [this]() { finishTransition(); });
+
+    m_overlayAnimation = animation;
+    animation->start(QAbstractAnimation::DeleteWhenStopped);
+}
+
+void LottoViewShell::finishTransition()
+{
+    if (m_overlayAnimation) {
+        m_overlayAnimation->stop();
+        m_overlayAnimation.clear();
+    }
+    if (m_overlay) {
+        m_overlay->hide();
+        m_overlay->deleteLater();
+        m_overlay.clear();
+    }
+}
+
+void LottoViewShell::resizeEvent(QResizeEvent *event)
+{
+    QWidget::resizeEvent(event);
+    if (m_overlay)
+        m_overlay->setGeometry(rect());
 }
 
 LottoView *LottoViewShell::createView(const LottoStyleDefinition &definition)

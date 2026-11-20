@@ -9,6 +9,7 @@ add_library(lotto_ui STATIC
     qsettingsstylestore.h qsettingsstylestore.cpp
     lottostylecatalog.h lottostylecatalog.cpp
     lottoviewshell.h lottoviewshell.cpp
+    lottostyleswitchoverlay.h lottostyleswitchoverlay.cpp
     classic/lottoclassicview.h classic/lottoclassicview.cpp
     classic/resources.qrc
 )
