@@ -8,7 +8,6 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QRegularExpression>
-#include <QResource>
 #include <QSettings>
 #include <QTemporaryDir>
 #include <QTest>
@@ -116,8 +115,8 @@ private slots:
     void initTestCase()
     {
         QVERIFY(m_dir.isValid());
-        // 与生产入口一致: 静态库 qrc 资源需显式初始化, 否则样式表不加载
-        Q_INIT_RESOURCE(resources);
+        // 资源初始化已内聚到 lotto_ui_classic; 测试不再手工初始化,
+        // 这样经典视图的自初始化若失效, 本测试会真实暴露
         m_store = new FakeLottoStyleStore;
         makeWindow();
     }

@@ -78,8 +78,7 @@ private:
     QPointer<LottoView> m_currentView;         /*!< 当前视图 */
     QString m_currentStyleId;                  /*!< 当前风格 id */
     QString m_pendingStyleId;                  /*!< 已排队待执行的切换目标(空表示无) */
-    LottoViewState m_lastState;                /*!< 最近一次展示状态 */
-    bool m_hasState = false;                   /*!< 是否已收到过展示状态 */
+    LottoViewState m_lastState;                /*!< 最近一次展示状态(构造即由 Main 注入) */
     int m_transitionMs = 200;                  /*!< 过渡时长 */
 
     // 过渡状态(仅 transitionMs > 0 时使用)

@@ -34,7 +34,6 @@ LottoViewShell::LottoViewShell(LottoController *controller,
         connect(m_presenter, &LottoPresenter::viewStateChanged,
                 this, [this](const LottoViewState &state) {
             m_lastState = state;
-            m_hasState = true;
             if (m_currentView)
                 m_currentView->renderState(m_lastState);
         });
@@ -42,7 +41,11 @@ LottoViewShell::LottoViewShell(LottoController *controller,
 
     // 初始状态由 Main 注入: 任何时刻创建的视图都至少能渲染出占位符
     m_lastState = initialState;
-    m_hasState = true;
+    if (m_lastState.groups.size() < LottoViewShape::GROUP_COUNT) {
+        qWarning() << "[LOTTO] 注入的初始展示状态不完整: groups="
+                   << m_lastState.groups.size()
+                   << "(期望" << LottoViewShape::GROUP_COUNT << "组), 视图将显示空控件";
+    }
 
     // 首个视图: 优先按偏好恢复, 未知/空偏好或视图不可用则回退目录首项
     if (m_catalog.isEmpty())

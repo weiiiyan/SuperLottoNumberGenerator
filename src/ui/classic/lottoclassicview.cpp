@@ -355,7 +355,7 @@ void LottoClassicView::initUi()
         setStyleSheet(qss.readAll());
     } else {
         qWarning() << "[LOTTO] 未能加载 :/classic/style.qss, 样式表未应用"
-                   << "(静态库资源需在入口调用 Q_INIT_RESOURCE)";
+                   << "(本组件的 Q_INIT_RESOURCE 未能注册资源)";
     }
 
     // 信号连接: 按钮点击只发请求信号, 由宿主转发给输入侧适配器

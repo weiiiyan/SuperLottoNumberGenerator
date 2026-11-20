@@ -1,8 +1,6 @@
 #ifndef LOTTOSTYLECATALOG_H
 #define LOTTOSTYLECATALOG_H
 
-#include <QVector>
-
 #include <functional>
 
 #include "lottostylehost.h"

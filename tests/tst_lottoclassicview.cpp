@@ -2,7 +2,6 @@
 // 覆盖: 状态渲染到控件、按钮发请求信号、风格菜单列出宿主风格并请求切换
 
 #include <QLabel>
-#include <QResource>
 #include <QPushButton>
 #include <QSignalSpy>
 #include <QTest>
@@ -19,12 +18,6 @@ class TestLottoClassicView : public QObject
     Q_OBJECT
 
 private slots:
-    void initTestCase()
-    {
-        // 与生产入口一致: 静态库 qrc 资源需显式初始化
-        Q_INIT_RESOURCE(resources);
-    }
-
     void firstFrameShowsPlaceholdersWithoutAnyRenderCall()
     {
         qDebug() << "验证经典视图未收到状态时不自我渲染(首帧由宿主注入)";

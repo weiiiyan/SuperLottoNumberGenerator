@@ -4,7 +4,7 @@
 # 注意事项：
 #   - 测试仅在桌面平台构建（MinGW/MSVC/Linux/macOS），Android 跳过
 #   - 测试目标链接各层库（lotto_core / lotto_application / lotto_adapters /
-#     lotto_app），
+#     lotto_ui / lotto_ui_classic / lotto_ui_neumorphic / lotto_main），
 #     不再手工编译被测源码
 #   - 使用 CTest 集成，可通过 ctest 或 cmake --build . --target test 运行
 

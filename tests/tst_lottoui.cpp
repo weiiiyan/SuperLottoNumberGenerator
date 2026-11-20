@@ -19,7 +19,6 @@ private slots:
         QCOMPARE(view.stateCount(), 1);
         view.snapshot();   // 不崩溃即可
     }
-
 };
 
 QTEST_MAIN(TestLottoUi)

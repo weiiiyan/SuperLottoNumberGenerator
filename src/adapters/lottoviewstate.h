@@ -15,7 +15,8 @@
  * 开关, 不含任何业务实体。视图只消费本结构, 不感知 LottoTicket。
  */
 struct LottoViewState {
-    QVector<QStringList> groups;       /*!< 每组展示文本: 前区 FRONT_COUNT 个 + 后区 BACK_COUNT 个, 缺项为占位符 */
+    /*! 每组展示文本: 前区 FRONT_COUNT 个 + 后区 BACK_COUNT 个, 缺项为占位符 */
+    QVector<QStringList> groups;
     QString timeLabelText;             /*!< 时间标签标题, 如 "生成时间：" */
     QString timeValueText;             /*!< 时间值或占位, 如 "2026-01-01 08:00:00" */
     QString generateButtonText;        /*!< 生成按钮文字 */

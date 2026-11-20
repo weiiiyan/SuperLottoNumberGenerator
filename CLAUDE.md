@@ -179,11 +179,14 @@ src/app/qsettingsstylestore.*    偏好端口的 QSettings 实现, 键 ui/styleI
 
 #### 新拟物视图：[src/ui/neumorphic/lottoneumorphicview.cpp](src/ui/neumorphic/lottoneumorphicview.cpp)
 
-`LottoNeumorphicView` **组合**一个 `QQuickWidget`（QQuickWidget 自身是 QWidget，无法与 `LottoView` 多重继承），QML 场景在 `src/ui/LottoUi/`。C++ 侧把 `LottoViewState` 写成根对象属性（`groups` / `timeLabelText` / `timeValueText` / `*ButtonText` / 三个布尔 / `styles` / `currentStyleId`），QML 侧以 `generateClicked` / `lockClicked` / `styleSwitchRequested(string)` 信号回传。视觉由 `RectangularShadow`（QtQuick.Effects）做双向柔影，按下/选中改为阴影反向 + 底色加深形成内陷感；图标用 `Canvas` 自绘，不引入 Qt6::Svg。
+`LottoNeumorphicView` **组合**一个 `QQuickWidget`（QQuickWidget 自身是 QWidget，无法与 `LottoView` 多重继承），QML 场景在 `src/ui/neumorphic/LottoUi/`。C++ 侧把 `LottoViewState` 写成根对象属性（`groups` / `timeLabelText` / `timeValueText` / `*ButtonText` / 三个布尔 / `styles` / `currentStyleId`），QML 侧以 `generateClicked` / `lockClicked` / `styleSwitchRequested(string)` 信号回传。视觉由 `RectangularShadow`（QtQuick.Effects）做双向柔影，按下/选中改为阴影反向 + 底色加深形成内陷感；图标用 `Canvas` 自绘，不引入 Qt6::Svg。
 
 #### 输出侧适配器（展示器）：[lottopresenter.h](src/adapters/lottopresenter.h)
 
-`LottoPresenter` 按谦卑对象模式提取所有可测试的展示逻辑（不依赖任何 Widget）：实现用例层输出边界 `LottoPresenterPort`，交互器调用 `present(LottoTicket)` 时，经静态纯函数 `buildViewState(LottoTicket) → LottoViewState` 推导展示文本（号码格式化/`?` 占位符/时间标签/按钮文字与互斥状态）并重发 `viewStateChanged(LottoViewState)` 信号供视图消费。所有 UI 展示字符串（`TIME_PREFIX`/`LOCK_TEXT_*`/`GENERATE_TEXT` 等）及视图结构常量（`GROUP_COUNT` 等，别名领域规则）在此定义，视图与测试引用同一来源。`formatNumber()` 也在此供 UI 与测试复用。`LottoViewState` 通过 `Q_DECLARE_METATYPE` 注册，供信号捕获/排队连接使用。
+`LottoPresenter` 按谦卑对象模式提取所有可测试的展示逻辑（不依赖任何 Widget）：实现用例层输出边界 `LottoPresenterPort`，交互器调用 `present(LottoTicket)` 时，经静态纯函数 `buildViewState(LottoTicket) → LottoViewState` 推导展示文本（号码格式化/`?` 占位符/时间标签/按钮文字与互斥状态）并重发 `viewStateChanged(LottoViewState)` 信号供视图消费。展示**文案与结构常量不在此定义**：它们住在 `src/adapters/lottoviewstate.h` 的
+`LottoViewText::*` 与 `LottoViewShape::*`（见下文"展示状态与文案约定"）。
+本类只保留 `formatNumber()` / `buildViewState()` / `initialState()`。
+`initialState()` 的唯一生产调用方是 Main（作为宿主种子），**视图不得调用它**。
 
 #### 经典视图布局（仅竖屏）
 
@@ -200,7 +203,7 @@ src/app/qsettingsstylestore.*    偏好端口的 QSettings 实现, 键 ui/styleI
 - 从容器的实际宽度反推，`std::clamp` 在 `LABEL_MIN_SIZE_PORTRAIT`(22px) 到 `LABEL_MAX_SIZE`(44px) 之间，乘以 `LABEL_ROW_WIDTH_FRACTION`(0.94) 安全系数消化内边距误差
 - 字号 = 标签尺寸的 50%，不窄于 10px
 
-所有布局尺寸常量定义在 [lottoclassicview.h](src/ui/classic/lottoclassicview.h) 的 `public` 区：`WIDTH_TIER_*`、`LABEL_*`。彩票格式常量（`GROUP_COUNT` 等）为 `LottoPresenter::*` 的别名，展示器再别名领域层 `LottoTicket::*`（组级规则唯一来源是 `LottoGroup`），视图不直接依赖领域常量。
+所有布局尺寸常量定义在 [lottoclassicview.h](src/ui/classic/lottoclassicview.h) 的 `public` 区：`WIDTH_TIER_*`、`LABEL_*`。彩票格式常量（`GROUP_COUNT` 等）别名 `LottoViewShape::*`（定义于 `lottoviewstate.h`，其 `GROUP_COUNT` 由 `static_assert` 与 `LottoTicket::GROUP_COUNT` 绑定），视图不直接依赖领域常量。
 
 #### 号码显示格式
 
@@ -216,7 +219,10 @@ src/app/qsettingsstylestore.*    偏好端口的 QSettings 实现, 键 ui/styleI
 
 ### 资源文件：[classic/resources.qrc](src/ui/classic/resources.qrc)
 
-Qt 资源文件，将经典视图的 `style.qss` 打包到 `:/classic/` 前缀下（文件基名仍为 `resources`，故入口仍调用 `Q_INIT_RESOURCE(resources)`）。新拟物视图的 QML 与图标由 `qt_add_qml_module` 打进 `:/qt/qml/LottoUi/`。
+Qt 资源文件，将经典视图的 `style.qss` 打包到 `:/classic/` 前缀下。**初始化由
+`LottoClassicView` 构造函数内的 `Q_INIT_RESOURCE(resources)` 自己完成**——入口与
+测试都不再手工初始化，资源属于组件实现细节。新拟物视图的 QML 由
+`qt_add_qml_module` 打进 `:/qt/qml/LottoUi/`。
 
 ### 持久化：[src/adapters/qsettingsrepository.cpp](src/adapters/qsettingsrepository.cpp)
 
@@ -268,7 +274,7 @@ APK 现状（Qt 6.11.1，arm64-v8a，debug）：约 24 MB，已包含 `libQt6Qui
 | `LottoViewShell::applySwitch()` | src/ui/lottoviewshell.cpp | 查找/懒创建视图、重放状态、通知、存偏好、失败回退 |
 | `LottoStyleSwitchOverlay` | src/ui/lottostyleswitchoverlay.* | 切换过渡：旧视图快照淡出，快速连击时先结束上一次 |
 | `renderState()` / `applyState()` | lottoclassicview.cpp | 经典视图渲染唯一入口（初始渲染与信号渲染共用） |
-| `NeumoIcon.kind` | src/ui/LottoUi/NeumoIcon.qml | Canvas 自绘图标（generate/lock/style），不依赖 Svg 模块 |
+| `NeumoIcon.kind` | src/ui/neumorphic/LottoUi/NeumoIcon.qml | Canvas 自绘图标（generate/lock/style），不依赖 Svg 模块 |
 | `setLocked()` 状态守卫 | src/application/lottointeractor.cpp | 相同状态不重复保存 |
 | `hasNumbers()` | src/domain/lottoticket.cpp | 实体层"是否含号码"判定，展示器据此推导锁定按钮可用性 |
 | `parseGenerateTime()` | qsettingsrepository.cpp | 时间 ISO 优先、旧显示串正则回退、无效兜底 |
@@ -280,14 +286,14 @@ APK 现状（Qt 6.11.1，arm64-v8a，debug）：约 24 MB，已包含 `libQt6Qui
 ### 避坑指南
 
 - **不要删除经典视图 resizeEvent 中的 50ms 防抖定时器**：Android 端宽度可能在相近值间反复跳动（如 448↔800），导致 `resizeEvent → updateLabelSizes → rebuildGroupRows → resizeEvent` 死循环。`m_layoutDebounceTimer`（singleShot, 50ms）将多次 resize 合并为一次布局更新。QML 视图无此问题。
-- **新增源文件加入所属层的 CMakeLists.txt**：`src/domain/`、`src/application/`、`src/adapters/`、`src/ui/`、`src/app/` 各有独立 `CMakeLists.txt`。**QML 文件要加进 `qt_add_qml_module` 的 `QML_FILES`**，否则不会进资源。改 CMake 后需重新运行 cmake 配置以刷新 `compile_commands.json`。
+- **新增源文件加入所属层的 CMakeLists.txt**：`src/domain/`、`src/application/`、`src/adapters/`、`src/ui/`、`src/ui/classic/`、`src/ui/neumorphic/`、`src/app/` 各有独立 `CMakeLists.txt`。**QML 文件要加进 `qt_add_qml_module` 的 `QML_FILES`**，否则不会进资源。改 CMake 后需重新运行 cmake 配置以刷新 `compile_commands.json`。
 - **静态库的 Qt 依赖必须 PUBLIC**：`lotto_core`/`lotto_application`/`lotto_adapters`/`lotto_ui`/`lotto_ui_classic`/`lotto_ui_neumorphic`/`lotto_main` 用 `target_link_libraries(... PUBLIC Qt::...)`，PRIVATE 不会向下游传递 Qt 头文件路径，导致测试/可执行编译找不到 Qt 头。
 - **不要把具体风格链接进 `lotto_ui`**：核心库一旦依赖 `lotto_ui_classic` 或 `lotto_ui_neumorphic`，"可插拔"就失效了。`LottoUiIsolationTest` 只链接 `lotto_ui`，它的 `linkLibs.rsp` 里出现任何 `Quick`/`Qml` 都说明边界被破坏。
 - **具体风格类名只允许出现在 `src/app/maincatalog.cpp`**：核心库、宿主、窗口壳都不得 include `lottoclassicview.h` / `lottoneumorphicview.h`。新增风格时改目录，不改宿主。
 - **初始 ViewModel 由 Main 注入**：`LottoViewShell` / `MainWindow` 的构造需要 `const LottoViewState &initialState`（`LottoPresenter::initialState()`）。视图构造期不自我渲染，首帧与切换首帧都由注入的种子保证。
 - **视图用 `clicked` 而非 `toggled` 转发按钮动作**：程序化 `setChecked`（渲染时）会触发 `toggled`，若接 `toggled` 会导致保存回路。按钮 checked 状态完全由 `renderState()` 驱动。
 - **`.ui` 文件仅做骨架**：`mainwindow.ui` 只定义 central widget、menu bar、status bar；所有实际 UI 由 `LottoView` 实现提供，不要用 Qt Designer 添加业务控件。
-- **展示逻辑放 `LottoPresenter`，视图只调 `renderState()`**：号码格式化、占位符、按钮文字/互斥状态、时间拆分统一由 `LottoPresenter::buildViewState()` 推导；视图只做机械写入。UI 展示字符串以 `LottoPresenter::*` 常量为唯一来源，视图与测试不得重复魔法字符串，且**不得含 emoji**。
+- **展示逻辑放 `LottoPresenter`，视图只调 `renderState()`**：号码格式化、占位符、按钮文字/互斥状态、时间拆分统一由 `LottoPresenter::buildViewState()` 推导；视图只做机械写入。展示文案与结构常量以 `LottoViewText::*` / `LottoViewShape::*`（[lottoviewstate.h](src/adapters/lottoviewstate.h)）为唯一来源，视图与测试不得重复魔法字符串，且**不得含 emoji**。
 - **视图不感知领域实体**：`LottoView` 实现只依赖 `LottoViewState`（+ `LottoStyleHost`），不得直接包含/引用 `LottoTicket`、`LottoInteractor`、`LottoController`。**端口头 `lottoview.h` 只包含 `lottoviewstate.h`**——加一个 `#include "lottopresenter.h"` 就会把领域实体带进所有视图的编译作用域。
 - **切换视图必须排队执行**：`LottoViewShell::requestSwitchTo()` 用 `QMetaObject::invokeMethod(..., Qt::QueuedConnection)` 延后到事件循环，否则会在视图自身的事件处理中隐藏/销毁自己。切换时先 `finishTransition()` 结束上一个过渡，避免覆盖层叠加。
 - **QML 属性不得覆盖基类成员**：例如 `Item` 已有 `enabled`，自定义按钮若声明同名属性会触发 `qmlcache` 警告并改变语义——本项目用 `interactive` 代替。
