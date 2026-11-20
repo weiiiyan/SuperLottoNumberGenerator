@@ -94,9 +94,7 @@ if(NOT ANDROID)
 
     # ── UI 层: 端口与偏好存储单元测试 ──
     add_lotto_test(LottoUiTest tst_lottoui.cpp)
-    # QSettingsStyleStore 已迁入 lotto_main; 其往返测试暂时随本目标链接
-    target_link_libraries(LottoUiTest PRIVATE lotto_ui lotto_main)
-    target_include_directories(LottoUiTest PRIVATE ${CMAKE_SOURCE_DIR}/src/app)
+    target_link_libraries(LottoUiTest PRIVATE lotto_ui)
     register_lotto_test(LottoUiTest LottoUiTest -platform offscreen)
     message(STATUS "测试目标 LottoUiTest 已创建")
 
@@ -105,6 +103,18 @@ if(NOT ANDROID)
     target_link_libraries(LottoUiIsolationTest PRIVATE lotto_ui)
     register_lotto_test(LottoUiIsolationTest LottoUiIsolationTest -platform offscreen)
     message(STATUS "测试目标 LottoUiIsolationTest 已创建")
+
+    # ── Main 组件: 具体风格目录(唯一允许出现具体风格类名的地方)──
+    add_lotto_test(LottoMainCatalogTest tst_maincatalog.cpp)
+    target_link_libraries(LottoMainCatalogTest PRIVATE lotto_main)
+    register_lotto_test(LottoMainCatalogTest LottoMainCatalogTest -platform offscreen)
+    message(STATUS "测试目标 LottoMainCatalogTest 已创建")
+
+    # ── Main 组件: 风格偏好存储 ──
+    add_lotto_test(QSettingsStyleStoreTest tst_qsettingsstylestore.cpp)
+    target_link_libraries(QSettingsStyleStoreTest PRIVATE lotto_main)
+    register_lotto_test(QSettingsStyleStoreTest QSettingsStyleStoreTest -platform offscreen)
+    message(STATUS "测试目标 QSettingsStyleStoreTest 已创建")
 
     # ── UI 层: 经典视图单元测试 ──
     add_lotto_test(LottoClassicViewTest tst_lottoclassicview.cpp)

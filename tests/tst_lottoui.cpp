@@ -1,11 +1,8 @@
 // UI 层端口与偏好存储单元测试
-// 覆盖: 视图基类默认行为、QSettings 风格偏好往返
+// 覆盖: 视图基类默认行为(偏好存储测试见 QSettingsStyleStoreTest)
 
-#include <QSettings>
-#include <QTemporaryDir>
 #include <QTest>
 
-#include "qsettingsstylestore.h"
 #include "uitesthelpers.h"
 
 class TestLottoUi : public QObject
@@ -23,17 +20,6 @@ private slots:
         view.snapshot();   // 不崩溃即可
     }
 
-    void styleStore_shouldRoundTrip()
-    {
-        qDebug() << "验证风格偏好经 QSettings 往返";
-        QTemporaryDir dir;
-        QVERIFY(dir.isValid());
-        QSettings settings(dir.filePath("s.ini"), QSettings::IniFormat);
-        QSettingsStyleStore store(&settings);
-        QCOMPARE(store.loadStyleId(), QString());
-        store.saveStyleId(QStringLiteral("neumorphic"));
-        QCOMPARE(store.loadStyleId(), QStringLiteral("neumorphic"));
-    }
 };
 
 QTEST_MAIN(TestLottoUi)
