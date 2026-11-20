@@ -1,17 +1,18 @@
-# 视图层: lotto_app 静态库(谦卑视图)与可执行目标
-# 输入/输出侧适配器(LottoController/LottoPresenter)位于 src/adapters/lotto_adapters,
-# 视图依赖其接口, 不再直接感知用例层实体
-# 拆分为库+薄 exe: 测试可链接库而非手工编译视图源码
+# Main 组件(圆外): 配置细节 + 具体风格目录 + 可执行目标
+# 运行期没有任何组件依赖 lotto_main —— 只有可执行目标与 Main 级测试链接它,
+# 因此它不是一层, 而是 ch26 所说的"最脏的一层"
 
-add_library(lotto_app STATIC
-    mainwindow.h mainwindow.cpp
-    mainwindow.ui
-    resources.qrc
+add_library(lotto_main STATIC
+    maincatalog.h maincatalog.cpp
 )
 
-target_include_directories(lotto_app PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(lotto_app PUBLIC lotto_adapters lotto_core
+target_include_directories(lotto_main PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(lotto_main PUBLIC
+    lotto_ui lotto_ui_classic lotto_adapters lotto_core
     Qt${QT_VERSION_MAJOR}::Widgets)
+if(QT_VERSION_MAJOR GREATER_EQUAL 6)
+    target_link_libraries(lotto_main PUBLIC lotto_ui_neumorphic)
+endif()
 
 # ── 可执行目标(Qt6 / Qt5 双路径, Android manifest 只在 exe)──
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -32,7 +33,7 @@ else()
 endif()
 
 target_link_libraries(SuperLottoNumberGenerator PRIVATE
-    lotto_app lotto_adapters lotto_application lotto_core)
+    lotto_main lotto_adapters lotto_application lotto_core)
 
 # 可执行输出到构建根目录(子目录默认会把 exe 放到 src/app/, 改变 QSettings INI 落地位置)
 set_target_properties(SuperLottoNumberGenerator PROPERTIES

@@ -4,7 +4,7 @@
 # 注意事项：
 #   - 测试仅在桌面平台构建（MinGW/MSVC/Linux/macOS），Android 跳过
 #   - 测试目标链接各层库（lotto_core / lotto_application / lotto_adapters /
-#     lotto_app），
+#     lotto_ui / lotto_ui_classic / lotto_ui_neumorphic / lotto_main），
 #     不再手工编译被测源码
 #   - 使用 CTest 集成，可通过 ctest 或 cmake --build . --target test 运行
 
@@ -87,10 +87,69 @@ if(NOT ANDROID)
     find_package(Qt${TEST_QT_MAJOR} REQUIRED COMPONENTS Widgets)
     add_lotto_test(MainWindowTest tst_mainwindow.cpp)
     target_link_libraries(MainWindowTest PRIVATE
-        lotto_app lotto_adapters lotto_application lotto_core
+        lotto_main lotto_ui lotto_adapters lotto_application lotto_core
         Qt${TEST_QT_MAJOR}::Widgets)
     register_lotto_test(MainWindowTest MainWindowTest -platform offscreen)
     message(STATUS "测试目标 MainWindowTest 已创建")
+
+    # ── UI 层: 端口与偏好存储单元测试 ──
+    add_lotto_test(LottoUiTest tst_lottoui.cpp)
+    target_link_libraries(LottoUiTest PRIVATE lotto_ui)
+    register_lotto_test(LottoUiTest LottoUiTest -platform offscreen)
+    message(STATUS "测试目标 LottoUiTest 已创建")
+
+    # ── UI 层: 核心库链接隔离(不链接任何风格)──
+    add_lotto_test(LottoUiIsolationTest tst_uiisolation.cpp)
+    target_link_libraries(LottoUiIsolationTest PRIVATE lotto_ui)
+    register_lotto_test(LottoUiIsolationTest LottoUiIsolationTest -platform offscreen)
+    message(STATUS "测试目标 LottoUiIsolationTest 已创建")
+
+    # ── Main 组件: 具体风格目录(唯一允许出现具体风格类名的地方)──
+    add_lotto_test(LottoMainCatalogTest tst_maincatalog.cpp)
+    target_link_libraries(LottoMainCatalogTest PRIVATE lotto_main)
+    register_lotto_test(LottoMainCatalogTest LottoMainCatalogTest -platform offscreen)
+    message(STATUS "测试目标 LottoMainCatalogTest 已创建")
+
+    # ── Main 组件: 风格偏好存储 ──
+    add_lotto_test(QSettingsStyleStoreTest tst_qsettingsstylestore.cpp)
+    target_link_libraries(QSettingsStyleStoreTest PRIVATE
+        lotto_adapters lotto_application lotto_core)
+    # 纯 Qt::Core 测试(仅链 adapters), 不需要 platform 参数
+    register_lotto_test(QSettingsStyleStoreTest QSettingsStyleStoreTest)
+    message(STATUS "测试目标 QSettingsStyleStoreTest 已创建")
+
+    # ── UI 层: 经典视图单元测试 ──
+    add_lotto_test(LottoClassicViewTest tst_lottoclassicview.cpp)
+    target_link_libraries(LottoClassicViewTest PRIVATE lotto_ui_classic)
+    register_lotto_test(LottoClassicViewTest LottoClassicViewTest -platform offscreen)
+    message(STATUS "测试目标 LottoClassicViewTest 已创建")
+
+    # ── UI 层: 视图宿主单元测试(假目录, 无 QML 依赖)──
+    add_lotto_test(LottoViewShellTest tst_lottoviewshell.cpp)
+    target_link_libraries(LottoViewShellTest PRIVATE
+        lotto_ui lotto_adapters lotto_application lotto_core)
+    register_lotto_test(LottoViewShellTest LottoViewShellTest -platform offscreen)
+    message(STATUS "测试目标 LottoViewShellTest 已创建")
+
+    # ── UI 层: 新拟物视图测试(Qt6 专属, 平台 Quick 不可用时跳过)──
+    if(TEST_QT_MAJOR GREATER_EQUAL 6)
+        find_package(Qt${TEST_QT_MAJOR} REQUIRED COMPONENTS QuickWidgets)
+        add_lotto_test(LottoNeumorphicViewTest tst_lottoneumorphicview.cpp)
+        target_link_libraries(LottoNeumorphicViewTest PRIVATE lotto_ui_neumorphic
+            Qt${TEST_QT_MAJOR}::QuickWidgets)
+        register_lotto_test(LottoNeumorphicViewTest LottoNeumorphicViewTest -platform offscreen)
+        message(STATUS "测试目标 LottoNeumorphicViewTest 已创建")
+    endif()
+
+    # ── UI 层: 静态库 QML 模块冒烟(Qt6 专属)──
+    if(TEST_QT_MAJOR GREATER_EQUAL 6)
+        find_package(Qt${TEST_QT_MAJOR} REQUIRED COMPONENTS QuickWidgets)
+        add_lotto_test(LottoQmlSmokeTest tst_lottoqmlsmoke.cpp)
+        target_link_libraries(LottoQmlSmokeTest PRIVATE lotto_ui_neumorphic
+            Qt${TEST_QT_MAJOR}::QuickWidgets)
+        register_lotto_test(LottoQmlSmokeTest LottoQmlSmokeTest -platform offscreen)
+        message(STATUS "测试目标 LottoQmlSmokeTest 已创建")
+    endif()
 else()
     message(STATUS "跳过测试目标：当前为 Android 构建（测试仅支持桌面平台）")
 endif()

@@ -4,14 +4,24 @@
    避免代码中重复编写样式，降低主题迭代成本。
    ============================================================ */
 
-/* ---- 生成时间标签 ---- */
+/* ---- 生成时间标签(标题 + 值两个控件)---- */
 QLabel#timeLabel {
     font-size: 16px;
     color: #C1121F;
     background: rgba(230, 57, 70, 0.10);
     border: 1px solid rgba(230, 57, 70, 0.35);
-    border-radius: 12px;
-    padding: 4px 20px;
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+    padding: 4px 0px 4px 20px;
+}
+QLabel#timeValueLabel {
+    font-size: 16px;
+    color: #C1121F;
+    background: rgba(230, 57, 70, 0.10);
+    border: 1px solid rgba(230, 57, 70, 0.35);
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+    padding: 4px 20px 4px 0px;
 }
 
 /* ---- 前区号码标签（红球 1–35）
@@ -88,4 +98,17 @@ QPushButton#btnLock:checked {
 QPushButton#btnLock:disabled {
     background: #CCCCCC;
     color: #666666;
+}
+
+/* ---- 风格切换按钮(角落)---- */
+QToolButton#btnStyleSwitch {
+    font-size: 13px;
+    padding: 4px 10px;
+    border: 1px solid rgba(120, 120, 120, 0.35);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.75);
+    color: #444444;
+}
+QToolButton#btnStyleSwitch:hover {
+    background: #FFFFFF;
 }

@@ -1,7 +1,7 @@
 # 可切换 UI 组件 + 新拟物风格视图 设计文档
 
 日期: 2026-11-20
-状态: 待批准
+状态: 已实施(2026-11-20)
 范围: 新增可替换 UI 组件层; 经典视图与新增"新拟物"视图运行时可切换;
 过渡动画; 风格偏好持久化
 
@@ -104,7 +104,7 @@ src/ui/
   lottostylestore.h                风格偏好端口
   qsettingsstylestore.h/.cpp       偏好端口实现
   classic/lottoclassicview.h/.cpp 经典视图(自 MainWindow 抽取)
-  classic/style.qss, classic/resources.qrc, classic/icons/*
+  classic/style.qss, classic/resources.qrc
   neumorphic/lottoneumorphicview.h/.cpp QQuickWidget 子类
   LottoUi/*.qml                     QML 模块场景(URI LottoUi, 目录与
                                     target path 一致)

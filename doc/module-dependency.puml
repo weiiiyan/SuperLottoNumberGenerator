@@ -1,7 +1,7 @@
 @startuml module-dependency
 !theme plain
 ' 代码模块及其依赖图: 按整洁架构分层, 依赖只指向内层
-' (app → adapters → application → domain)
+' (ui → adapters → application → domain; 具体风格与 Main 在外侧)
 ' 渲染: 可用 VS Code PlantUML 插件, 或上传 kroki.io / plantuml.com 在线渲染
 
 title SuperLottoNumberGenerator 模块依赖图（整洁架构分层）
@@ -16,7 +16,9 @@ skinparam dpi 150
 legend top right
   ==图例==
   <size:10><i>虚线箭头 = 依赖 / 实现 / 调用方向</i></size>
-  <size:10><i>依赖只指向内层: app → adapters → application → domain</i></size>
+  <size:10><i>依赖只指向内层: ui → adapters → application → domain</i></size>
+  <size:10><i>风格组件独立链接: 核心库不依赖任何风格</i></size>
+  <size:10><i>lotto_main 只被可执行目标与 Main 级测试链接</i></size>
   <size:10><i>存储/用例间数据载体: LottoTicket (值类型)</i></size>
   <size:10><i>展示侧数据载体: LottoViewState (视图只感知它)</i></size>
 endlegend
@@ -55,13 +57,42 @@ package "接口适配器层 src/adapters/ — lotto_adapters" as adapters #E0F0E
   Presenter ..> LottoTicket : buildViewState(ticket) 推导
 }
 
-package "视图层 src/app/ — lotto_app" as app #E0E8F8 {
-  component [MainWindow\n«谦卑视图: 纯渲染»] as MainWindow
-  component [style.qss\n«Qt 资源 :/style.qss»] as Style
+package "框架与驱动 src/ui/ — lotto_ui(UI 核心)" as ui #E0E8F8 {
+  component [LottoView\n«视图端口: 只消费 LottoViewState»] as View
+  component [LottoStyleHost\n«风格端口: 视图自行调切换»] as StyleHost
+  component [LottoViewShell\n«宿主: 栈/重放/过渡/失败回退»] as Shell
+  component [MainWindow\n«窗口壳: setupUi + 挂宿主»] as MainWindow
 
-  MainWindow --> Controller : 按钮 clicked 转发动作
-  MainWindow ..> Presenter : 消费 viewStateChanged(LottoViewState)
-  MainWindow ..> Style : 加载 QSS
+  View ..> StyleHost : 枚举风格/请求切换
+  Shell ..|> StyleHost : implements
+  Shell --> View : 创建/渲染/切换
+  Shell --> Controller : 转发生成/锁定请求
+  Shell ..> Presenter : 订阅 viewStateChanged(LottoViewState)
+  MainWindow --> Shell : setCentralWidget
+}
+
+package "经典风格 src/ui/classic/ — lotto_ui_classic" as classic #E8F0E8 {
+  component [LottoClassicView\n«Widgets + QSS»] as ClassicView
+  component [style.qss / resources.qrc] as Style
+
+  ClassicView ..|> View : implements
+  ClassicView ..> Style : 自带 Q_INIT_RESOURCE
+}
+
+package "新拟物风格 src/ui/neumorphic/ — lotto_ui_neumorphic(Qt6)" as neo #EEE8F0 {
+  component [LottoNeumorphicView\n«QQuickWidget 组合»] as NeoView
+  component [LottoUi/*.qml\n«QML 模块 :/qt/qml/LottoUi»] as Qml
+
+  NeoView ..|> View : implements
+  NeoView ..> Qml : loadFromModule
+}
+
+package "Main 组件 src/app/ — lotto_main(圆外)" as mainlib #F8E8E8 {
+  component [buildStyleCatalog()\n«具体风格目录: 唯一出现类名处»] as Catalog
+  component [QSettingsStyleStore\n«键 ui/styleId»] as StyleStore
+
+  Catalog ..> ClassicView : new
+  Catalog ..> NeoView : new (Qt6)
 }
 
 package "组合根 src/app/main.cpp\n— SuperLottoNumberGenerator 可执行目标" as exe #F8E8E8 {
@@ -73,6 +104,9 @@ package "组合根 src/app/main.cpp\n— SuperLottoNumberGenerator 可执行目�
   Main ..> Presenter : new 实现输出端口
   Main ..> Controller : new(&interactor) 依赖输入边界
   Main ..> QSettings : new(路径, IniFormat)
+  Main ..> Catalog : buildStyleCatalog()
+  Main ..> StyleStore : new(&settings)
+  Main ..> MainWindow : new(..., catalog, seed)
 }
 
 package "测试 tests/" as tests #F0F0F0 {
@@ -81,6 +115,11 @@ package "测试 tests/" as tests #F0F0F0 {
   component [QSettingsRepositoryTest\n(QTemporaryDir 隔离)] as T3
   component [LottoControllerTest\n(事件→用例翻译, 无 GUI 依赖)] as T6
   component [LottoPresenterTest\n(展示推导 + 订阅桥接, 无 GUI 依赖)] as T4
+  component [LottoUiTest / LottoViewShellTest\n(核心端口与宿主, 假目录)] as T7
+  component [LottoUiIsolationTest\n(只链 lotto_ui: 不拖入 Quick)] as T8
+  component [LottoClassicViewTest] as T9
+  component [LottoNeumorphicViewTest\n/ LottoQmlSmokeTest (Qt6)] as T10
+  component [LottoMainCatalogTest\n/ QSettingsStyleStoreTest (Main)] as T11
   component [MainWindowTest\n(offscreen 集成)] as T5
 
   T1 ..> LottoEngine
@@ -89,15 +128,24 @@ package "测试 tests/" as tests #F0F0F0 {
   T3 ..> QSettingsRepo
   T6 ..> Controller
   T4 ..> Presenter
+  T7 ..> Shell
+  T8 ..> View
+  T9 ..> ClassicView
+  T10 ..> NeoView
+  T11 ..> Catalog
   T5 ..> MainWindow
 }
 
 ' ── 层间依赖: 编译目标链接关系 ──
 application ..> domain : lotto_application → lotto_core (PUBLIC)
 adapters ..> application : lotto_adapters → lotto_application (PUBLIC)
-app ..> adapters : lotto_app → lotto_adapters (PUBLIC)
-app ..> domain : lotto_app → lotto_core (PUBLIC)
-exe ..> app : exe → lotto_app
+ui ..> adapters : lotto_ui → lotto_adapters (PUBLIC)
+classic ..> ui : lotto_ui_classic → lotto_ui
+neo ..> ui : lotto_ui_neumorphic → lotto_ui (Qt6 only)
+mainlib ..> ui : lotto_main → lotto_ui
+mainlib ..> classic : lotto_main → lotto_ui_classic
+mainlib ..> neo : lotto_main → lotto_ui_neumorphic (Qt6 only)
+exe ..> mainlib : exe → lotto_main
 exe ..> adapters : exe → lotto_adapters
 exe ..> application : exe → lotto_application
 exe ..> domain : exe → lotto_core

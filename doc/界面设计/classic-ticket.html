@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>经典主题 · 票券 — 超级大乐透</title>
+<style>
+/* ============================================================
+   共用骨架（与 neumorphic.html 保持逐像素一致）
+   ============================================================ */
+:root{
+  --app-w: 390px;
+  --app-h: 844px;
+  --pad-x: 22px;
+  --pad-top: 40px;
+  --pad-bottom: 34px;
+  --ball: 38px;
+  --ball-gap: 5px;
+  --row-idx: 18px;
+
+  --font-body: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", "Source Han Sans SC", system-ui, sans-serif;
+  --font-num: "Bahnschrift", "DIN Alternate", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+  /* 经典 · 票券 */
+  --stage: #E4DED1;
+  --notch: #E4DED1;
+  --paper: #F7F2E6;
+  --paper-2: #EFE7D6;
+  --ink: #1C1B19;
+  --ink-soft: #6A655B;
+  --rule: #D6CCB6;
+  --front: #C1121F;
+  --front-deep: #8C0C16;
+  --back: #0B6FA4;
+  --back-deep: #064E75;
+}
+*{ box-sizing: border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background:
+    radial-gradient(120% 70% at 50% 0%, #EFEADF 0%, var(--stage) 58%, #DCD5C6 100%);
+  display:grid;
+  place-items:center;
+  padding:28px 20px 36px;
+  -webkit-font-smoothing: antialiased;
+}
+.stage{ display:grid; gap:14px; justify-items:center; }
+.stage-nav{
+  width: var(--app-w);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  font-size:12px;
+  color:#5C574D;
+  letter-spacing:.02em;
+}
+.stage-nav .set{ display:flex; align-items:center; gap:14px; }
+.stage-nav a{ color:#5C574D; text-decoration:none; border-bottom:1px solid transparent; padding-bottom:2px; }
+.stage-nav a:hover{ border-color:currentColor; }
+.stage-nav a[aria-current="page"]{ color:#1C1B19; font-weight:600; border-color:#1C1B19; }
+
+/* ---------- 应用外框 ---------- */
+.app{
+  position:relative;
+  width: var(--app-w);
+  height: var(--app-h);
+  display:flex;
+  flex-direction:column;
+  padding: var(--pad-top) var(--pad-x) var(--pad-bottom);
+  overflow:hidden;
+  border-radius:36px;
+  background:
+    repeating-linear-gradient(0deg, rgba(120,100,60,.030) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #FBF7EC 0%, var(--paper) 42%, #F2EBDA 100%);
+  box-shadow:
+    0 0 0 1px rgba(28,27,25,.08),
+    0 30px 60px -20px rgba(60,50,30,.45),
+    0 60px 120px -60px rgba(60,50,30,.5);
+}
+.app::after{
+  content:"";
+  position:absolute; inset:0;
+  pointer-events:none;
+  background: radial-gradient(100% 40% at 50% 0%, rgba(255,255,255,.55), transparent 70%);
+  mix-blend-mode: soft-light;
+}
+
+/* ---------- 顶栏 ---------- */
+.top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  padding-bottom:18px;
+  border-bottom:2px solid var(--ink);
+  position:relative;
+}
+.brand{ display:flex; gap:10px; align-items:flex-start; }
+.brand-mark{
+  width:11px; height:11px; margin-top:6px; border-radius:50%;
+  background: var(--front);
+  box-shadow: inset 0 0 0 3px rgba(255,255,255,.32), 0 1px 2px rgba(140,12,22,.4);
+  flex:0 0 auto;
+}
+.brand-name{
+  margin:0;
+  font-size:18px;
+  font-weight:700;
+  letter-spacing:.03em;
+  line-height:1.2;
+}
+.brand-meta{
+  margin:5px 0 0;
+  font-family: var(--font-num);
+  font-size:10.5px;
+  letter-spacing:.14em;
+  color: var(--ink-soft);
+  text-transform:uppercase;
+}
+.style-btn{
+  appearance:none;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  height:32px;
+  padding:0 10px 0 8px;
+  border:1.5px solid rgba(28,27,25,.55);
+  border-radius:8px;
+  background: rgba(255,255,255,.45);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size:11.5px;
+  letter-spacing:.06em;
+  cursor:pointer;
+  flex:0 0 auto;
+}
+.style-btn:hover{ background:#fff; }
+.style-btn:focus-visible{ outline:2px solid var(--front); outline-offset:2px; }
+.style-btn svg{ display:block; }
+
+/* ---------- 时间条 ---------- */
+.meta{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+  padding:20px 0 18px;
+  border-bottom:1px dashed var(--rule);
+}
+.meta-label{
+  font-size:10.5px;
+  letter-spacing:.16em;
+  color: var(--ink-soft);
+  white-space:nowrap;
+}
+.meta-value{
+  font-family: var(--font-num);
+  font-size:12.5px;
+  letter-spacing:.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  white-space:nowrap;
+}
+
+/* ---------- 号码区 ---------- */
+.rows{
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:12px;
+}
+.row{
+  flex:0 0 auto;
+  height:84px;
+  display:grid;
+  grid-template-columns: var(--row-idx) 1fr;
+  align-items:center;
+  gap:8px;
+  border-bottom:1px dashed var(--rule);
+}
+.row:last-child{ border-bottom:none; }
+.idx{
+  font-family: var(--font-num);
+  font-size:10px;
+  letter-spacing:.1em;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.line{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: var(--ball-gap);
+  min-width:0;
+}
+.balls{ display:flex; align-items:center; gap: var(--ball-gap); }
+.sep{
+  width:12px;
+  text-align:center;
+  font-family: var(--font-num);
+  font-size:13px;
+  color:#B0A692;
+  transform: translateY(-1px);
+}
+.ball{
+  width: var(--ball);
+  height: var(--ball);
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  font-family: var(--font-num);
+  font-size:16px;
+  font-weight:700;
+  letter-spacing:.01em;
+  font-variant-numeric: tabular-nums;
+  color:#FFF8F4;
+  flex:0 0 auto;
+  animation: pop .34s cubic-bezier(.2,.85,.3,1.25) both;
+  animation-delay: calc(var(--i, 0) * 16ms);
+}
+.front .ball{
+  background:
+    radial-gradient(125% 125% at 34% 22%, #E8434F 0%, var(--front) 52%, var(--front-deep) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.26),
+    inset 0 -7px 11px rgba(70,0,6,.28),
+    0 2px 3px rgba(28,27,25,.18);
+}
+.back .ball{
+  background:
+    radial-gradient(125% 125% at 34% 22%, #2E96CC 0%, var(--back) 52%, var(--back-deep) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.26),
+    inset 0 -7px 11px rgba(0,20,35,.28),
+    0 2px 3px rgba(28,27,25,.18);
+}
+@keyframes pop{
+  from{ transform: scale(.72); opacity:0; }
+  to{ transform: scale(1); opacity:1; }
+}
+
+/* ---------- 票根：骑缝线 + 票号 ---------- */
+.perf{
+  position:relative;
+  height:0;
+  margin:0 calc(var(--pad-x) * -1);
+  border-top:2px dashed #DCD1B9;
+}
+.perf::before,
+.perf::after{
+  content:"";
+  position:absolute;
+  top:-9px;
+  width:17px; height:17px;
+  border-radius:50%;
+  background: var(--notch);
+  box-shadow: inset 0 1px 2px rgba(60,50,30,.25);
+}
+.perf::before{ left:-8.5px; }
+.perf::after{ right:-8.5px; }
+
+.foot{
+  position:relative;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+  padding:20px 0 14px;
+}
+.serial{
+  font-family: var(--font-mono);
+  font-size:10.5px;
+  letter-spacing:.06em;
+  color: var(--ink-soft);
+  white-space:nowrap;
+}
+.foot-right{
+  position:relative;
+  display:flex;
+  align-items:flex-end;
+  gap:10px;
+  min-height:22px;
+}
+.barcode{
+  width:78px; height:17px;
+  opacity:.5;
+  background: repeating-linear-gradient(90deg,
+    var(--ink) 0 1px, transparent 1px 3px,
+    var(--ink) 3px 5px, transparent 5px 7px,
+    var(--ink) 7px 8px, transparent 8px 12px);
+}
+.hint{
+  position:absolute;
+  right:0; bottom:2px;
+  font-size:10px;
+  letter-spacing:.06em;
+  color: var(--ink-soft);
+  white-space:nowrap;
+  transition: opacity .18s ease;
+}
+.stamp{
+  position:absolute;
+  right:-2px; bottom:-4px;
+  padding:3px 9px;
+  border:2px solid rgba(193,18,31,.5);
+  border-radius:5px;
+  color: rgba(193,18,31,.78);
+  font-size:11.5px;
+  font-weight:700;
+  letter-spacing:.2em;
+  text-indent:.2em;
+  transform: rotate(-7deg);
+  opacity:0;
+  transition: opacity .2s ease, transform .2s ease;
+  background: rgba(247,242,230,.5);
+}
+.stamp::after{
+  content:"";
+  position:absolute; inset:-4px;
+  border:1px solid rgba(193,18,31,.28);
+  border-radius:7px;
+}
+.app.locked .hint{ opacity:0; }
+.app.locked .stamp{ opacity:1; transform: rotate(-7deg) scale(1); }
+
+/* ---------- 操作区 ---------- */
+.actions{
+  display:grid;
+  grid-template-columns: 1fr 1.32fr;
+  gap:10px;
+  padding-top:20px;
+  border-top:1px solid rgba(28,27,25,.12);
+}
+.btn{
+  appearance:none;
+  height:52px;
+  border-radius:10px;
+  font-family: var(--font-body);
+  font-size:15px;
+  font-weight:600;
+  letter-spacing:.06em;
+  cursor:pointer;
+  transition: transform .12s ease, box-shadow .12s ease, background .15s ease, color .15s ease;
+}
+.btn:focus-visible{ outline:2px solid var(--back); outline-offset:3px; }
+.btn-lock{
+  border:1.5px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+}
+.btn-lock:hover{ background: rgba(28,27,25,.06); }
+.btn-lock[aria-pressed="true"]{
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.btn-gen{
+  position:relative;
+  border:none;
+  color:#FFF6F2;
+  background: linear-gradient(180deg, #D01A27 0%, var(--front) 55%, #A80F1A 100%);
+  box-shadow: 0 3px 0 var(--front-deep), 0 10px 20px -8px rgba(193,18,31,.65);
+}
+.btn-gen:hover{ filter: brightness(1.04); }
+.btn-gen:active{ transform: translateY(2px); box-shadow: 0 1px 0 var(--front-deep); }
+.btn-gen:disabled{
+  background:#D8D2C4;
+  color:#8A8478;
+  box-shadow:none;
+  cursor:not-allowed;
+}
+.btn-gen .sm{
+  font-family: var(--font-num);
+  font-size:11px;
+  letter-spacing:.1em;
+  opacity:.7;
+  margin-left:8px;
+}
+
+/* ---------- 风格切换面板 ---------- */
+.scrim{
+  position:absolute; inset:0;
+  background: rgba(28,27,25,.34);
+  opacity:0;
+  pointer-events:none;
+  transition: opacity .2s ease;
+  z-index:20;
+}
+.scrim.open{ opacity:1; pointer-events:auto; }
+.sheet{
+  position:absolute;
+  left:0; right:0; bottom:0;
+  z-index:21;
+  padding:18px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+  border-radius:20px 20px 0 0;
+  background: #FBF7EC;
+  box-shadow: 0 -18px 40px -20px rgba(40,30,15,.55);
+  transform: translateY(102%);
+  transition: transform .26s cubic-bezier(.2,.8,.25,1);
+}
+.sheet.open{ transform: translateY(0); }
+.sheet-title{
+  margin:0 0 12px;
+  font-size:11px;
+  letter-spacing:.16em;
+  color: var(--ink-soft);
+}
+.sheet-opt{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  width:100%;
+  padding:14px 14px;
+  margin-bottom:8px;
+  border:1.5px solid rgba(28,27,25,.14);
+  border-radius:10px;
+  background:#fff;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size:14.5px;
+  text-align:left;
+  text-decoration:none;
+  cursor:pointer;
+}
+.sheet-opt span{
+  font-size:11px;
+  letter-spacing:.08em;
+  color: var(--ink-soft);
+}
+.sheet-opt[aria-current="true"]{
+  border-color: var(--front);
+  box-shadow: inset 0 0 0 1px var(--front);
+}
+.sheet-opt[aria-current="true"] span{ color: var(--front); font-weight:600; }
+.sheet-opt:hover{ border-color: rgba(28,27,25,.4); }
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation:none !important; transition:none !important; }
+}
+@media (max-width: 440px){
+  body{ display:block; padding:0; background: var(--paper); }
+  .stage{ gap:0; }
+  .stage-nav{ display:none; }
+  .app{
+    width:100%;
+    height:100dvh;
+    border-radius:0;
+    box-shadow:none;
+    padding-top: calc(var(--pad-top) + env(safe-area-inset-top, 0px));
+  }
+}
+</style>
+</head>
+<body>
+<div class="stage">
+  <nav class="stage-nav" aria-label="设计文件">
+    <div class="set">
+      <a href="index.html">总览</a>
+      <a href="classic-ticket.html" aria-current="page">经典 · 票券</a>
+      <a href="neumorphic.html">新拟物</a>
+      <a href="design-spec.html">组件规范</a>
+    </div>
+    <span>390 × 844</span>
+  </nav>
+
+  <main class="app" id="app" data-od-id="app">
+    <header class="top" data-od-id="header">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div>
+          <h1 class="brand-name">超级大乐透</h1>
+          <p class="brand-meta" id="drawMeta">本期 · 5 注</p>
+        </div>
+      </div>
+      <button class="style-btn" id="styleBtn" type="button"
+              aria-haspopup="dialog" aria-expanded="false" data-od-id="style-switch">
+        <svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true">
+          <rect x="0.5" y="0.5" width="5" height="5" rx="1" fill="currentColor"/>
+          <rect x="7.5" y="0.5" width="5" height="5" rx="1" fill="currentColor" opacity=".45"/>
+          <rect x="0.5" y="7.5" width="5" height="5" rx="1" fill="currentColor" opacity=".45"/>
+          <rect x="7.5" y="7.5" width="5" height="5" rx="1" fill="currentColor" opacity=".8"/>
+        </svg>
+        经典
+      </button>
+    </header>
+
+    <section class="meta" data-od-id="time-strip">
+      <span class="meta-label">生成时间</span>
+      <time class="meta-value" id="timeValue">—</time>
+    </section>
+
+    <section class="rows" id="rows" aria-label="本期号码" data-od-id="number-rows"></section>
+
+    <div class="perf" aria-hidden="true"></div>
+
+    <footer class="foot" data-od-id="ticket-footer">
+      <span class="serial" id="serial">NO. 000000 0000</span>
+      <div class="foot-right">
+        <span class="barcode" aria-hidden="true"></span>
+        <span class="hint">前区 1–35 · 后区 1–12</span>
+        <span class="stamp" id="stamp" role="status">已锁定</span>
+      </div>
+    </footer>
+
+    <div class="actions" data-od-id="actions">
+      <button class="btn btn-lock" id="lockBtn" type="button" aria-pressed="false" data-od-id="lock-button">锁定号码</button>
+      <button class="btn btn-gen" id="genBtn" type="button" data-od-id="generate-button">
+        生成号码<span class="sm">RAND</span>
+      </button>
+    </div>
+
+    <div class="scrim" id="scrim"></div>
+    <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="切换界面风格">
+      <p class="sheet-title">界面风格</p>
+      <button class="sheet-opt" type="button" aria-current="true" data-od-id="style-option-classic">
+        经典 · 票券 <span>当前</span>
+      </button>
+      <a class="sheet-opt" href="neumorphic.html" data-od-id="style-option-neumorphic">
+        新拟物 <span>切换</span>
+      </a>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  const FRONT_COUNT = 5, BACK_COUNT = 2, GROUP_COUNT = 5;
+  const FRONT_MAX = 35, BACK_MAX = 12;
+  const pad = n => String(n).padStart(2, '0');
+  const $ = (sel, root = document) => root.querySelector(sel);
+
+  const app = $('#app');
+  const rowsHost = $('#rows');
+  const genBtn = $('#genBtn');
+  const lockBtn = $('#lockBtn');
+  let locked = false;
+
+  function sample(count, max) {
+    const picked = new Set();
+    while (picked.size < count) picked.add(1 + Math.floor(Math.random() * max));
+    return Array.from(picked).sort((a, b) => a - b);
+  }
+
+  function buildRow(index) {
+    const front = sample(FRONT_COUNT, FRONT_MAX).map(pad);
+    const back = sample(BACK_COUNT, BACK_MAX).map(pad);
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.dataset.odId = 'number-row-' + (index + 1);
+    row.innerHTML =
+      '<span class="idx">' + pad(index + 1) + '</span>' +
+      '<div class="line">' +
+        '<div class="balls front">' +
+          front.map((n, i) => '<span class="ball" style="--i:' + i + '">' + n + '</span>').join('') +
+        '</div>' +
+        '<span class="sep" aria-hidden="true">+</span>' +
+        '<div class="balls back">' +
+          back.map((n, i) => '<span class="ball" style="--i:' + (i + FRONT_COUNT) + '">' + n + '</span>').join('') +
+        '</div>' +
+      '</div>';
+    return row;
+  }
+
+  function renderNumbers() {
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < GROUP_COUNT; i++) frag.appendChild(buildRow(i));
+    rowsHost.replaceChildren(frag);
+  }
+
+  function stampTicket() {
+    const now = new Date();
+    $('#timeValue').textContent =
+      now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + ' ' +
+      pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+    $('#serial').textContent =
+      'NO. ' + String(now.getFullYear()).slice(2) + pad(now.getMonth() + 1) + pad(now.getDate()) +
+      ' ' + String(1000 + Math.floor(Math.random() * 9000));
+  }
+
+  function generate() {
+    if (locked) return;
+    renderNumbers();
+    stampTicket();
+  }
+
+  function setLocked(next) {
+    locked = next;
+    app.classList.toggle('locked', locked);
+    lockBtn.setAttribute('aria-pressed', String(locked));
+    lockBtn.textContent = locked ? '解锁生成' : '锁定号码';
+    genBtn.disabled = locked;
+    $('#drawMeta').textContent = locked ? '本期 · 5 注 · 已锁定' : '本期 · 5 注';
+  }
+
+  const scrim = $('#scrim'), sheet = $('#sheet'), styleBtn = $('#styleBtn');
+  function setSheet(open) {
+    sheet.classList.toggle('open', open);
+    scrim.classList.toggle('open', open);
+    styleBtn.setAttribute('aria-expanded', String(open));
+    if (open) sheet.querySelector('.sheet-opt').focus();
+  }
+
+  genBtn.addEventListener('click', generate);
+  lockBtn.addEventListener('click', () => setLocked(!locked));
+  styleBtn.addEventListener('click', () => setSheet(!sheet.classList.contains('open')));
+  scrim.addEventListener('click', () => setSheet(false));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setSheet(false); });
+
+  generate();
+  setLocked(false);
+})();
+</script>
+</body>
+</html>
