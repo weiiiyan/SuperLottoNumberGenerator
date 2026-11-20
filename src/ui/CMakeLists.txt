@@ -22,14 +22,27 @@ if(QT_VERSION_MAJOR GREATER_EQUAL 6)
     find_package(Qt6 REQUIRED COMPONENTS Qml QuickWidgets)
 
     # 经典视图的样式表资源前缀为 /classic/
-    # 静态库 QML 模块: 生成的 qrc/qmldir 需在链接期保留(见 lottoview.cpp 的注册调用)
+    # 单例需在加入模块前标记
+    set_source_files_properties(LottoUi/NeumoTheme.qml PROPERTIES
+        QT_QML_SINGLETON_TYPE TRUE)
+
+    # 静态库 QML 模块: qmldir/资源随 lotto_ui 一起链接
     qt_add_qml_module(lotto_ui
         URI LottoUi
         VERSION 1.0
         NO_PLUGIN
         RESOURCE_PREFIX /qt/qml/
         QML_FILES
+            LottoUi/NeumoTheme.qml
+            LottoUi/NeumoBall.qml
+            LottoUi/NeumoButton.qml
+            LottoUi/NeumoTicketRow.qml
+            LottoUi/NeumoValueRow.qml
             LottoUi/NeumorphicView.qml
+    )
+
+    target_sources(lotto_ui PRIVATE
+        neumorphic/lottoneumorphicview.h neumorphic/lottoneumorphicview.cpp
     )
 
     target_link_libraries(lotto_ui PUBLIC Qt6::Qml Qt6::QuickWidgets)

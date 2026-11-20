@@ -111,6 +111,16 @@ if(NOT ANDROID)
     register_lotto_test(LottoViewShellTest LottoViewShellTest -platform offscreen)
     message(STATUS "测试目标 LottoViewShellTest 已创建")
 
+    # ── UI 层: 新拟物视图测试(Qt6 专属, 平台 Quick 不可用时跳过)──
+    if(TEST_QT_MAJOR GREATER_EQUAL 6)
+        find_package(Qt${TEST_QT_MAJOR} REQUIRED COMPONENTS QuickWidgets)
+        add_lotto_test(LottoNeumorphicViewTest tst_lottoneumorphicview.cpp)
+        target_link_libraries(LottoNeumorphicViewTest PRIVATE lotto_ui
+            Qt${TEST_QT_MAJOR}::QuickWidgets)
+        register_lotto_test(LottoNeumorphicViewTest LottoNeumorphicViewTest -platform offscreen)
+        message(STATUS "测试目标 LottoNeumorphicViewTest 已创建")
+    endif()
+
     # ── UI 层: 静态库 QML 模块冒烟(Qt6 专属)──
     if(TEST_QT_MAJOR GREATER_EQUAL 6)
         find_package(Qt${TEST_QT_MAJOR} REQUIRED COMPONENTS QuickWidgets)
