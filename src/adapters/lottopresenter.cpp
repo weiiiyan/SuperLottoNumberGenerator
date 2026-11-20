@@ -2,6 +2,14 @@
 
 #include <QMetaType>
 
+// 视图结构常量与领域规则的编译期绑定: 两处定义不得漂移
+static_assert(LottoViewShape::GROUP_COUNT == LottoTicket::GROUP_COUNT,
+              "LottoViewShape::GROUP_COUNT 必须与 LottoTicket::GROUP_COUNT 一致");
+static_assert(LottoViewShape::FRONT_COUNT == LottoTicket::FRONT_COUNT,
+              "LottoViewShape::FRONT_COUNT 必须与 LottoTicket::FRONT_COUNT 一致");
+static_assert(LottoViewShape::BACK_COUNT == LottoTicket::BACK_COUNT,
+              "LottoViewShape::BACK_COUNT 必须与 LottoTicket::BACK_COUNT 一致");
+
 LottoPresenter::LottoPresenter(QObject *parent)
     : QObject(parent)
 {
@@ -24,31 +32,31 @@ LottoViewState LottoPresenter::buildViewState(const LottoTicket &ticket)
         QStringList row;
         for (int i = 0; i < LottoGroup::FRONT_COUNT; ++i) {
             row << (i < result.front.size() ? formatNumber(result.front.at(i))
-                                            : QString::fromUtf8(NUMBER_PLACEHOLDER));
+                                            : QString::fromUtf8(LottoViewText::NUMBER_PLACEHOLDER));
         }
         for (int i = 0; i < LottoGroup::BACK_COUNT; ++i) {
             row << (i < result.back.size() ? formatNumber(result.back.at(i))
-                                           : QString::fromUtf8(NUMBER_PLACEHOLDER));
+                                           : QString::fromUtf8(LottoViewText::NUMBER_PLACEHOLDER));
         }
         state.groups.append(row);
     }
 
     // 时间: 标题与值分开下发, 由视图决定排版(有效时间按固定格式, 无效显示占位)
     const QDateTime time = ticket.generateTime();
-    state.timeLabelText = QString::fromUtf8(TIME_LABEL);
+    state.timeLabelText = QString::fromUtf8(LottoViewText::TIME_LABEL);
     state.timeValueText = time.isValid()
-        ? time.toString(QString::fromUtf8(TIME_FORMAT))
-        : QString::fromUtf8(TIME_PLACEHOLDER);
+        ? time.toString(QString::fromUtf8(LottoViewText::TIME_FORMAT))
+        : QString::fromUtf8(LottoViewText::TIME_PLACEHOLDER);
 
     // 按钮互斥状态与文字: 含号码才可锁定, 锁定时禁用生成
-    state.lockButtonText = ticket.isLocked() ? QString::fromUtf8(LOCK_TEXT_LOCKED)
-                                             : QString::fromUtf8(LOCK_TEXT_UNLOCKED);
+    state.lockButtonText = ticket.isLocked() ? QString::fromUtf8(LottoViewText::LOCK_TEXT_LOCKED)
+                                             : QString::fromUtf8(LottoViewText::LOCK_TEXT_UNLOCKED);
     state.lockButtonEnabled = ticket.hasNumbers();
     state.lockButtonChecked = ticket.isLocked();
     state.generateEnabled   = !ticket.isLocked();
-    state.generateButtonText = QString::fromUtf8(GENERATE_TEXT);
-    state.numberPlaceholder  = QString::fromUtf8(NUMBER_PLACEHOLDER);
-    state.separatorText      = QString::fromUtf8(SEPARATOR_TEXT);
+    state.generateButtonText = QString::fromUtf8(LottoViewText::GENERATE_TEXT);
+    state.numberPlaceholder  = QString::fromUtf8(LottoViewText::NUMBER_PLACEHOLDER);
+    state.separatorText      = QString::fromUtf8(LottoViewText::SEPARATOR_TEXT);
 
     return state;
 }

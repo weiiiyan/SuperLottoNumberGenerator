@@ -51,9 +51,9 @@ private slots:
 
         QQuickItem *root = view.rootItem();
         QTRY_COMPARE(root->property("generateButtonText").toString(),
-                     QString::fromUtf8(LottoPresenter::GENERATE_TEXT));
+                     QString::fromUtf8(LottoViewText::GENERATE_TEXT));
         QCOMPARE(root->property("timeLabelText").toString(),
-                 QString::fromUtf8(LottoPresenter::TIME_LABEL));
+                 QString::fromUtf8(LottoViewText::TIME_LABEL));
         const QVariantList groups = root->property("groups").toList();
         QCOMPARE(groups.size(), LottoTicket::GROUP_COUNT);
         QCOMPARE(groups.at(0).toStringList().size(),

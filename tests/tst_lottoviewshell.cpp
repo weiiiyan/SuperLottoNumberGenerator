@@ -45,7 +45,7 @@ private slots:
         m_controller = new LottoController(m_input);
         m_presenter = new LottoPresenter;
         m_store = new FakeLottoStyleStore;
-        m_lastButtonText = QString::fromUtf8(LottoPresenter::GENERATE_TEXT);
+        m_lastButtonText = QString::fromUtf8(LottoViewText::GENERATE_TEXT);
         m_shell = new LottoViewShell(m_controller, m_presenter, m_store,
                                      makeCatalog(), 0);
         m_presenter->present(makeTicket());

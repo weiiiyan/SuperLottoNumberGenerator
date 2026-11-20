@@ -170,10 +170,10 @@ private slots:
     void allNumberLabelsAndSeparatorsShouldExist()
     {
         qDebug() << "验证所有号码标签和分隔符存在(5 组)";
-        for (int g = 0; g < LottoPresenter::GROUP_COUNT; g++) {
-            for (int i = 0; i < LottoPresenter::FRONT_COUNT; i++)
+        for (int g = 0; g < LottoViewShape::GROUP_COUNT; g++) {
+            for (int i = 0; i < LottoViewShape::FRONT_COUNT; i++)
                 QVERIFY(frontLabel(g, i) != nullptr);
-            for (int i = 0; i < LottoPresenter::BACK_COUNT; i++)
+            for (int i = 0; i < LottoViewShape::BACK_COUNT; i++)
                 QVERIFY(backLabel(g, i) != nullptr);
             QVERIFY(separatorLabel(g) != nullptr);
         }
@@ -204,8 +204,8 @@ private slots:
         QVERIFY(btnGenerate() != nullptr);
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
 
-        for (int g = 0; g < LottoPresenter::GROUP_COUNT; g++) {
-            for (int i = 0; i < LottoPresenter::FRONT_COUNT; i++) {
+        for (int g = 0; g < LottoViewShape::GROUP_COUNT; g++) {
+            for (int i = 0; i < LottoViewShape::FRONT_COUNT; i++) {
                 auto *label = frontLabel(g, i);
                 QVERIFY(label != nullptr);
                 bool ok;
@@ -216,7 +216,7 @@ private slots:
                          QString("前区号码 %1 超出范围").arg(num).toUtf8());
                 QCOMPARE(label->text().size(), 2);  // 零填充两位
             }
-            for (int i = 0; i < LottoPresenter::BACK_COUNT; i++) {
+            for (int i = 0; i < LottoViewShape::BACK_COUNT; i++) {
                 auto *label = backLabel(g, i);
                 QVERIFY(label != nullptr);
                 bool ok;
@@ -235,7 +235,7 @@ private slots:
         qDebug() << "验证分隔符显示 '+'";
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
 
-        for (int g = 0; g < LottoPresenter::GROUP_COUNT; g++) {
+        for (int g = 0; g < LottoViewShape::GROUP_COUNT; g++) {
             auto *sep = separatorLabel(g);
             QVERIFY(sep != nullptr);
             QCOMPARE(sep->text(), QString("+"));
@@ -251,8 +251,8 @@ private slots:
 
         QVERIFY(btnLock()->isEnabled());
         QVERIFY(!btnLock()->isChecked());
-        QCOMPARE(btnLock()->text(), QString::fromUtf8(LottoPresenter::LOCK_TEXT_UNLOCKED));
-        QCOMPARE(btnGenerate()->text(), QString::fromUtf8(LottoPresenter::GENERATE_TEXT));
+        QCOMPARE(btnLock()->text(), QString::fromUtf8(LottoViewText::LOCK_TEXT_UNLOCKED));
+        QCOMPARE(btnGenerate()->text(), QString::fromUtf8(LottoViewText::GENERATE_TEXT));
     }
 
     // ── 场景 4: 锁定 / 解锁流程 ──
@@ -266,13 +266,13 @@ private slots:
         // ── 锁定 ──
         QTest::mouseClick(btnLock(), Qt::LeftButton);
         QVERIFY(btnLock()->isChecked());
-        QCOMPARE(btnLock()->text(), QString::fromUtf8(LottoPresenter::LOCK_TEXT_LOCKED));
+        QCOMPARE(btnLock()->text(), QString::fromUtf8(LottoViewText::LOCK_TEXT_LOCKED));
         QVERIFY(!btnGenerate()->isEnabled());
 
         // ── 解锁 ──
         QTest::mouseClick(btnLock(), Qt::LeftButton);
         QVERIFY(!btnLock()->isChecked());
-        QCOMPARE(btnLock()->text(), QString::fromUtf8(LottoPresenter::LOCK_TEXT_UNLOCKED));
+        QCOMPARE(btnLock()->text(), QString::fromUtf8(LottoViewText::LOCK_TEXT_UNLOCKED));
         QVERIFY(btnGenerate()->isEnabled());
     }
 
@@ -283,9 +283,9 @@ private slots:
         qDebug() << "验证 UI 上前区号码按升序显示(5 组)";
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
 
-        for (int g = 0; g < LottoPresenter::GROUP_COUNT; g++) {
+        for (int g = 0; g < LottoViewShape::GROUP_COUNT; g++) {
             QVector<int> numbers;
-            for (int i = 0; i < LottoPresenter::FRONT_COUNT; i++)
+            for (int i = 0; i < LottoViewShape::FRONT_COUNT; i++)
                 numbers.append(frontLabel(g, i)->text().toInt());
             for (int i = 1; i < numbers.size(); i++) {
                 QVERIFY2(numbers[i] > numbers[i-1],
@@ -300,9 +300,9 @@ private slots:
         qDebug() << "验证 UI 上后区号码按升序显示(5 组)";
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
 
-        for (int g = 0; g < LottoPresenter::GROUP_COUNT; g++) {
+        for (int g = 0; g < LottoViewShape::GROUP_COUNT; g++) {
             QVector<int> numbers;
-            for (int i = 0; i < LottoPresenter::BACK_COUNT; i++)
+            for (int i = 0; i < LottoViewShape::BACK_COUNT; i++)
                 numbers.append(backLabel(g, i)->text().toInt());
             for (int i = 1; i < numbers.size(); i++) {
                 QVERIFY2(numbers[i] > numbers[i-1],
@@ -319,7 +319,7 @@ private slots:
         qDebug() << "验证生成后时间标题与时间值分别更新";
         QTest::mouseClick(btnGenerate(), Qt::LeftButton);
 
-        QCOMPARE(timeLabel()->text(), QString::fromUtf8(LottoPresenter::TIME_LABEL));
+        QCOMPARE(timeLabel()->text(), QString::fromUtf8(LottoViewText::TIME_LABEL));
 
         const QString value = timeValueLabel()->text();
         QRegularExpression re(R"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})");
@@ -406,28 +406,28 @@ private slots:
         QTest::mouseClick(btnLock(), Qt::LeftButton);   // 锁定 → controller 保存
 
         QStringList expectedFront, expectedBack;
-        for (int g = 0; g < LottoPresenter::GROUP_COUNT; g++) {
-            for (int i = 0; i < LottoPresenter::FRONT_COUNT; i++)
+        for (int g = 0; g < LottoViewShape::GROUP_COUNT; g++) {
+            for (int i = 0; i < LottoViewShape::FRONT_COUNT; i++)
                 expectedFront << frontLabel(g, i)->text();
-            for (int i = 0; i < LottoPresenter::BACK_COUNT; i++)
+            for (int i = 0; i < LottoViewShape::BACK_COUNT; i++)
                 expectedBack << backLabel(g, i)->text();
         }
 
         makeWindow();
 
         QVERIFY2(btnLock()->isChecked(), "重建窗口后锁定按钮应为选中状态");
-        QCOMPARE(btnLock()->text(), QString::fromUtf8(LottoPresenter::LOCK_TEXT_LOCKED));
+        QCOMPARE(btnLock()->text(), QString::fromUtf8(LottoViewText::LOCK_TEXT_LOCKED));
         QVERIFY(!btnGenerate()->isEnabled());
 
         int fIdx = 0, bIdx = 0;
-        for (int g = 0; g < LottoPresenter::GROUP_COUNT; g++) {
-            for (int i = 0; i < LottoPresenter::FRONT_COUNT; i++)
+        for (int g = 0; g < LottoViewShape::GROUP_COUNT; g++) {
+            for (int i = 0; i < LottoViewShape::FRONT_COUNT; i++)
                 QCOMPARE(frontLabel(g, i)->text(), expectedFront[fIdx++]);
-            for (int i = 0; i < LottoPresenter::BACK_COUNT; i++)
+            for (int i = 0; i < LottoViewShape::BACK_COUNT; i++)
                 QCOMPARE(backLabel(g, i)->text(), expectedBack[bIdx++]);
         }
 
-        QCOMPARE(timeLabel()->text(), QString::fromUtf8(LottoPresenter::TIME_LABEL));
+        QCOMPARE(timeLabel()->text(), QString::fromUtf8(LottoViewText::TIME_LABEL));
         QRegularExpression re(R"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})");
         QVERIFY2(re.match(timeValueLabel()->text()).hasMatch(),
                  QString("时间值格式不正确: '%1'").arg(timeValueLabel()->text()).toUtf8());
@@ -445,7 +445,7 @@ private slots:
         QVERIFY(!btnLock()->isEnabled());
         QVERIFY(!btnLock()->isChecked());
         QCOMPARE(frontLabel(0, 0)->text(),
-                 QString::fromUtf8(LottoPresenter::NUMBER_PLACEHOLDER));
+                 QString::fromUtf8(LottoViewText::NUMBER_PLACEHOLDER));
     }
 
     // ── 场景 9: resize 布局自适应不崩溃 ──

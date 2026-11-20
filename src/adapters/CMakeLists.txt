@@ -6,6 +6,7 @@ add_library(lotto_adapters STATIC
     qsettingsrepository.h qsettingsrepository.cpp
     lottocontroller.h lottocontroller.cpp
     lottopresenter.h lottopresenter.cpp
+    lottoviewstate.h
 )
 
 target_include_directories(lotto_adapters PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

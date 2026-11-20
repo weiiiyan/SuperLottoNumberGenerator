@@ -47,9 +47,9 @@ protected:
 
 public:
     // 彩票格式常量(别名展示器, 其别名领域层规则)
-    static constexpr int GROUP_COUNT    = LottoPresenter::GROUP_COUNT;
-    static constexpr int FRONT_COUNT    = LottoPresenter::FRONT_COUNT;
-    static constexpr int BACK_COUNT     = LottoPresenter::BACK_COUNT;
+    static constexpr int GROUP_COUNT    = LottoViewShape::GROUP_COUNT;
+    static constexpr int FRONT_COUNT    = LottoViewShape::FRONT_COUNT;
+    static constexpr int BACK_COUNT     = LottoViewShape::BACK_COUNT;
     static constexpr int LABELS_PER_ROW = FRONT_COUNT + BACK_COUNT;
 
     // 竖屏宽度分档阈值(逻辑像素)

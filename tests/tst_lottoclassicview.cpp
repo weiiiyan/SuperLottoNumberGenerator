@@ -42,7 +42,7 @@ private slots:
 
         auto *timeLabel = view.findChild<QLabel *>("timeLabel");
         QVERIFY(timeLabel != nullptr);
-        QCOMPARE(timeLabel->text(), QString::fromUtf8(LottoPresenter::TIME_LABEL));
+        QCOMPARE(timeLabel->text(), QString::fromUtf8(LottoViewText::TIME_LABEL));
     }
 
     void buttonsEmitRequestSignals()
