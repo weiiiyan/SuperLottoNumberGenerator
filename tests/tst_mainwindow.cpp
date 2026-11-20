@@ -150,6 +150,17 @@ private slots:
         QCOMPARE(m_window->windowTitle(), QString("大乐透随机号码生成器"));
     }
 
+    void windowShellOwnsNoNumberWidgetsItself()
+    {
+        qDebug() << "验证窗口壳自身不直接创建号码控件(全部来自视图)";
+        QVERIFY(m_window->viewShell() != nullptr);
+        auto *label = frontLabel(0, 0);
+        QVERIFY(label != nullptr);
+        QVERIFY(m_window->viewShell()->currentView() != nullptr);
+        QVERIFY(label->isAncestorOf(m_window->viewShell()->currentView())
+                || m_window->viewShell()->currentView()->isAncestorOf(label));
+    }
+
     void viewShellShouldExist()
     {
         qDebug() << "验证窗口承载视图宿主, 且当前为经典视图";

@@ -87,14 +87,16 @@ if(NOT ANDROID)
     find_package(Qt${TEST_QT_MAJOR} REQUIRED COMPONENTS Widgets)
     add_lotto_test(MainWindowTest tst_mainwindow.cpp)
     target_link_libraries(MainWindowTest PRIVATE
-        lotto_app lotto_ui lotto_adapters lotto_application lotto_core
+        lotto_main lotto_ui lotto_adapters lotto_application lotto_core
         Qt${TEST_QT_MAJOR}::Widgets)
     register_lotto_test(MainWindowTest MainWindowTest -platform offscreen)
     message(STATUS "测试目标 MainWindowTest 已创建")
 
     # ── UI 层: 端口与偏好存储单元测试 ──
     add_lotto_test(LottoUiTest tst_lottoui.cpp)
-    target_link_libraries(LottoUiTest PRIVATE lotto_ui)
+    # QSettingsStyleStore 已迁入 lotto_main; 其往返测试暂时随本目标链接
+    target_link_libraries(LottoUiTest PRIVATE lotto_ui lotto_main)
+    target_include_directories(LottoUiTest PRIVATE ${CMAKE_SOURCE_DIR}/src/app)
     register_lotto_test(LottoUiTest LottoUiTest -platform offscreen)
     message(STATUS "测试目标 LottoUiTest 已创建")
 
