@@ -122,9 +122,10 @@ private slots:
 
     void init()
     {
-        // 每个测试前重置状态: 若处于锁定则点击解锁, 恢复干净初始态
-        if (m_window && btnLock() && btnLock()->isChecked())
-            QTest::mouseClick(btnLock(), Qt::LeftButton);
+        // 每个测试前重置: 清空风格偏好并按默认混合目录重建窗口,
+        // 避免上一个用例注入的目录/偏好泄漏到本用例
+        m_store->storedId.clear();
+        rebuildWindow(makeTestCatalog());
     }
 
     void cleanupTestCase()
@@ -370,6 +371,29 @@ private slots:
         // 复位到经典视图, 避免影响后续用例
         shell->requestSwitchTo(QStringLiteral("classic"));
         QTRY_COMPARE(shell->currentStyleId(), QStringLiteral("classic"));
+    }
+
+    // ── 场景 6c: 风格偏好持久化 ──
+
+    void styleChoice_persistsAcrossWindowRebuild()
+    {
+        qDebug() << "验证风格选择写入偏好并在窗口重建后恢复";
+        m_window->viewShell()->requestSwitchTo(QStringLiteral("fake-b"));
+        QTRY_COMPARE(m_window->viewShell()->currentStyleId(), QStringLiteral("fake-b"));
+        QCOMPARE(m_store->storedId, QStringLiteral("fake-b"));
+
+        rebuildWindow(makeTestCatalog());   // 同一 m_store, 新窗口
+        QCOMPARE(m_window->viewShell()->currentStyleId(), QStringLiteral("fake-b"));
+    }
+
+    void unknownStoredStyle_fallsBackAndKeepsValue()
+    {
+        qDebug() << "验证未知偏好回退首项且保留原值";
+        m_store->storedId = QStringLiteral("ghost");
+        rebuildWindow(makeTestCatalog());
+        QCOMPARE(m_window->viewShell()->currentStyleId(), QStringLiteral("classic"));
+        QCOMPARE(m_store->storedId, QStringLiteral("ghost"));
+        m_store->storedId.clear();   // 复位, 避免影响后续用例
     }
 
     // ── 场景 7: 持久化 round-trip(数据层已由仓储测试覆盖, 此处验证视图管线)──
