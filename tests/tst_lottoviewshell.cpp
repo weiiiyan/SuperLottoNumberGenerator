@@ -22,6 +22,7 @@ private:
     LottoPresenter *m_presenter = nullptr;
     FakeLottoStyleStore *m_store = nullptr;
     LottoViewShell *m_shell = nullptr;
+    LottoViewState m_seed;          /*!< 注入宿主与窗口的初始展示状态 */
     QString m_lastButtonText;
 
     static QVector<LottoStyleDefinition> makeCatalog()
@@ -46,8 +47,9 @@ private slots:
         m_presenter = new LottoPresenter;
         m_store = new FakeLottoStyleStore;
         m_lastButtonText = QString::fromUtf8(LottoViewText::GENERATE_TEXT);
+        m_seed = LottoPresenter::initialState();
         m_shell = new LottoViewShell(m_controller, m_presenter, m_store,
-                                     makeCatalog(), 0);
+                                     makeCatalog(), m_seed, 0);
         m_presenter->present(makeTicket());
     }
 
@@ -71,7 +73,7 @@ private slots:
     void emptyCatalog_shouldNotCrash()
     {
         qDebug() << "验证空目录不崩溃且忽略切换请求";
-        LottoViewShell shell(m_controller, m_presenter, m_store, {}, 0);
+        LottoViewShell shell(m_controller, m_presenter, m_store, {}, m_seed, 0);
         QCOMPARE(shell.currentStyleId(), QString());
         QVERIFY(shell.currentView() == nullptr);
         shell.requestSwitchTo(QStringLiteral("a"));
@@ -83,7 +85,8 @@ private slots:
     {
         qDebug() << "验证按偏好恢复风格";
         m_store->storedId = QStringLiteral("b");
-        LottoViewShell shell(m_controller, m_presenter, m_store, makeCatalog(), 0);
+        LottoViewShell shell(m_controller, m_presenter, m_store, makeCatalog(),
+                             m_seed, 0);
         QCOMPARE(shell.currentStyleId(), QStringLiteral("b"));
     }
 
@@ -91,7 +94,8 @@ private slots:
     {
         qDebug() << "验证偏好为空时回退首项且不回写";
         m_store->storedId = QString();
-        LottoViewShell shell(m_controller, m_presenter, m_store, makeCatalog(), 0);
+        LottoViewShell shell(m_controller, m_presenter, m_store, makeCatalog(),
+                             m_seed, 0);
         QCOMPARE(shell.currentStyleId(), QStringLiteral("a"));
         QCOMPARE(m_store->storedId, QString());
     }
@@ -100,7 +104,8 @@ private slots:
     {
         qDebug() << "验证偏好为未知 id 时回退首项且保留原值";
         m_store->storedId = QStringLiteral("ghost");
-        LottoViewShell shell(m_controller, m_presenter, m_store, makeCatalog(), 0);
+        LottoViewShell shell(m_controller, m_presenter, m_store, makeCatalog(),
+                             m_seed, 0);
         QCOMPARE(shell.currentStyleId(), QStringLiteral("a"));
         QCOMPARE(m_store->storedId, QStringLiteral("ghost"));
     }
@@ -139,7 +144,7 @@ private slots:
             view->setReady(false);
             return view;
         };
-        LottoViewShell shell(m_controller, m_presenter, m_store, catalog, 0);
+        LottoViewShell shell(m_controller, m_presenter, m_store, catalog, m_seed, 0);
         QSignalSpy spy(&shell, &LottoViewShell::styleSwitchFailed);
         shell.requestSwitchTo(QStringLiteral("b"));
         QTRY_COMPARE(spy.count(), 1);
@@ -154,7 +159,7 @@ private slots:
         catalog[1].create = [](LottoStyleHost *, QWidget *) -> LottoView * {
             return nullptr;
         };
-        LottoViewShell shell(m_controller, m_presenter, m_store, catalog, 0);
+        LottoViewShell shell(m_controller, m_presenter, m_store, catalog, m_seed, 0);
         QSignalSpy spy(&shell, &LottoViewShell::styleSwitchFailed);
         shell.requestSwitchTo(QStringLiteral("b"));
         QTRY_COMPARE(spy.count(), 1);
@@ -172,15 +177,26 @@ private slots:
         QCOMPARE(m_input->toggleLockCalls, 1);
     }
 
-    void switchBeforeAnyState_shouldNotCrash()
+    void switchBeforeAnyState_shouldRenderInjectedSeed()
     {
-        qDebug() << "验证首次状态到达前切换不崩溃";
+        qDebug() << "验证首次状态到达前切换, 新视图显示注入的初始状态";
         delete m_shell;
         m_shell = new LottoViewShell(m_controller, m_presenter, m_store,
-                                     makeCatalog(), 0);
+                                     makeCatalog(), m_seed, 0);
         m_shell->requestSwitchTo(QStringLiteral("b"));
         QTRY_COMPARE(m_shell->currentStyleId(), QStringLiteral("b"));
-        QCOMPARE(static_cast<FakeLottoView *>(m_shell->currentView())->stateCount(), 0);
+        auto *b = static_cast<FakeLottoView *>(m_shell->currentView());
+        QCOMPARE(b->stateCount(), 1);
+        QCOMPARE(b->lastState().generateButtonText, m_seed.generateButtonText);
+    }
+
+    void initialViewReceivesSeedImmediately()
+    {
+        qDebug() << "验证构造后首个视图立即收到初始状态";
+        auto *view = static_cast<FakeLottoView *>(m_shell->currentView());
+        QVERIFY(view != nullptr);
+        QVERIFY(view->stateCount() >= 1);
+        QCOMPARE(view->lastState().numberPlaceholder, m_seed.numberPlaceholder);
     }
 
     void zeroTransition_createsNoOverlay()
@@ -194,7 +210,8 @@ private slots:
     void fadeTransition_removesOverlayAfterwards()
     {
         qDebug() << "验证过渡覆盖层播放后自动销毁";
-        LottoViewShell shell(m_controller, m_presenter, m_store, makeCatalog(), 400);
+        LottoViewShell shell(m_controller, m_presenter, m_store, makeCatalog(),
+                             m_seed, 400);
         shell.resize(400, 600);
         shell.show();
         QTest::qWait(10);
@@ -209,7 +226,8 @@ private slots:
     void rapidSwitches_leaveSingleOverlay()
     {
         qDebug() << "验证快速连续切换后不残留覆盖层且停在最后目标";
-        LottoViewShell shell(m_controller, m_presenter, m_store, makeCatalog(), 200);
+        LottoViewShell shell(m_controller, m_presenter, m_store, makeCatalog(),
+                             m_seed, 200);
         shell.resize(400, 600);
         shell.show();
         QTest::qWait(10);
@@ -233,7 +251,7 @@ private slots:
             view->setReady(false);
             return view;
         };
-        LottoViewShell shell(m_controller, m_presenter, m_store, catalog, 0);
+        LottoViewShell shell(m_controller, m_presenter, m_store, catalog, m_seed, 0);
         QCOMPARE(shell.currentStyleId(), QStringLiteral("a"));
         QVERIFY(shell.currentView() != nullptr);
         QCOMPARE(shell.currentView()->styleId(), QStringLiteral("a"));
@@ -253,7 +271,8 @@ private slots:
     void resizeDuringTransition_keepsOverlayCoveringAndDisposes()
     {
         qDebug() << "验证过渡期间 resize: 覆盖层跟随尺寸并在结束后释放";
-        LottoViewShell shell(m_controller, m_presenter, m_store, makeCatalog(), 400);
+        LottoViewShell shell(m_controller, m_presenter, m_store, makeCatalog(),
+                             m_seed, 400);
         shell.resize(400, 600);
         shell.show();
         QTest::qWait(10);

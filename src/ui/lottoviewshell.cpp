@@ -15,6 +15,7 @@ LottoViewShell::LottoViewShell(LottoController *controller,
                                LottoPresenter *presenter,
                                LottoStyleStore *store,
                                QVector<LottoStyleDefinition> catalog,
+                               const LottoViewState &initialState,
                                int transitionMs, QWidget *parent)
     : QWidget(parent)
     , m_controller(controller)
@@ -39,6 +40,10 @@ LottoViewShell::LottoViewShell(LottoController *controller,
         });
     }
 
+    // 初始状态由 Main 注入: 任何时刻创建的视图都至少能渲染出占位符
+    m_lastState = initialState;
+    m_hasState = true;
+
     // 首个视图: 优先按偏好恢复, 未知/空偏好或视图不可用则回退目录首项
     if (m_catalog.isEmpty())
         return;
@@ -51,8 +56,7 @@ LottoViewShell::LottoViewShell(LottoController *controller,
     m_stack->setCurrentWidget(view);
     m_currentView = view;
     m_currentStyleId = view->styleId();
-    if (m_hasState)
-        view->renderState(m_lastState);
+    view->renderState(m_lastState);
     view->styleChanged(m_currentStyleId);
 }
 
@@ -185,8 +189,7 @@ void LottoViewShell::applySwitch(const QString &styleId)
     if (m_stack->indexOf(view) < 0)
         m_stack->addWidget(view);
 
-    if (m_hasState)
-        view->renderState(m_lastState);
+    view->renderState(m_lastState);
 
     m_stack->setCurrentWidget(view);
     m_currentView = view;

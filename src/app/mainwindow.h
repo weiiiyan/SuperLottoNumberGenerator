@@ -5,6 +5,7 @@
 #include <QVector>
 
 #include "lottostylecatalog.h"
+#include "lottoviewstate.h"
 
 class LottoController;
 class LottoPresenter;
@@ -33,11 +34,13 @@ public:
      * \param presenter 输出侧适配器(不持有所有权)
      * \param store 风格偏好端口(不持有所有权)
      * \param catalog 风格目录(默认取应用目录, 测试可注入假目录)
+     * \param initialState 初始展示状态(由 Main 提供)
      * \param parent 父窗口
      */
     MainWindow(LottoController *controller, LottoPresenter *presenter,
                LottoStyleStore *store,
                QVector<LottoStyleDefinition> catalog = lottoStyleCatalog(),
+               const LottoViewState &initialState = LottoViewState(),
                QWidget *parent = nullptr);
     ~MainWindow() override;
 

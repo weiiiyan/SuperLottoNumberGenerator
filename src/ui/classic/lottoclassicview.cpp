@@ -346,9 +346,6 @@ void LottoClassicView::initUi()
     // 构建竖屏布局
     buildLayout();
 
-    // 初始渲染: 空票据占位符
-    applyState(LottoPresenter::initialState());
-
     // 统一样式表
     QFile qss(QStringLiteral(":/classic/style.qss"));
     if (qss.open(QFile::ReadOnly | QFile::Text)) {

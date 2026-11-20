@@ -77,7 +77,8 @@ private:
         m_presenter = new LottoPresenter;
         m_interactor = new LottoInteractor(m_repo, m_engine, m_presenter);
         m_controller = new LottoController(m_interactor);
-        m_window = new MainWindow(m_controller, m_presenter, m_store, catalog);
+        m_window = new MainWindow(m_controller, m_presenter, m_store, catalog,
+                                  LottoPresenter::initialState());
         m_interactor->load();   // 用例启动: 排定异步恢复
         QTest::qWait(50);       // 等 interactor->load() 的 singleShot(0) 异步恢复
     }

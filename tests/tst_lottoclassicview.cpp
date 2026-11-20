@@ -25,6 +25,15 @@ private slots:
         Q_INIT_RESOURCE(resources);
     }
 
+    void firstFrameShowsPlaceholdersWithoutAnyRenderCall()
+    {
+        qDebug() << "验证经典视图未收到状态时不自我渲染(首帧由宿主注入)";
+        FakeStyleHost host;
+        LottoClassicView view(&host);
+        // 构造期不再自渲染: 号码标签为空, 不存在展示器推导
+        QCOMPARE(view.findChild<QLabel *>("frontLabel_0_0")->text(), QString());
+    }
+
     void rendersStateIntoWidgets()
     {
         qDebug() << "验证展示状态写入号码/时间控件";
@@ -93,7 +102,7 @@ private slots:
         host.styles = { {QStringLiteral("classic"), QStringLiteral("经典")},
                         {QStringLiteral("neo"), QStringLiteral("新拟物")} };
         LottoClassicView view(&host);
-        view.renderState(LottoPresenter::initialState());
+        view.renderState(LottoViewState());
         view.styleChanged(QStringLiteral("neo"));
 
         auto *menu = view.findChild<QToolButton *>("btnStyleSwitch")->menu();

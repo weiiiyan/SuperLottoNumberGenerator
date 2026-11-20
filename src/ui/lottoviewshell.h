@@ -33,12 +33,14 @@ public:
      * \param presenter 输出侧适配器(不持有所有权)
      * \param store 风格偏好端口(不持有所有权)
      * \param catalog 风格目录, 顺序即展示顺序, 首项为默认风格
+     * \param initialState 初始展示状态(由 Main 注入), 视图构造时立即渲染
      * \param transitionMs 切换过渡时长(毫秒), <=0 表示瞬时切换
      * \param parent 父控件
      */
     LottoViewShell(LottoController *controller, LottoPresenter *presenter,
                    LottoStyleStore *store,
                    QVector<LottoStyleDefinition> catalog,
+                   const LottoViewState &initialState,
                    int transitionMs = 200, QWidget *parent = nullptr);
 
     /*! 全部可用风格(顺序即展示顺序) */

@@ -4,7 +4,7 @@
 #include <QPixmap>
 #include <QWidget>
 
-#include "lottopresenter.h"
+#include "lottoviewstate.h"
 
 /*!
  * \brief LottoView 视图端口: 所有风格的视图都实现本接口

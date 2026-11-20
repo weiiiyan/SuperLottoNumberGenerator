@@ -9,7 +9,8 @@
 
 MainWindow::MainWindow(LottoController *controller, LottoPresenter *presenter,
                        LottoStyleStore *store,
-                       QVector<LottoStyleDefinition> catalog, QWidget *parent)
+                       QVector<LottoStyleDefinition> catalog,
+                       const LottoViewState &initialState, QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
@@ -19,7 +20,7 @@ MainWindow::MainWindow(LottoController *controller, LottoPresenter *presenter,
     // 视图宿主承载全部 UI: 视图创建/状态渲染/风格切换均由 UI 层负责。
     // setCentralWidget 接管其所有权, 无需自建占位 central widget
     m_shell = new LottoViewShell(controller, presenter, store,
-                                 std::move(catalog), 200, this);
+                                 std::move(catalog), initialState, 200, this);
     setCentralWidget(m_shell);
 }
 
