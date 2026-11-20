@@ -4,7 +4,6 @@
 
 add_library(lotto_main STATIC
     maincatalog.h maincatalog.cpp
-    qsettingsstylestore.h qsettingsstylestore.cpp
 )
 
 target_include_directories(lotto_main PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

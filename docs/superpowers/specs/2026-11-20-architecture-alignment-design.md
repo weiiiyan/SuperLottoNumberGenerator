@@ -81,7 +81,7 @@ ch26(Main 组件)
   src/ui/neumorphic/ lotto_ui_neumorphic        Frameworks (Qt6 QML 细节)
   src/app/           —— 不是一层, 是 Main 组件
                      ├ main.cpp(装配 + 具体目录 + 初始视图模型)
-                     └ qsettingsstylestore.*(配置细节)
+                     └ (Main 只做装配; 存储实现在 adapters)
 ```
 
 依赖图(全部指向内层, 无环):
@@ -109,7 +109,7 @@ tests                → 按被测层选择, 不经过 lotto_ui 取具体风格
 | 初始 ViewModel | 由 Main 提供, 经 `MainWindow`/宿主注入 | ch23: 视图不生产 ViewModel |
 | 具体风格目录 | 移到 Main(`main.cpp` 内的 `buildStyleCatalog()`) | ch26: 具体类名集中在 Main |
 | 测试用真实目录 | 测试自行构造 | 避免测试依赖 Main |
-| `QSettingsStyleStore` | 移到 `src/app/`, 仅编入 exe 与相关测试 | ch26/ch30 |
+| `QSettingsStyleStore` | 留在 `src/adapters/`, 与端口同层 | 实现属存储适配器, 非 Main 配置 |
 | 经典 qrc 初始化 | 由 `lotto_ui_classic` 内部调用 | 实现细节不外泄 |
 | QML 模块 | 挂在 `lotto_ui_neumorphic` 目标上 | 模块与风格组件同生命周期 |
 | 初始 ViewModel | 宿主构造参数必选, 注入后即视为"已有状态" | 视图任何时刻都不会渲染空白; ch23 |
@@ -164,7 +164,7 @@ tests                → 按被测层选择, 不经过 lotto_ui 取具体风格
 
 `src/app/` 不再产出 `lotto_app` 层库, 改为产出 `lotto_main` 静态库, 内含:
 
-- `qsettingsstylestore.*`(配置细节);
+- (无存储实现: 风格偏好存储已归 adapters 层)
 - `buildStyleCatalog()`(唯一知道具体风格类名的地方);
 - 其余 Main 专有的装配辅助(如有)。
 

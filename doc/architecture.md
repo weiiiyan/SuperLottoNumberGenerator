@@ -20,14 +20,15 @@
 src/domain/        → lotto_core 库: 业务实体(Entities, 仅 Qt::Core)
 src/application/   → lotto_application 库: 用例(Use Cases) + 三个 DIP 端口(仅 Qt::Core)
 src/adapters/      → lotto_adapters 库: 接口适配器(Interface Adapters, 仅 Qt::Core)
-                     存储侧 QSettingsTicketRepository + 输入侧 LottoController +
-                     输出侧 LottoPresenter + 展示状态 DTO lottoviewstate.h
+                     存储侧 QSettingsTicketRepository + QSettingsStyleStore +
+                     输入侧 LottoController + 输出侧 LottoPresenter +
+                     展示状态 DTO lottoviewstate.h + 风格偏好端口 lottostylestore.h
 src/ui/            → lotto_ui 库: 框架与驱动(UI 核心)
                      视图端口 + 风格端口 + 宿主 LottoViewShell + 过渡 + 窗口壳 MainWindow
                      不含任何具体风格, 不依赖 Qt Quick
 src/ui/classic/    → lotto_ui_classic 库: 经典风格组件(Widgets + QSS)
 src/ui/neumorphic/ → lotto_ui_neumorphic 库: 新拟物风格组件(Qt6 QML + QQuickWidget)
-src/app/           → lotto_main 库: Main 组件(具体风格目录 + QSettings 偏好存储)
+src/app/           → lotto_main 库: Main 组件(具体风格目录 + 组合根)
 src/app/main.cpp   → 组合根: 装配具体依赖(唯一接触 QSettings 具体类的点)
 ```
 

@@ -6,8 +6,9 @@
 /*!
  * \brief LottoStyleStore 风格偏好端口: 持久化"用户选择了哪套 UI"
  *
- * 风格选择属呈现层偏好, 不是应用业务规则, 因此归视图层所有, 由
- * 组合根注入具体实现(QSettings)。用例层不感知本端口。
+ * 风格选择属呈现层偏好, 不是应用业务规则。本端口由存储侧实现
+ * (QSettingsStyleStore)、由 UI 宿主消费; 与实现放在同一层, 避免
+ * adapters → ui 的反向依赖。用例层不感知本端口。
  */
 class LottoStyleStore
 {

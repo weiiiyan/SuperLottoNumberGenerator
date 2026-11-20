@@ -82,15 +82,16 @@ src/domain/       → lotto_core 库：业务实体（Entities，仅 Qt::Core）
 src/application/  → lotto_application 库：用例（Use Cases）+ 三个 DIP 端口
                     TicketRepository / LottoPresenterPort / LottoInputBoundary
 src/adapters/     → lotto_adapters 库：接口适配器（Interface Adapters）
-                    存储侧 QSettingsTicketRepository + 输入侧 LottoController +
-                    输出侧 LottoPresenter + 展示状态 DTO lottoviewstate.h（仅 Qt::Core）
+                    存储侧 QSettingsTicketRepository + QSettingsStyleStore +
+                    输入侧 LottoController + 输出侧 LottoPresenter +
+                    展示状态 DTO lottoviewstate.h + 风格偏好端口 lottostylestore.h（仅 Qt::Core）
 src/ui/           → lotto_ui 库：框架与驱动（Frameworks & Drivers）的 UI 核心
                     视图端口 LottoView + 风格端口 LottoStyleHost + 宿主 LottoViewShell +
                     过渡覆盖层 + 窗口壳 MainWindow。不含任何具体风格, 不依赖 Qt Quick
 src/ui/classic/   → lotto_ui_classic 库：经典风格组件（Widgets + QSS）
 src/ui/neumorphic/→ lotto_ui_neumorphic 库：新拟物风格组件（Qt6 QML + QQuickWidget）
 src/app/          → lotto_main 库 + main.cpp：Main 组件（圆外）
-                    具体风格目录 buildStyleCatalog() + QSettingsStyleStore + 组合根
+                    具体风格目录 buildStyleCatalog() + 组合根
 tests/            → 14 个测试 target
 ```
 
@@ -146,16 +147,20 @@ lotto_application → lotto_core`, `lotto_main → 全部`。**运行期没有�
 src/ui/lottoview.h/.cpp          视图端口：renderState / isReady / styleChanged / snapshot + 两个请求信号
                                  只包含 lottoviewstate.h, 不包含展示器, 不感知领域实体
 src/ui/lottostylehost.h          宿主端口：availableStyles / currentStyleId / requestSwitchTo(视图自行调用)
-src/ui/lottostylestore.h         偏好端口：loadStyleId / saveStyleId（呈现层偏好, 不属用例）
 src/ui/lottostylecatalog.h       仅 LottoStyleDefinition 类型（具体目录在 Main）
 src/ui/lottoviewshell.*          宿主：栈/懒创建/状态重放/信号转发/过渡/偏好保存/失败回退
 src/ui/lottostyleswitchoverlay.* 切换过渡覆盖层(旧画面淡出)
 src/ui/mainwindow.*              窗口壳：setupUi + 挂宿主（并入 UI 核心, 不是单独一层）
 src/ui/classic/                  lotto_ui_classic: LottoClassicView + style.qss + resources.qrc
 src/ui/neumorphic/               lotto_ui_neumorphic: LottoNeumorphicView + LottoUi/*.qml
-src/app/maincatalog.*            buildStyleCatalog(): 唯一允许出现具体风格类名的地方
-src/app/qsettingsstylestore.*    偏好端口的 QSettings 实现, 键 ui/styleId
 ```
+
+Main 侧（`src/app/`）只有 `buildStyleCatalog()`——唯一允许出现具体风格类名的地方。
+
+偏好端口 `LottoStyleStore`（`src/adapters/lottostylestore.h`）与其 QSettings 实现
+（`src/adapters/qsettingsstylestore.*`，键 `ui/styleId`）位于**适配器层**，与
+`QSettingsTicketRepository` 同级——风格偏好是呈现层偏好，不是应用业务规则，但
+它的实现是存储适配器，不属于 Main 的装配职责，也不与 UI 共库。
 
 **视图只消费 `LottoViewState`**：按钮点击只发 `generateRequested` / `lockRequested`，由宿主接给 `LottoController`；视图不持有控制器、不感知 `LottoInteractor` / `LottoTicket` / 仓储。
 
@@ -268,7 +273,7 @@ APK 现状（Qt 6.11.1，arm64-v8a，debug）：约 24 MB，已包含 `libQt6Qui
 | `formatNumber()` | src/adapters/lottopresenter.h | 零填充两位数字（inline，UI 与测试复用） |
 | `LottoView` | src/ui/lottoview.h | 视图端口（renderState/isReady/styleChanged/snapshot + 请求信号） |
 | `LottoStyleHost` | src/ui/lottostylehost.h | 宿主端口：风格清单/当前风格/切换请求，视图自行调用 |
-| `LottoStyleStore` | src/ui/lottostylestore.h | 风格偏好端口（Impl 在 `src/app/qsettingsstylestore.*`） |
+| `LottoStyleStore` / `QSettingsStyleStore` | src/adapters/lottostylestore.h | 风格偏好端口与 INI 实现（键 `ui/styleId`） |
 | `buildStyleCatalog()` | src/app/maincatalog.cpp | 具体风格目录，首项默认；新增风格只改这里 |
 | `LottoViewShell::requestSwitchTo()` | src/ui/lottoviewshell.cpp | 切换排队执行，防在视图事件中隐藏自己 |
 | `LottoViewShell::applySwitch()` | src/ui/lottoviewshell.cpp | 查找/懒创建视图、重放状态、通知、存偏好、失败回退 |

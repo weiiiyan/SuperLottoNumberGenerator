@@ -112,8 +112,10 @@ if(NOT ANDROID)
 
     # ── Main 组件: 风格偏好存储 ──
     add_lotto_test(QSettingsStyleStoreTest tst_qsettingsstylestore.cpp)
-    target_link_libraries(QSettingsStyleStoreTest PRIVATE lotto_main)
-    register_lotto_test(QSettingsStyleStoreTest QSettingsStyleStoreTest -platform offscreen)
+    target_link_libraries(QSettingsStyleStoreTest PRIVATE
+        lotto_adapters lotto_application lotto_core)
+    # 纯 Qt::Core 测试(仅链 adapters), 不需要 platform 参数
+    register_lotto_test(QSettingsStyleStoreTest QSettingsStyleStoreTest)
     message(STATUS "测试目标 QSettingsStyleStoreTest 已创建")
 
     # ── UI 层: 经典视图单元测试 ──

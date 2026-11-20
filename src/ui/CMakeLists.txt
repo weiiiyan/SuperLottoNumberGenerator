@@ -5,7 +5,6 @@
 add_library(lotto_ui STATIC
     lottoview.h lottoview.cpp
     lottostylehost.h
-    lottostylestore.h
     lottostylecatalog.h
     lottoviewshell.h lottoviewshell.cpp
     lottostyleswitchoverlay.h lottostyleswitchoverlay.cpp
