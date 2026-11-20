@@ -17,6 +17,8 @@ Item {
     property bool lockButtonChecked: false
     property var styles: []
     property string currentStyleId: ""
+    property string numberPlaceholder: "?"
+    property string separatorText: "+"
 
     // ── 回传给 C++ 的交互信号 ──
     signal generateClicked()
@@ -82,6 +84,8 @@ Item {
                     delegate: NeumoTicketRow {
                         Layout.fillWidth: true
                         numbers: root.groups[index] !== undefined ? root.groups[index] : []
+                        placeholder: root.numberPlaceholder
+                        separator: root.separatorText
                     }
                 }
             }

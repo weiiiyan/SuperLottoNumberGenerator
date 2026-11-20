@@ -21,7 +21,7 @@
 int main(int argc, char *argv[])
 {
     // 静态库中的 qrc 资源需显式初始化: 链接器会丢弃未被引用的 qrc 对象,
-    // 不调用则 :/style.qss 在运行时不存在
+    // 不调用则 :/classic/style.qss 在运行时不存在
     Q_INIT_RESOURCE(resources);
 
     QApplication a(argc, argv);

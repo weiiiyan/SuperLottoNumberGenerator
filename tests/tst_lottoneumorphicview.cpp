@@ -124,18 +124,43 @@ private slots:
 
     void pillClickRequestsSwitch()
     {
-        qDebug() << "验证风格胶囊点击请求切换(经 requestStyleSwitch 入口)";
+        qDebug() << "验证真实点击风格胶囊触发切换请求(点击 MouseArea, 不走函数入口)";
         FakeStyleHost host;
         host.styles = { {QStringLiteral("classic"), QStringLiteral("经典")},
                         {QStringLiteral("neumorphic"), QStringLiteral("新拟物")} };
         host.currentId = QStringLiteral("neumorphic");
         LottoNeumorphicView view(&host);
+        view.resize(480, 720);
+        view.show();
         if (!waitReady(view))
             QSKIP("当前平台 Quick 未能初始化");
+        QTest::qWait(150);   // 等布局完成, 胶囊才有几何尺寸
 
-        QVERIFY(QMetaObject::invokeMethod(view.rootItem(), "requestStyleSwitch",
-                                          Q_ARG(QVariant, QStringLiteral("classic"))));
-        QCOMPARE(host.requested, QStringList{ QStringLiteral("classic") });
+        // 通过底部 Repeater 取回胶囊实例(委托尚未成为可枚举子对象时也可用)
+        QQuickItem *pill = nullptr;
+        const QList<QQuickItem *> items = view.rootItem()->findChildren<QQuickItem *>();
+        for (QQuickItem *item : items) {
+            if (!QString::fromLatin1(item->metaObject()->className())
+                     .contains(QStringLiteral("Repeater")))
+                continue;
+            if (item->property("count").toInt() < 2)
+                continue;
+
+            QQuickItem *candidate = nullptr;
+            QMetaObject::invokeMethod(item, "itemAt", Q_RETURN_ARG(QQuickItem *, candidate),
+                                      Q_ARG(int, 0));
+            if (candidate) {
+                pill = candidate;
+                break;
+            }
+        }
+        QVERIFY2(pill != nullptr, "未找到风格胶囊委托");
+
+        const QPointF center = pill->mapToScene(QPointF(pill->width() / 2,
+                                                        pill->height() / 2));
+        QTest::mouseClick(view.quickWidget(), Qt::LeftButton, Qt::NoModifier,
+                          center.toPoint());
+        QTRY_COMPARE(host.requested, QStringList{ QStringLiteral("classic") });
     }
 
     void snapshotReturnsImage()

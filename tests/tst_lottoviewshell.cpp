@@ -223,6 +223,55 @@ private slots:
         QCOMPARE(shell.currentStyleId(), QStringLiteral("b"));
     }
 
+    void startupNotReadyView_shouldFallBackToFirst()
+    {
+        qDebug() << "验证启动时恢复的视图未就绪则回退首项且不覆盖偏好";
+        m_store->storedId = QStringLiteral("b");
+        auto catalog = makeCatalog();
+        catalog[1].create = [](LottoStyleHost *, QWidget *parent) -> LottoView * {
+            auto *view = new FakeLottoView(nullptr, QStringLiteral("b"), parent);
+            view->setReady(false);
+            return view;
+        };
+        LottoViewShell shell(m_controller, m_presenter, m_store, catalog, 0);
+        QCOMPARE(shell.currentStyleId(), QStringLiteral("a"));
+        QVERIFY(shell.currentView() != nullptr);
+        QCOMPARE(shell.currentView()->styleId(), QStringLiteral("a"));
+        QCOMPARE(m_store->storedId, QStringLiteral("b"));   // 原值保留
+    }
+
+    void requestWhileSwitchPending_keepsLastIntent()
+    {
+        qDebug() << "验证切换排队期间再次请求, 以最后一次请求为准";
+        m_shell->requestSwitchTo(QStringLiteral("b"));
+        m_shell->requestSwitchTo(QStringLiteral("a"));   // 同一事件轮次内回切
+        QTRY_COMPARE(m_shell->currentStyleId(), QStringLiteral("a"));
+        QTest::qWait(20);
+        QCOMPARE(m_shell->currentStyleId(), QStringLiteral("a"));
+    }
+
+    void resizeDuringTransition_keepsOverlayCoveringAndDisposes()
+    {
+        qDebug() << "验证过渡期间 resize: 覆盖层跟随尺寸并在结束后释放";
+        LottoViewShell shell(m_controller, m_presenter, m_store, makeCatalog(), 400);
+        shell.resize(400, 600);
+        shell.show();
+        QTest::qWait(10);
+        shell.requestSwitchTo(QStringLiteral("b"));
+        QTRY_COMPARE(shell.currentStyleId(), QStringLiteral("b"));
+
+        auto *overlay = shell.findChild<LottoStyleSwitchOverlay *>();
+        QVERIFY(overlay != nullptr);
+        QCOMPARE(overlay->size(), shell.size());
+
+        shell.resize(320, 480);
+        QTRY_COMPARE(overlay->size(), shell.size());
+
+        QTRY_VERIFY_WITH_TIMEOUT(
+            shell.findChild<LottoStyleSwitchOverlay *>() == nullptr, 3000);
+        QCOMPARE(shell.findChildren<LottoStyleSwitchOverlay *>().size(), 0);
+    }
+
     void sameStyleRequestIsIgnored()
     {
         qDebug() << "验证请求当前风格时不做任何事";

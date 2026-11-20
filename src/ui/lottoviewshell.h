@@ -61,6 +61,7 @@ protected:
     void resizeEvent(QResizeEvent *event) override;
 
 private:
+    LottoView *createInitialView();
     void applySwitch(const QString &styleId);
     void playTransition(const QPixmap &snapshot);
     void finishTransition();
@@ -74,6 +75,7 @@ private:
     QStackedWidget *m_stack = nullptr;         /*!< 视图容器 */
     QPointer<LottoView> m_currentView;         /*!< 当前视图 */
     QString m_currentStyleId;                  /*!< 当前风格 id */
+    QString m_pendingStyleId;                  /*!< 已排队待执行的切换目标(空表示无) */
     LottoViewState m_lastState;                /*!< 最近一次展示状态 */
     bool m_hasState = false;                   /*!< 是否已收到过展示状态 */
     int m_transitionMs = 200;                  /*!< 过渡时长 */

@@ -89,9 +89,11 @@ void LottoNeumorphicView::renderState(const LottoViewState &state)
 
 bool LottoNeumorphicView::isReady() const
 {
+    // 加载中允许使用(状态会在 Ready 后补推), 出错或根对象始终不存在则不可用
     if (!m_quick)
         return false;
-    return m_quick->status() != QQuickWidget::Error;
+    return m_quick->status() != QQuickWidget::Error
+        || m_quick->rootObject() != nullptr;
 }
 
 void LottoNeumorphicView::styleChanged(const QString &currentStyleId)
@@ -168,4 +170,6 @@ void LottoNeumorphicView::pushStateToQml()
     root->setProperty("lockButtonText", m_state.lockButtonText);
     root->setProperty("lockButtonEnabled", m_state.lockButtonEnabled);
     root->setProperty("lockButtonChecked", m_state.lockButtonChecked);
+    root->setProperty("numberPlaceholder", m_state.numberPlaceholder);
+    root->setProperty("separatorText", m_state.separatorText);
 }

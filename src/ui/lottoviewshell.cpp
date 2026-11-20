@@ -39,32 +39,58 @@ LottoViewShell::LottoViewShell(LottoController *controller,
         });
     }
 
-    // 首个视图: 优先按偏好恢复, 未知/空偏好回退目录首项且不回写
+    // 首个视图: 优先按偏好恢复, 未知/空偏好或视图不可用则回退目录首项
     if (m_catalog.isEmpty())
         return;
 
-    QString preferred = m_store ? m_store->loadStyleId() : QString();
-    int index = 0;
-    if (!preferred.isEmpty()) {
-        for (int i = 0; i < m_catalog.size(); ++i) {
-            if (m_catalog.at(i).info.id == preferred) {
-                index = i;
-                break;
-            }
-        }
-    }
-
-    LottoView *view = createView(m_catalog.at(index));
+    LottoView *view = createInitialView();
     if (!view)
         return;
 
     m_stack->addWidget(view);
     m_stack->setCurrentWidget(view);
     m_currentView = view;
-    m_currentStyleId = m_catalog.at(index).info.id;
+    m_currentStyleId = view->styleId();
     if (m_hasState)
         view->renderState(m_lastState);
     view->styleChanged(m_currentStyleId);
+}
+
+LottoView *LottoViewShell::createInitialView()
+{
+    const QString preferred = m_store ? m_store->loadStyleId() : QString();
+
+    // 先尝试偏好项, 再逐一回退: 偏好未知、工厂返回空、视图未就绪都不采用,
+    // 且不覆盖用户已保存的偏好(便于修复后恢复其选择)
+    auto tryCreate = [this](const LottoStyleDefinition &definition) -> LottoView * {
+        LottoView *view = createView(definition);
+        if (!view)
+            return nullptr;
+        if (!view->isReady()) {
+            qWarning() << "[LOTTO] 恢复的风格视图未就绪, 回退:" << definition.info.id;
+            view->deleteLater();
+            return nullptr;
+        }
+        return view;
+    };
+
+    if (!preferred.isEmpty()) {
+        for (const LottoStyleDefinition &definition : m_catalog) {
+            if (definition.info.id == preferred) {
+                if (LottoView *view = tryCreate(definition))
+                    return view;
+                break;
+            }
+        }
+    }
+
+    for (const LottoStyleDefinition &definition : m_catalog) {
+        if (definition.info.id == preferred)
+            continue;
+        if (LottoView *view = tryCreate(definition))
+            return view;
+    }
+    return nullptr;
 }
 
 QVector<LottoStyleInfo> LottoViewShell::availableStyles() const
@@ -83,8 +109,17 @@ QString LottoViewShell::currentStyleId() const
 
 void LottoViewShell::requestSwitchTo(const QString &styleId)
 {
-    if (styleId.isEmpty() || styleId == m_currentStyleId)
+    if (styleId.isEmpty())
         return;
+
+    // 去重基准是"已生效或已排队的最后一个目标", 而非仅已生效的风格:
+    // 否则同一事件轮次内的"切走再切回"会让最后一次选择被丢弃
+    const QString effective = m_pendingStyleId.isEmpty() ? m_currentStyleId
+                                                         : m_pendingStyleId;
+    if (styleId == effective)
+        return;
+
+    m_pendingStyleId = styleId;
 
     // 排队执行: 切换通常在视图自身的事件处理中发起, 不能在此时销毁/隐藏自己
     QMetaObject::invokeMethod(this, [this, styleId]() { applySwitch(styleId); },
@@ -103,6 +138,11 @@ int LottoViewShell::transitionMs() const
 
 void LottoViewShell::applySwitch(const QString &styleId)
 {
+    // 队列中可能积压多次请求: 只有最后一次目标生效
+    if (styleId != m_pendingStyleId)
+        return;
+    m_pendingStyleId.clear();
+
     if (styleId == m_currentStyleId)
         return;
 

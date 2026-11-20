@@ -47,6 +47,8 @@ LottoViewState LottoPresenter::buildViewState(const LottoTicket &ticket)
     state.lockButtonChecked = ticket.isLocked();
     state.generateEnabled   = !ticket.isLocked();
     state.generateButtonText = QString::fromUtf8(GENERATE_TEXT);
+    state.numberPlaceholder  = QString::fromUtf8(NUMBER_PLACEHOLDER);
+    state.separatorText      = QString::fromUtf8(SEPARATOR_TEXT);
 
     return state;
 }

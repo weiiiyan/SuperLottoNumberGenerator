@@ -2,8 +2,6 @@
 
 #include "./ui_mainwindow.h"
 
-#include <QWidget>
-
 #include "lottocontroller.h"
 #include "lottopresenter.h"
 #include "lottostylestore.h"
@@ -18,14 +16,10 @@ MainWindow::MainWindow(LottoController *controller, LottoPresenter *presenter,
     ui->setupUi(this);
     setWindowTitle(QStringLiteral("大乐透随机号码生成器"));
 
-    if (!ui->centralwidget) {
-        ui->centralwidget = new QWidget(this);
-        setCentralWidget(ui->centralwidget);
-    }
-
-    // 视图宿主承载全部 UI: 视图创建/状态渲染/风格切换均由 UI 层负责
+    // 视图宿主承载全部 UI: 视图创建/状态渲染/风格切换均由 UI 层负责。
+    // setCentralWidget 接管其所有权, 无需自建占位 central widget
     m_shell = new LottoViewShell(controller, presenter, store,
-                                 std::move(catalog), 200, ui->centralwidget);
+                                 std::move(catalog), 200, this);
     setCentralWidget(m_shell);
 }
 

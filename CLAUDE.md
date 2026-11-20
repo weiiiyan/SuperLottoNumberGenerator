@@ -16,15 +16,21 @@ cmake --build build/Desktop_Qt_6_11_1_MinGW_64_bit-Debug
 # 运行桌面版
 ./build/Desktop_Qt_6_11_1_MinGW_64_bit-Debug/SuperLottoNumberGenerator.exe
 
-# Android 调试构建（需先设置 ANDROID_NDK_ROOT 环境变量）
-cmake -B build/Qt_6_11_1_for_Android_arm64_v8a-Debug \
+# Android 调试构建（用 Qt 自带的 qt.toolchain.cmake）
+# 注意: 直接用 NDK 的 android.toolchain.cmake 会让 Qt 的 QML 插件导入目标缺失,
+# qt_finalize_executable 报 "No target Qt6::QDebugMessageServiceFactoryPlugin"
+cmake -B build/Qt_6_11_1_for_Android_arm64_v8a-Debug -G Ninja \
+  -DCMAKE_MAKE_PROGRAM=D:/Software/Qt6.11/Tools/Ninja/ninja.exe \
   -DCMAKE_BUILD_TYPE=Debug \
-  -DCMAKE_TOOLCHAIN_FILE=%ANDROID_NDK_ROOT%/build/cmake/android.toolchain.cmake \
-  -DANDROID_ABI=arm64-v8a .
+  -DCMAKE_TOOLCHAIN_FILE=D:/Software/Qt6.11/6.11.1/android_arm64_v8a/lib/cmake/Qt6/qt.toolchain.cmake \
+  -DQT_HOST_PATH=D:/Software/Qt6.11/6.11.1/mingw_64 \
+  -DANDROID_ABI=arm64-v8a \
+  -DANDROID_SDK_ROOT=D:/Software/AndroidSDK \
+  -DANDROID_NDK_ROOT=D:/Software/AndroidSDK/ndk/27.2.12479018 .
 cmake --build build/Qt_6_11_1_for_Android_arm64_v8a-Debug
 
-# 部署到 Android 设备
-adb install build/Qt_6_11_1_for_Android_arm64_v8a-Debug/android-build-SuperLottoNumberGenerator/build/outputs/apk/debug/android-build-SuperLottoNumberGenerator-debug.apk
+# 部署到 Android 设备（APK 落点以构建日志末尾的 File: 行为准）
+adb install -r build/Qt_6_11_1_for_Android_arm64_v8a-Debug/src/app/android-build/build/outputs/apk/debug/android-build-debug.apk
 
 # 清理构建
 cmake --build build/Desktop_Qt_6_11_1_MinGW_64_bit-Debug --target clean
@@ -227,10 +233,10 @@ APK 现状（Qt 6.11.1，arm64-v8a，debug）：约 24 MB，已包含 `libQt6Qui
 | `setLocked()` 状态守卫 | src/application/lottointeractor.cpp | 相同状态不重复保存 |
 | `hasNumbers()` | src/domain/lottoticket.cpp | 实体层"是否含号码"判定，展示器据此推导锁定按钮可用性 |
 | `parseGenerateTime()` | qsettingsrepository.cpp | 时间 ISO 优先、旧显示串正则回退、无效兜底 |
-| `clearLayout()` | mainwindow.cpp | 递归清空布局项，保留 widget |
-| `spacingForWidth()` | mainwindow.cpp | 竖屏四档间距分档（XS/SM/MD/LG） |
-| `buildLayout()` | mainwindow.cpp | 构建固定竖屏布局（仅 init 调用一次） |
-| `m_layoutDebounceTimer` | mainwindow.cpp | 50ms 防抖定时器，解决 Android resizeEvent 自激震荡 |
+| `clearLayout()` | src/ui/classic/lottoclassicview.cpp | 递归清空布局项，保留 widget |
+| `spacingForWidth()` | src/ui/classic/lottoclassicview.cpp | 竖屏四档间距分档（XS/SM/MD/LG） |
+| `buildLayout()` | src/ui/classic/lottoclassicview.cpp | 构建固定竖屏布局（仅 init 调用一次） |
+| `m_layoutDebounceTimer` | src/ui/classic/lottoclassicview.cpp | 50ms 防抖定时器，解决 Android resizeEvent 自激震荡 |
 
 ### 避坑指南
 

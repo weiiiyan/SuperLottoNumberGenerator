@@ -86,6 +86,10 @@ void LottoClassicView::applyState(const LottoViewState &state)
             if (FRONT_COUNT + i < row.size() && m_backLabels[g][i])
                 m_backLabels[g][i]->setText(row.at(FRONT_COUNT + i));
     }
+    for (int g = 0; g < GROUP_COUNT; g++) {
+        if (m_separators[g])
+            m_separators[g]->setText(state.separatorText);
+    }
     if (m_timeLabel)
         m_timeLabel->setText(state.timeLabelText);
     if (m_timeValueLabel)
@@ -305,7 +309,7 @@ void LottoClassicView::initUi()
                      FRONT_COUNT, m_frontLabels[g], g);
         createLabels(QStringLiteral("backLabel"), QStringLiteral("back"),
                      BACK_COUNT, m_backLabels[g], g);
-        m_separators[g] = new QLabel(QStringLiteral("+"), this);
+        m_separators[g] = new QLabel(QString(), this);   // 文本由 renderState 填充
         m_separators[g]->setObjectName(QString("separator_%1").arg(g));
         m_separators[g]->setFixedSize(m_separatorWidth, m_labelWidth);
         m_separators[g]->setAlignment(Qt::AlignCenter);
