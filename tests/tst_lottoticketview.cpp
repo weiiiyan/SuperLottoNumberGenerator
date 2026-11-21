@@ -25,7 +25,7 @@ class TestLottoTicketView : public QObject
 private slots:
     void firstFrameShowsPlaceholdersWithoutAnyRenderCall()
     {
-        qDebug() << "验证票据视图未收到状态时不自我渲染(首帧由宿主注入)";
+        qDebug() << "验证票据视图未收到状态时不自我渲染(首帧由组合根接线渲染)";
         FakeStyleHost host;
         LottoTicketView view(&host);
         // 构造期不再自渲染: 号码标签为空, 不存在展示器推导

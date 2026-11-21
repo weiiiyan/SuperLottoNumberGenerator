@@ -60,14 +60,12 @@ package "接口适配器层 src/adapters/ — lotto_adapters" as adapters #E0F0E
 package "框架与驱动 src/ui/ — lotto_ui(UI 核心)" as ui #E0E8F8 {
   component [LottoView\n«视图端口: 只消费 LottoViewState»] as View
   component [LottoStyleHost\n«风格端口: 视图自行调切换»] as StyleHost
-  component [LottoViewShell\n«宿主: 栈/重放/过渡/失败回退»] as Shell
+  component [LottoViewShell\n«宿主: 栈/切换/过渡/失败回退»] as Shell
   component [MainWindow\n«窗口壳: setupUi + 挂宿主»] as MainWindow
 
   View ..> StyleHost : 枚举风格/请求切换
   Shell ..|> StyleHost : implements
-  Shell --> View : 创建/渲染/切换
-  Shell --> Controller : 转发生成/锁定请求
-  Shell ..> Presenter : 订阅 viewStateChanged(LottoViewState)
+  Shell --> View : 创建/切换
   MainWindow --> Shell : setCentralWidget
 }
 
@@ -89,10 +87,14 @@ package "新拟物风格 src/ui/neumorphic/ — lotto_ui_neumorphic(Qt6)" as neo
 
 package "Main 组件 src/app/ — lotto_main(圆外)" as mainlib #F8E8E8 {
   component [buildStyleCatalog()\n«具体风格目录: 唯一出现类名处»] as Catalog
+  component [wireStyleCatalog()\n«接线: 创建 + connect + 首帧»] as Wiring
   component [QSettingsStyleStore\n«键 ui/styleId»] as StyleStore
 
   Catalog ..> TicketView : new
   Catalog ..> NeoView : new (Qt6)
+  Wiring ..> View : 工厂创建视图
+  Wiring ..> Presenter : state() 首帧 + 订阅 viewStateChanged
+  Wiring ..> Controller : connect 请求信号 → 用例调用槽
 }
 
 package "组合根 src/app/main.cpp\n— SuperLottoNumberGenerator 可执行目标" as exe #F8E8E8 {
@@ -105,8 +107,9 @@ package "组合根 src/app/main.cpp\n— SuperLottoNumberGenerator 可执行目�
   Main ..> Controller : new(&interactor) 依赖输入边界
   Main ..> QSettings : new(路径, IniFormat)
   Main ..> Catalog : buildStyleCatalog()
+  Main ..> Wiring : wireStyleCatalog(catalog, ...)
   Main ..> StyleStore : new(&settings)
-  Main ..> MainWindow : new(..., catalog, seed)
+  Main ..> MainWindow : new(styleStore, 接线后的目录)
 }
 
 package "测试 tests/" as tests #F0F0F0 {
@@ -133,6 +136,7 @@ package "测试 tests/" as tests #F0F0F0 {
   T9 ..> TicketView
   T10 ..> NeoView
   T11 ..> Catalog
+  T11 ..> Wiring
   T5 ..> MainWindow
 }
 

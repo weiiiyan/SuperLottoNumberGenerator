@@ -24,7 +24,7 @@ public:
 
     /*! 本视图的风格 id(与风格目录条目一致) */
     virtual QString styleId() const = 0;
-    /*! 用展示状态渲染控件(宿主在状态变化与切换后调用) */
+    /*! 用展示状态渲染控件(组合根创建视图时渲染首帧, 之后由展示器信号驱动) */
     virtual void renderState(const LottoViewState &state) = 0;
     /*! 本视图当前能否展示(异步初始化的视图覆写), 默认恒真 */
     virtual bool isReady() const;

@@ -16,9 +16,10 @@ QT_END_NAMESPACE
 /*!
  * \brief MainWindow 窗口壳: 承载视图宿主, 不含任何展示逻辑
  *
- * 视图的创建、状态渲染、风格切换与偏好持久化全部由 LottoViewShell
- * (UI 层的视图宿主)承担; 本类只负责窗口框架(菜单栏/状态栏骨架)与把
- * 依赖转交宿主, 以便视图成为可独立替换、可独立测试的组件。
+ * 视图的创建、风格切换与偏好持久化由 LottoViewShell(UI 层的视图宿主)
+ * 承担; 状态渲染由 Main 在 wireStyleCatalog() 中接线的展示器驱动。本类只
+ * 负责窗口框架(菜单栏/状态栏骨架)与把依赖转交宿主, 以便视图成为可独立
+ * 替换、可独立测试的组件。
  */
 class MainWindow : public QMainWindow
 {
