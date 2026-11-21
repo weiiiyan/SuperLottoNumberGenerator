@@ -5,10 +5,7 @@
 #include <QVector>
 
 #include "lottostylecatalog.h"
-#include "lottoviewstate.h"
 
-class LottoController;
-class LottoPresenter;
 class LottoStyleStore;
 class LottoViewShell;
 
@@ -30,17 +27,12 @@ class MainWindow : public QMainWindow
 public:
     /*!
      * \brief 构造主窗口
-     * \param controller 输入侧适配器(不持有所有权)
-     * \param presenter 输出侧适配器(不持有所有权)
      * \param store 风格偏好端口(不持有所有权)
-     * \param catalog 风格目录(由 Main 或测试注入)
-     * \param initialState 初始展示状态(由 Main 提供)
+     * \param catalog 风格目录(已由 Main 的 wireStyleCatalog 接线)
      * \param parent 父窗口
      */
-    MainWindow(LottoController *controller, LottoPresenter *presenter,
-               LottoStyleStore *store,
+    MainWindow(LottoStyleStore *store,
                QVector<LottoStyleDefinition> catalog,
-               const LottoViewState &initialState,
                QWidget *parent = nullptr);
     ~MainWindow() override;
 

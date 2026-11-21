@@ -2,25 +2,20 @@
 
 #include "./ui_mainwindow.h"
 
-#include "lottocontroller.h"
-#include "lottopresenter.h"
-#include "lottostylestore.h"
 #include "lottoviewshell.h"
 
-MainWindow::MainWindow(LottoController *controller, LottoPresenter *presenter,
-                       LottoStyleStore *store,
+MainWindow::MainWindow(LottoStyleStore *store,
                        QVector<LottoStyleDefinition> catalog,
-                       const LottoViewState &initialState, QWidget *parent)
+                       QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
     setWindowTitle(QStringLiteral("大乐透随机号码生成器"));
 
-    // 视图宿主承载全部 UI: 视图创建/状态渲染/风格切换均由 UI 层负责。
-    // setCentralWidget 接管其所有权, 无需自建占位 central widget
-    m_shell = new LottoViewShell(controller, presenter, store,
-                                 std::move(catalog), initialState, 200, this);
+    // 视图宿主承载全部 UI: 视图创建/风格切换由 UI 层负责;
+    // 视图与控制器/展示器的接线已由 Main 的 wireStyleCatalog 完成
+    m_shell = new LottoViewShell(store, std::move(catalog), 200, this);
     setCentralWidget(m_shell);
 
     // Android: 请求把客户区扩展到系统栏区域(edge-to-edge)。设计骨架的

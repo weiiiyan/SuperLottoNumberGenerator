@@ -6,20 +6,14 @@
 #include <QVBoxLayout>
 #include <QVariantAnimation>
 
-#include "lottocontroller.h"
 #include "lottostyleswitchoverlay.h"
 #include "lottostylestore.h"
 #include "lottoview.h"
 
-LottoViewShell::LottoViewShell(LottoController *controller,
-                               LottoPresenter *presenter,
-                               LottoStyleStore *store,
+LottoViewShell::LottoViewShell(LottoStyleStore *store,
                                QVector<LottoStyleDefinition> catalog,
-                               const LottoViewState &initialState,
                                int transitionMs, QWidget *parent)
     : QWidget(parent)
-    , m_controller(controller)
-    , m_presenter(presenter)
     , m_store(store)
     , m_catalog(std::move(catalog))
     , m_transitionMs(transitionMs)
@@ -28,24 +22,6 @@ LottoViewShell::LottoViewShell(LottoController *controller,
     layout->setContentsMargins(0, 0, 0, 0);
     m_stack = new QStackedWidget(this);
     layout->addWidget(m_stack);
-
-    // 状态推送: 缓存最近状态供切换重放, 并转发给当前视图
-    if (m_presenter) {
-        connect(m_presenter, &LottoPresenter::viewStateChanged,
-                this, [this](const LottoViewState &state) {
-            m_lastState = state;
-            if (m_currentView)
-                m_currentView->renderState(m_lastState);
-        });
-    }
-
-    // 初始状态由 Main 注入: 任何时刻创建的视图都至少能渲染出占位符
-    m_lastState = initialState;
-    if (m_lastState.groups.size() < LottoViewShape::GROUP_COUNT) {
-        qWarning() << "[LOTTO] 注入的初始展示状态不完整: groups="
-                   << m_lastState.groups.size()
-                   << "(期望" << LottoViewShape::GROUP_COUNT << "组), 视图将显示空控件";
-    }
 
     // 首个视图: 优先按偏好恢复, 未知/空偏好或视图不可用则回退目录首项
     if (m_catalog.isEmpty())
@@ -59,7 +35,6 @@ LottoViewShell::LottoViewShell(LottoController *controller,
     m_stack->setCurrentWidget(view);
     m_currentView = view;
     m_currentStyleId = view->styleId();
-    view->renderState(m_lastState);
     view->styleChanged(m_currentStyleId);
 }
 
@@ -192,8 +167,6 @@ void LottoViewShell::applySwitch(const QString &styleId)
     if (m_stack->indexOf(view) < 0)
         m_stack->addWidget(view);
 
-    view->renderState(m_lastState);
-
     m_stack->setCurrentWidget(view);
     m_currentView = view;
     m_currentStyleId = styleId;
@@ -258,20 +231,7 @@ LottoView *LottoViewShell::createView(const LottoStyleDefinition &definition)
 {
     if (!definition.create)
         return nullptr;
-
-    LottoView *view = definition.create(this, this);
-    if (!view)
-        return nullptr;
-
-    connect(view, &LottoView::generateRequested, this, [this]() {
-        if (m_controller)
-            m_controller->onGenerateRequested();
-    });
-    connect(view, &LottoView::lockRequested, this, [this]() {
-        if (m_controller)
-            m_controller->onLockRequested();
-    });
-    return view;
+    return definition.create(this, this);
 }
 
 LottoView *LottoViewShell::findExistingView(const QString &styleId) const
