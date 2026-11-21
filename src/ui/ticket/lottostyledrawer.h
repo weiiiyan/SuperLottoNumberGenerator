@@ -7,6 +7,7 @@
 #include "lottostylecatalog.h"
 
 class QLabel;
+class QPainter;
 class QPropertyAnimation;
 class QVBoxLayout;
 
@@ -50,6 +51,9 @@ protected:
 
 private:
     void rebuildOptions();
+    void paintSheetShadow(QPainter &painter) const;
+    void updatePaintFrame();
+    QRect sheetFrameRect() const;
     int sheetHeight() const;
 
     QWidget      *m_sheet = nullptr;        /*!< 抽屉面板 */
@@ -59,6 +63,7 @@ private:
     QString       m_currentId;              /*!< 当前风格 id */
     QRect         m_cardRect;               /*!< 票面矩形(面板贴底) */
     bool          m_open = false;           /*!< 展开状态 */
+    QRect         m_paintFrame;             /*!< 上一帧的面板+柔影范围 */
     QPropertyAnimation *m_slide = nullptr;  /*!< 上滑/下滑动画 */
 };
 

@@ -183,6 +183,10 @@ Main 侧（`src/app/`）只有 `buildStyleCatalog()`——唯一允许出现具�
 
 Widgets + QSS 实现，按 390 × 844 竖屏骨架排布：顶栏（品牌 + 副标题 + 风格按钮）→ 时间条 → 5 行号码带 → 骑缝线 → 两行票根 → 操作区。保留既有控件 objectName（`ticketRoot` / `timeLabel` / `timeValueLabel` / `frontLabel_g_i` / `backLabel_g_i` / `separator_g` / `btnGenerate` / `btnLock` / `btnStyleSwitch` / `groupsContainer`），并新增 `serialLabel` / `stubHint` / `stubCount` / `stampLabel` / `rowIndex_g`。展示推导仍由 `LottoPresenter` 承担，本视图只做机械写入；按钮用 `clicked`（不用 `toggled`，避免程序化 `setChecked` 触发保存回路）。
 
+性能：票面背景（舞台渐变 + 纸纹 + 顶部柔光）只与尺寸有关，缓存进
+`m_backdrop`（QPixmap，按 `devicePixelRatio` 渲染），尺寸/DPR 变化才重建；
+抽屉等子控件的动画重绘因此只做位块拷贝（实机单帧重绘 6–16ms → 1–2ms）。
+
 自绘控件（QSS 无法表达多重 inset 阴影与条纹）：
 - [lottoballlabel.cpp](src/ui/ticket/lottoballlabel.cpp) — 号码球：`QRadialGradient` 双点 + 底部内阴影 + 1px 内描边；`popScale` 属性驱动换号弹入（0.72 → 1，按球序 16ms 错峰）
 - [lottoticketdecor.cpp](src/ui/ticket/lottoticketdecor.cpp) — 骑缝线（虚线 + 两端半圆缺口）、条形码、锁定印章（斜 7°，220ms 淡入）
@@ -307,6 +311,9 @@ APK 现状（Qt 6.11.1，arm64-v8a，debug）：约 24 MB，已包含 `libQt6Qui
 - **新增源文件加入所属层的 CMakeLists.txt**：`src/domain/`、`src/application/`、`src/adapters/`、`src/ui/`、`src/ui/ticket/`、`src/ui/neumorphic/`、`src/app/` 各有独立 `CMakeLists.txt`。**QML 文件要加进 `qt_add_qml_module` 的 `QML_FILES`**，否则不会进资源。改 CMake 后需重新运行 cmake 配置以刷新 `compile_commands.json`。
 - **静态库的 Qt 依赖必须 PUBLIC**：`lotto_core`/`lotto_application`/`lotto_adapters`/`lotto_ui`/`lotto_ui_ticket`/`lotto_ui_neumorphic`/`lotto_main` 用 `target_link_libraries(... PUBLIC Qt::...)`，PRIVATE 不会向下游传递 Qt 头文件路径，导致测试/可执行编译找不到 Qt 头。
 - **Android 全屏要连 `WA_ContentsMarginsRespectsSafeArea` 一起关**：只设 `ExpandedClientAreaHint` 时窗口虽已是整屏，`QWidget::contentsMargins()` 仍会把 `safeAreaMargins()` 并进布局边距，中央控件再缩一圈，且 `QStatusBar` 在底部多占一行。属性必须在 `show()` 之前设置，否则自动置位已生效。
+- **动画中的控件不要挂 `QGraphicsDropShadowEffect`**：票据抽屉原用 blurRadius 40 的投影，实机每帧绘制 20–30ms，240ms 上滑动画只跑出 5–6 帧（约 12fps）；现改为在抽屉 `paintEvent` 里画渐变柔影（`paintSheetShadow()`），同动画 14 帧（≈58fps）。需要柔影时优先缓存成 pixmap 或用渐变近似。
+- **手绘柔影要自己维护失效区域**：柔影画在面板矩形之外，Qt 只按面板新旧矩形失效重绘，面板滑动时旧柔影会留在画面上（收起时出现拖影）。抽屉在动画每帧调 `updatePaintFrame()`，把上一帧与当前帧的「面板 + 柔影」范围一并 `update()`。
+- **柔影裁剪要用正圆弧**：面板圆角是 QSS 的 20px 圆弧，柔影裁剪若用 `quadTo`（二次贝塞尔）会在角上偏外约 6px，圆角外留下月牙形浅色夹缝；`paintSheetShadow()` 用 `arcTo` 画圆角。
 - **窄屏票面不要按画布高 844 截断**：Android 全屏后可用高可能超过 844，`qMin(height, 844)` 会让票面缩成上下留边的圆角卡片。窄屏（宽 ≤ 390）必须宽高都满幅，票据视图 `updateCardRect()` 与 `NeumorphicView.qml` 的 `card` 两处同步。
 - **不要把具体风格链接进 `lotto_ui`**：核心库一旦依赖 `lotto_ui_ticket` 或 `lotto_ui_neumorphic`，"可插拔"就失效了。`LottoUiIsolationTest` 只链接 `lotto_ui`，它的 `linkLibs.rsp` 里出现任何 `Quick`/`Qml` 都说明边界被破坏。
 - **具体风格类名只允许出现在 `src/app/maincatalog.cpp`**：核心库、宿主、窗口壳都不得 include `lottoticketview.h` / `lottoneumorphicview.h`。新增风格时改目录，不改宿主。

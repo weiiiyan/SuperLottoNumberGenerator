@@ -559,7 +559,24 @@ void LottoTicketView::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event)
 
+    // 背景(渐变/纸纹/柔光)只与尺寸有关: 缓存成 pixmap, 抽屉等子控件的
+    // 动画重绘时只做一次位块拷贝, 不再逐帧重跑纸纹循环
+    const qreal dpr = devicePixelRatioF();
+    if (m_backdrop.size() != (QSizeF(size()) * dpr).toSize()
+        || !qFuzzyCompare(m_backdrop.devicePixelRatio(), dpr)) {
+        m_backdrop = QPixmap((QSizeF(size()) * dpr).toSize());
+        m_backdrop.setDevicePixelRatio(dpr);
+        m_backdrop.fill(Qt::transparent);
+        QPainter cachePainter(&m_backdrop);
+        paintBackdrop(cachePainter);
+    }
+
     QPainter painter(this);
+    painter.drawPixmap(0, 0, m_backdrop);
+}
+
+void LottoTicketView::paintBackdrop(QPainter &painter)
+{
     painter.setRenderHint(QPainter::Antialiasing, true);
 
     // 展示底: 暖灰径向渐变

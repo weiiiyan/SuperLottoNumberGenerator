@@ -3,11 +3,12 @@
 #include <QColor>
 #include <QEvent>
 #include <QFont>
-#include <QGraphicsDropShadowEffect>
 #include <QKeyEvent>
+#include <QLinearGradient>
 #include <QLabel>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPainterPath>
 #include <QPropertyAnimation>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -18,7 +19,9 @@ namespace {
 constexpr int kSheetPad = 18;      /*!< 面板内边距 */
 constexpr int kOptionHeight = 48;  /*!< 单个选项高度(设计稿 14px 内边距 + 文案) */
 constexpr int kOptionGap = 8;      /*!< 选项间距 */
+constexpr int kShadowHeight = 60;  /*!< 面板上沿柔影高度 */
 constexpr int kSlideMs = 240;      /*!< 上滑时长 */
+
 /*! 风格选项: 自绘 1.5px 边框, 文案左对齐、状态右对齐(设计稿 space-between) */
 class StyleOptionButton : public QPushButton
 {
@@ -114,13 +117,6 @@ LottoStyleDrawer::LottoStyleDrawer(QWidget *parent)
     m_sheet->setObjectName(QStringLiteral("styleDrawerSheet"));
     m_sheet->setAttribute(Qt::WA_StyledBackground, true);
 
-    // 面板上沿投影(设计稿: 0 -18px 40px rgba(40,30,15,.55))
-    auto *sheetShadow = new QGraphicsDropShadowEffect(m_sheet);
-    sheetShadow->setBlurRadius(40);
-    sheetShadow->setOffset(0, -18);
-    sheetShadow->setColor(QColor(40, 30, 15, 140));
-    m_sheet->setGraphicsEffect(sheetShadow);
-
     m_sheetLayout = new QVBoxLayout(m_sheet);
     m_sheetLayout->setContentsMargins(kSheetPad, kSheetPad, kSheetPad, kSheetPad);
     m_sheetLayout->setSpacing(kOptionGap);
@@ -133,6 +129,11 @@ LottoStyleDrawer::LottoStyleDrawer(QWidget *parent)
     m_slide = new QPropertyAnimation(m_sheet, "pos", this);
     m_slide->setDuration(kSlideMs);
     m_slide->setEasingCurve(QEasingCurve::OutCubic);
+
+    // 柔影画在面板上方, 不在面板自身的失效矩形里; 每帧把上一帧的
+    // "面板+柔影"范围一并失效, 否则面板移动时旧阴影会留在画面上(拖影)
+    connect(m_slide, &QPropertyAnimation::valueChanged, this,
+            [this](const QVariant &) { updatePaintFrame(); });
 }
 
 void LottoStyleDrawer::setStyles(const QVector<LottoStyleInfo> &styles,
@@ -215,6 +216,7 @@ void LottoStyleDrawer::openFor(const QRect &cardRect)
     setFocus();
 
     m_open = true;
+    m_paintFrame = sheetFrameRect();
     m_slide->stop();
     m_slide->setStartValue(QPoint(x, cardRect.bottom() + 1));
     m_slide->setEndValue(QPoint(x, cardRect.bottom() + 1 - height));
@@ -231,6 +233,7 @@ void LottoStyleDrawer::reposition(const QRect &cardRect)
         return;
     m_sheet->setGeometry(cardRect.left(), cardRect.bottom() + 1 - sheetHeight(),
                          cardRect.width(), sheetHeight());
+    m_paintFrame = sheetFrameRect();
     update();
 }
 
@@ -244,6 +247,7 @@ void LottoStyleDrawer::closeDrawer()
     }
     m_open = false;
 
+    m_paintFrame = sheetFrameRect();
     m_slide->stop();
     m_slide->setStartValue(m_sheet->pos());
     m_slide->setEndValue(QPoint(m_cardRect.left(), m_cardRect.bottom() + 1));
@@ -256,11 +260,75 @@ void LottoStyleDrawer::closeDrawer()
     update();
 }
 
+void LottoStyleDrawer::paintSheetShadow(QPainter &painter) const
+{
+    // 面板上沿投影(设计稿 0 -18px 40px rgba(40,30,15,.55)):
+    // 用渐变近似高斯模糊。QGraphicsDropShadowEffect 每帧要对整块面板做
+    // 离屏模糊(实测 20-30ms/帧), 在滑动动画里会直接掉帧。
+    const QRect sheetRect = m_sheet->geometry();
+    if (sheetRect.isEmpty())
+        return;
+    // 面板滑出卡片底部时柔影随之淡出, 避免收起末尾在窗口底部留下暗带
+    const qreal visibility = qBound(0.0,
+        qreal(m_cardRect.bottom() + 1 - sheetRect.top()) / kShadowHeight, 1.0);
+    if (visibility <= 0.0)
+        return;
+
+    // 柔影按面板轮廓(上圆角、下直角)裁剪: 矩形条带的直边会在圆角外侧
+    // 露出直角, 必须把圆角外的缺口也填上, 让面板从柔影里"长"出来
+    constexpr qreal kRadius = 20.0;   // 与 style.qss 的面板上圆角一致
+    const qreal left = sheetRect.left();
+    const qreal right = sheetRect.left() + sheetRect.width();
+    const qreal top = sheetRect.top();
+
+    // 面板圆角是正圆弧: 用 arcTo 而非 quadTo(二次贝塞尔偏外约 6px,
+    // 会在圆角外留出月牙形的浅色夹缝)
+    QPainterPath sheetPath;
+    sheetPath.moveTo(left, sheetRect.bottom() + 1);
+    sheetPath.lineTo(left, top + kRadius);
+    sheetPath.arcTo(QRectF(left, top, 2 * kRadius, 2 * kRadius), 180.0, -90.0);
+    sheetPath.lineTo(right - kRadius, top);
+    sheetPath.arcTo(QRectF(right - 2 * kRadius, top, 2 * kRadius, 2 * kRadius),
+                    90.0, -90.0);
+    sheetPath.lineTo(right, sheetRect.bottom() + 1);
+    sheetPath.closeSubpath();
+
+    const QRectF band(left, top - kShadowHeight, right - left,
+                      kShadowHeight + kRadius);
+    QPainterPath shadowPath;
+    shadowPath.addRect(band);
+    shadowPath = shadowPath.subtracted(sheetPath);
+
+    painter.save();
+    painter.setClipPath(shadowPath);
+    QLinearGradient gradient(QPointF(0.0, band.top()),
+                             QPointF(0.0, band.bottom()));
+    gradient.setColorAt(0.0, QColor(40, 30, 15, 0));
+    gradient.setColorAt(qreal(kShadowHeight) / (kShadowHeight + kRadius),
+                        QColor(40, 30, 15, qRound(140 * visibility)));
+    gradient.setColorAt(1.0, QColor(40, 30, 15, qRound(140 * visibility)));
+    painter.fillRect(band, gradient);
+    painter.restore();
+}
+
+QRect LottoStyleDrawer::sheetFrameRect() const
+{
+    return m_sheet->geometry().adjusted(0, -kShadowHeight, 0, 0);
+}
+
+void LottoStyleDrawer::updatePaintFrame()
+{
+    const QRect current = sheetFrameRect();
+    update(current.united(m_paintFrame));
+    m_paintFrame = current;
+}
+
 void LottoStyleDrawer::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event)
     QPainter painter(this);
     painter.fillRect(rect(), QColor(28, 27, 25, 87));
+    paintSheetShadow(painter);
 }
 
 void LottoStyleDrawer::mousePressEvent(QMouseEvent *event)

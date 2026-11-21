@@ -193,6 +193,28 @@ private slots:
         QCOMPARE(topBar->y(), LottoLayout::PadTop);
     }
 
+    void backdropCacheFollowsResize()
+    {
+        qDebug() << "验证背景缓存随尺寸重建(放大后新区域仍有纸面)";
+        FakeStyleHost host;
+        LottoTicketView view(&host);
+        view.resize(390, 844);
+        view.show();
+        QTest::qWait(80);
+
+        const QColor before = view.grab().toImage().pixelColor(200, 20);
+        view.resize(390, 900);
+        QTest::qWait(120);   // 等 50ms 布局防抖 + 重绘
+
+        const QImage after = view.grab().toImage();
+        QCOMPARE(after.pixelColor(200, 20), before);
+        const QColor bottom = after.pixelColor(200, 880);
+        QCOMPARE(bottom.alpha(), 255);
+        // 纸面是暖色(R 明显高于 B); 未绘制的区域是控件底色(中性灰白)
+        QVERIFY2(bottom.red() - bottom.blue() > 10,
+                 "放大后新区域应绘制纸面背景");
+    }
+
     void safeAreaRaisesPaddingsOnlyWhenLarger()
     {
         qDebug() << "验证安全边距取设计令牌与窗口安全区的较大者";
