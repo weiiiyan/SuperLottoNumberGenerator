@@ -4,13 +4,61 @@
 
 #include <QTest>
 
+#include "lottocontroller.h"
+#include "lottopresenter.h"
+#include "lottoview.h"
 #include "maincatalog.h"
+#include "testhelpers.h"
+#include "uitesthelpers.h"
 
 class TestMainCatalog : public QObject
 {
     Q_OBJECT
 
 private slots:
+    void wireStyleCatalog_shouldRenderCurrentStateAndForwardIntents()
+    {
+        qDebug() << "验证接线: 首帧取展示器缓存, 请求信号到达输入边界, present 后重渲染";
+
+        FakeInputBoundary input;
+        LottoController controller(&input);
+        LottoPresenter presenter;
+        FakeStyleHost host;
+
+        // 先推送一次, 确保视图创建时拿到的是最新缓存而不是初始种子
+        presenter.present(makeTicket());
+
+        QVector<LottoStyleDefinition> raw;
+        raw.append({ {QStringLiteral("fake"), QStringLiteral("假风格")},
+            [](LottoStyleHost *, QWidget *parent) -> LottoView * {
+                return new FakeLottoView(nullptr, QStringLiteral("fake"), parent);
+            } });
+
+        const auto wired = wireStyleCatalog(raw, &controller, &presenter);
+        QCOMPARE(wired.size(), 1);
+
+        LottoView *view = wired.first().create(&host, nullptr);
+        auto *fake = static_cast<FakeLottoView *>(view);
+        QVERIFY(fake != nullptr);
+
+        // 首帧: 展示器当前状态(含号码, 不是空种子)
+        QCOMPARE(fake->stateCount(), 1);
+        QCOMPARE(fake->lastState().groups, presenter.state().groups);
+        QCOMPARE(fake->lastState().lockButtonEnabled, true);
+
+        // 点击 → 输入边界
+        fake->simulateGenerate();
+        fake->simulateLock();
+        QCOMPARE(input.generateCalls, 1);
+        QCOMPARE(input.toggleLockCalls, 1);
+
+        // present → 视图重渲染
+        presenter.present(makeTicket());
+        QCOMPARE(fake->stateCount(), 2);
+
+        delete view;
+    }
+
     void firstEntryIsTicket()
     {
         qDebug() << "验证 Main 目录首项为票据视图";
