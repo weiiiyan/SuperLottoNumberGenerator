@@ -3,6 +3,7 @@
 # 本目标不链接任何具体风格, 也不依赖 Qt Quick —— 风格由子目录各自构建
 
 add_library(lotto_ui STATIC
+    lottolayoutmetrics.h
     lottoview.h lottoview.cpp
     lottostylehost.h
     lottostylecatalog.h
@@ -17,7 +18,7 @@ target_link_libraries(lotto_ui PUBLIC lotto_adapters
     Qt${QT_VERSION_MAJOR}::Widgets)
 
 # 具体风格组件: 每个风格一个可独立链接的目标
-add_subdirectory(classic)
+add_subdirectory(ticket)
 if(QT_VERSION_MAJOR GREATER_EQUAL 6)
     add_subdirectory(neumorphic)
 endif()

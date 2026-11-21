@@ -23,7 +23,7 @@ endif()
 
 # ── 分层架构: 领域核心 / 用例层 / 适配器 / UI 核心与风格组件 / Main ──
 # 依赖只指向内层: ui → adapters → application → domain;
-# 具体风格(ui/classic, ui/neumorphic)与 Main(app) 在外侧
+# 具体风格(ui/ticket, ui/neumorphic)与 Main(app) 在外侧
 add_subdirectory(src/domain)
 add_subdirectory(src/application)
 add_subdirectory(src/adapters)

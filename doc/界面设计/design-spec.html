@@ -253,11 +253,11 @@ footer.doc{
   <div>
     <p class="eyebrow">SuperLotto · Design Contract</p>
     <h1>组件与配色规范</h1>
-    <p class="sub">两套主题共用一套布局骨架，只替换视觉令牌。本页是给开发照着实现的唯一参照：尺寸、间距、状态、映射到 <code>classic/style.qss</code> 与 <code>LottoUi/*.qml</code> 的写法。</p>
+    <p class="sub">两套主题共用一套布局骨架，只替换视觉令牌。本页是给开发照着实现的唯一参照：尺寸、间距、状态、映射到 <code>ticket/style.qss</code> 与 <code>LottoUi/*.qml</code> 的写法。</p>
   </div>
   <nav class="docnav" aria-label="设计文件">
     <a href="index.html">总览</a>
-    <a href="classic-ticket.html">经典 · 票券</a>
+    <a href="ticket.html">票据</a>
     <a href="neumorphic.html">新拟物</a>
     <a href="design-spec.html" aria-current="page">组件规范</a>
   </nav>
@@ -266,7 +266,7 @@ footer.doc{
 <!-- ========== 1. 共用布局 ========== -->
 <section data-od-id="section-layout">
   <h2>01 · 共用布局骨架</h2>
-  <p class="lead">之前两套界面的问题不是配色，而是<strong>结构不同</strong>：经典版是 QWidget 竖排 + 角落菜单，新拟物版是 QML 的 <code>ColumnLayout</code> + 底部胶囊，标题位置、时间条位置、按钮顺序都不一样。使用者切换主题时等于换了一个应用。</p>
+  <p class="lead">之前两套界面的问题不是配色，而是<strong>结构不同</strong>：票据版是 QWidget 竖排 + 角落菜单，新拟物版是 QML 的 <code>ColumnLayout</code> + 底部胶囊，标题位置、时间条位置、按钮顺序都不一样。使用者切换主题时等于换了一个应用。</p>
   <p>现在统一为下面这一张骨架。两套主题<strong>行高、间距、控件顺序、点击区域全部一致</strong>，只允许改：背景、号码球外观、按钮质感、分隔线样式。</p>
 
   <div class="grid g2" style="margin-top:22px">
@@ -287,7 +287,7 @@ footer.doc{
         <li><strong>号码区紧凑成带</strong>：行高固定 76px，行间不设 gap，虚线就是行边界；5 行共 380px。390×844 下余高约 38px 分给号码带上下，票根区吸收剩余高度——不靠行距“吸收”余高。窗口变矮时先把行高压到 68px，再压边距，不出现滚动条。</li>
         <li><strong>票根区分两行</strong>：上行票号 + 条形码，下行提示 + 注数 + 印章；两行之间一条 hairline，整块约 105px。锁定印章落在下行右端，替掉注数。</li>
         <li><strong>操作区贴底</strong>：占 81px 固定高度，<em>左锁定、右生成</em>，生成按钮更宽（比例 1 : 1.32）。</li>
-        <li><strong>风格入口唯一</strong>：右上角一个 32px 按钮，弹出底部抽屉。删除原先经典版的 <code>QToolButton</code> 菜单与新拟物版的底部胶囊两套入口。</li>
+        <li><strong>风格入口唯一</strong>：右上角一个 32px 按钮，弹出底部抽屉。删除原先票据版的 <code>QToolButton</code> 菜单与新拟物版的底部胶囊两套入口。</li>
       </ul>
       <h4>尺寸令牌</h4>
       <table class="mono">
@@ -305,10 +305,10 @@ footer.doc{
   </div>
 </section>
 
-<!-- ========== 2. 经典主题 ========== -->
+<!-- ========== 2. 票据主题 ========== -->
 <section data-od-id="section-ticket">
-  <h2>02 · 经典主题 · 票券</h2>
-  <p class="lead">原来经典版的问题是"没设计感"：纯色红块按钮、圆角矩形号码、没有主次。新方向把它做成<strong>一张彩票票根</strong>——纸面、骑缝线、票号、锁定印章。号码球是绝对主角，其余元素全部退成细线。</p>
+  <h2>02 · 票据主题</h2>
+  <p class="lead">原来票据版的问题是"没设计感"：纯色红块按钮、圆角矩形号码、没有主次。新方向把它做成<strong>一张彩票票根</strong>——纸面、骑缝线、票号、锁定印章。号码球是绝对主角，其余元素全部退成细线。</p>
 
   <h3>配色令牌</h3>
   <table class="mono">
@@ -336,7 +336,7 @@ footer.doc{
     <span class="d-ball d-back">04</span>
     <span class="d-ball d-back">09</span>
   </div>
-  <pre><span class="c">// classic/style.qss —— 号码球由属性选择器区分</span>
+  <pre><span class="c">// ticket/style.qss —— 号码球由属性选择器区分</span>
 QLabel[area=<span class="s">"front"</span>] {
     color: #FFF8F4;
     border: none;
@@ -381,7 +381,7 @@ QLabel[area=<span class="s">"back"</span>] {
 <!-- ========== 3. 新拟物主题 ========== -->
 <section data-od-id="section-neumo">
   <h2>03 · 新拟物主题（保持风格，只换骨架）</h2>
-  <p class="lead">新拟物风格本身保留：<code>#E0E5EC</code> 底色、左上亮影 / 右下暗影、按下内陷。改的只有结构——与经典版逐像素对齐。</p>
+  <p class="lead">新拟物风格本身保留：<code>#E0E5EC</code> 底色、左上亮影 / 右下暗影、按下内陷。改的只有结构——与票据版逐像素对齐。</p>
 
   <h3>令牌（与 NeumoTheme.qml 一一对应）</h3>
   <table class="mono">
@@ -422,7 +422,7 @@ QLabel[area=<span class="s">"back"</span>] {
   <h4 style="margin-top:26px">实现要点</h4>
   <ul>
     <li>删除 <code>NeumorphicView.qml</code> 底部的 <code>NeumoPill</code> 胶囊行，风格入口收到右上角按钮。</li>
-    <li>球径从 44 改为 40；行高固定 76（球 40 + 上下各 18），行间 spacing 0。<code>NeumoTicketRow</code> 的 <code>ballSize</code> 直接绑定骨架常量，不再按宽度反算（反算会导致与经典版行高不一致），也不再用 <code>ballSize + 2 × 3</code> 推导行高。</li>
+    <li>球径从 44 改为 40；行高固定 76（球 40 + 上下各 18），行间 spacing 0。<code>NeumoTicketRow</code> 的 <code>ballSize</code> 直接绑定骨架常量，不再按宽度反算（反算会导致与票据版行高不一致），也不再用 <code>ballSize + 2 × 3</code> 推导行高。</li>
     <li><code>RectangularShadow</code> 的 blur 在 40px 球上取 8–9，否则阴影会糊在一起；<code>shadowOffset</code> 同步取 3。</li>
     <li>分隔线用 1px 线性渐变（中间实、两端透明），替代硬线，符合柔面语言。</li>
   </ul>
@@ -453,9 +453,9 @@ QLabel[area=<span class="s">"back"</span>] {
   <h2>05 · 改动清单</h2>
   <div class="grid g2">
     <div class="card">
-      <h4>经典主题（QWidget）</h4>
+      <h4>票据主题（QWidget）</h4>
       <ul>
-        <li><code>lottoclassicview.cpp</code>：<code>buildLayout()</code> 按新骨架重排——顶栏、时间条、票号行、操作区。</li>
+        <li><code>lottoticketview.cpp</code>：<code>buildLayout()</code> 按新骨架重排——顶栏、时间条、票号行、操作区。</li>
         <li>时间标签从两个拼接 Label（#timeLabel / #timeValueLabel）改为一行「标签 + 值」，去掉红色胶囊底。</li>
         <li>号码球固定 40px（390 宽下的上限），行高 76、行距 0；删除按屏幕宽度反算球径的逻辑（<code>updateLabelSizes</code> 里的 <code>LABEL_ROW_WIDTH_FRACTION</code> 分支）。</li>
         <li>新增两行票根区与骑缝线（可用 <code>QFrame</code> + <code>paintEvent</code> 画半圆缺口）：上行票号 + 条形码，下行提示 + 注数 + 印章。</li>
@@ -466,7 +466,7 @@ QLabel[area=<span class="s">"back"</span>] {
     <div class="card">
       <h4>新拟物主题（QML）</h4>
       <ul>
-        <li><code>NeumorphicView.qml</code>：根 <code>ColumnLayout</code> 按 66 / 60 / flex / 105 / 81 分段，号码带内部 spacing 0，与经典版共用同一组骨架常量。</li>
+        <li><code>NeumorphicView.qml</code>：根 <code>ColumnLayout</code> 按 66 / 60 / flex / 105 / 81 分段，号码带内部 spacing 0，与票据版共用同一组骨架常量。</li>
         <li>时间行 <code>NeumoValueRow</code> 改为整行两端对齐（标签左、值右）。</li>
         <li><code>NeumoTicketRow.qml</code>：<code>ballSize</code> 固定 40，行高固定 76，行间 spacing 0。</li>
         <li>删除 <code>NeumoPill.qml</code> 的使用；保留文件或一并删除均可。</li>

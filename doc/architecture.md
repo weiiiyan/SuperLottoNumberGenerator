@@ -26,7 +26,7 @@ src/adapters/      → lotto_adapters 库: 接口适配器(Interface Adapters, �
 src/ui/            → lotto_ui 库: 框架与驱动(UI 核心)
                      视图端口 + 风格端口 + 宿主 LottoViewShell + 过渡 + 窗口壳 MainWindow
                      不含任何具体风格, 不依赖 Qt Quick
-src/ui/classic/    → lotto_ui_classic 库: 经典风格组件(Widgets + QSS)
+src/ui/ticket/     → lotto_ui_ticket 库: 票据风格组件(Widgets + QSS)
 src/ui/neumorphic/ → lotto_ui_neumorphic 库: 新拟物风格组件(Qt6 QML + QQuickWidget)
 src/app/           → lotto_main 库: Main 组件(具体风格目录 + 组合根)
 src/app/main.cpp   → 组合根: 装配具体依赖(唯一接触 QSettings 具体类的点)
@@ -35,7 +35,7 @@ src/app/main.cpp   → 组合根: 装配具体依赖(唯一接触 QSettings 具�
 依赖方向(全部指向内层, 无环):
 
 ```text
-lotto_ui_classic ─┐
+lotto_ui_ticket ─┐
 lotto_ui_neumorphic ┴─► lotto_ui ─► lotto_adapters ─► lotto_application ─► lotto_core
 lotto_main ─► 以上全部(运行期无人依赖它)
 ```
@@ -56,7 +56,7 @@ lotto_main ─► 以上全部(运行期无人依赖它)
 
 **为何按层封装而非按用例/功能划分目录(有意权衡)**:第 21 章"尖叫的架构"主张顶层目录反映用例(如 `patients/`、`diagnoses/`);第 34 章也指出按层封装的隐患——不同业务领域的分层代码看起来惊人相似,无法展现领域信息。本项目仍按层划分,理由:(1) 本系统只有**一个用例**(生成/锁定/恢复一注大乐透号码),用例即系统本身,层目录只是洋葱壳;(2) "尖叫"由类名承担——全项目 `Lotto*` 前缀(LottoGroup/LottoTicket/LottoEngine/LottoInteractor/LottoPresenter),打开任何文件都知道这是什么系统;(3) 本项目用于教学,目录与洋葱图一一对应本身就是教学目标。**触发条件**:出现第二个可区分用例(历史记录/统计分析/多玩法等)时,层目录将开始埋没用例,应改为按用例纵向切分——每用例一个组件,自带交互器/展示器/仓储端口(参考第 33 章案例分析)。详见 CLAUDE.md。
 
-**为何风格是独立组件**:书图 22.2 把展示器、视图、控制器画在同一个圆里。实现"UI 可替换"的关键不是把视图放得"更外层", 而是让**每一套风格成为可独立链接的组件**:链接 `lotto_ui` 不被迫拖入 Qt Quick, 只想用经典视图的产品可以只链接 `lotto_ui_classic`。守门测试 `LottoUiIsolationTest` 只链接核心库。
+**为何风格是独立组件**:书图 22.2 把展示器、视图、控制器画在同一个圆里。实现"UI 可替换"的关键不是把视图放得"更外层", 而是让**每一套风格成为可独立链接的组件**:链接 `lotto_ui` 不被迫拖入 Qt Quick, 只想用票据视图的产品可以只链接 `lotto_ui_ticket`。守门测试 `LottoUiIsolationTest` 只链接核心库。
 
 **输入/输出侧适配器为何统一归入 adapters/**:按洋葱图 Controller(输入侧)与 Presenter(输出侧)都是接口适配器,与存储侧 Gateway 同层对称,因此统一物理上放 src/adapters/。曾有意让展示器与谦卑视图同库配对(ch24 不完全边界),本次已按"严格整洁架构"收口:适配器不依赖 Widget、依赖只指向内层的约束由库边界强制,视图与适配器解耦后各自可独立测试与替换。
 
@@ -89,7 +89,7 @@ lotto_main ─► 以上全部(运行期无人依赖它)
 - `LottoView` — 视图端口:只消费 `LottoViewState`(定义在 adapters 的 `lottoviewstate.h`), 把用户操作翻译为 `generateRequested`/`lockRequested` 信号; 不感知领域实体与本用例层
 - `LottoViewShell` — 视图宿主: 按目录懒创建视图、缓存并重放最近状态、把请求转发给控制器、执行切换过渡、保存偏好。初始 `LottoViewState` 由 Main 注入, 保证任何时刻创建的视图都能渲染
 - `MainWindow` — 窗口壳: `setupUi` + 把宿主设为 central widget, 与宿主同圆
-- `lotto_ui_classic` — 经典风格组件: `LottoClassicView` + QSS + qrc(自带资源初始化)
+- `lotto_ui_ticket` — 票据风格组件: `LottoTicketView` + QSS + qrc(自带资源初始化)
 - `lotto_ui_neumorphic` — 新拟物风格组件: `LottoNeumorphicView`(组合 `QQuickWidget`)+ `LottoUi` QML 模块; Qt6-only
 
 ### Main(src/app)
@@ -130,7 +130,7 @@ lotto_main ─► 以上全部(运行期无人依赖它)
 | LottoPresenterTest | 展示推导 + 输出端口桥接(无 GUI 依赖) |
 | LottoUiTest | 视图基类默认行为 |
 | LottoUiIsolationTest | 只链接 lotto_ui: 核心库不拖入 Qt Quick 的守门测试 |
-| LottoClassicViewTest | 经典视图渲染/请求信号/风格菜单 |
+| LottoTicketViewTest | 票据视图渲染/请求信号/票根文案/风格抽屉 |
 | LottoViewShellTest | 宿主: 默认与恢复风格/失败回退/状态重放/过渡覆盖层 |
 | LottoNeumorphicViewTest / LottoQmlSmokeTest | QML 视图与模块加载(Qt6) |
 | LottoMainCatalogTest | Main 的具体风格目录条目 |

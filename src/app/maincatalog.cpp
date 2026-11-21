@@ -2,7 +2,7 @@
 
 #include <QtGlobal>
 
-#include "classic/lottoclassicview.h"
+#include "ticket/lottoticketview.h"
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include "neumorphic/lottoneumorphicview.h"
 #endif
@@ -11,9 +11,9 @@ QVector<LottoStyleDefinition> buildStyleCatalog()
 {
     QVector<LottoStyleDefinition> catalog;
 
-    catalog.append({ {QStringLiteral("classic"), QStringLiteral("经典")},
+    catalog.append({ {QStringLiteral("ticket"), QStringLiteral("票据")},
         [](LottoStyleHost *host, QWidget *parent) -> LottoView * {
-            return new LottoClassicView(host, parent);
+            return new LottoTicketView(host, parent);
         } });
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)

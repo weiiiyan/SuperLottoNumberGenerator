@@ -172,4 +172,11 @@ void LottoNeumorphicView::pushStateToQml()
     root->setProperty("lockButtonChecked", m_state.lockButtonChecked);
     root->setProperty("numberPlaceholder", m_state.numberPlaceholder);
     root->setProperty("separatorText", m_state.separatorText);
+    root->setProperty("appTitleText", m_state.appTitleText);
+    root->setProperty("headerMetaText", m_state.headerMetaText);
+    root->setProperty("serialText", m_state.serialText);
+    root->setProperty("stubHintText", m_state.stubHintText);
+    root->setProperty("stubCountText", m_state.stubCountText);
+    root->setProperty("stubCountValueText", m_state.stubCountValueText);
+    root->setProperty("stampText", m_state.stampText);
 }

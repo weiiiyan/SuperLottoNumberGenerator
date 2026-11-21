@@ -214,6 +214,64 @@ private slots:
         QCOMPARE(state.timeValueText,
                  QString::fromUtf8(LottoViewText::TIME_PLACEHOLDER));
     }
+
+    // 票根: 票号/提示/注数/印章
+
+    void emptyTicket_shouldShowSerialPlaceholder()
+    {
+        qDebug() << "验证空票据的票号为占位文本";
+        const LottoViewState state = LottoPresenter::buildViewState(LottoTicket());
+        QCOMPARE(state.serialText, QString::fromUtf8(LottoViewText::SERIAL_PLACEHOLDER));
+    }
+
+    void serial_shouldBeDeterministicFromGenerateTime()
+    {
+        qDebug() << "验证票号由生成时间确定性推导, 重绘不跳变";
+        const QDateTime time(QDate(2026, 11, 20), QTime(20, 46, 7));
+        const LottoTicket ticket = makeTicket(LottoTicket::GROUP_COUNT, false, time);
+
+        const LottoViewState first = LottoPresenter::buildViewState(ticket);
+        const LottoViewState second = LottoPresenter::buildViewState(ticket);
+        QCOMPARE(first.serialText, second.serialText);
+
+        QCOMPARE(first.serialText.left(11), QStringLiteral("NO. 261120 "));
+        QCOMPARE(first.serialText.size(), 15);
+        const QString tail = first.serialText.mid(11);
+        QCOMPARE(tail.size(), 4);
+        for (QChar c : tail)
+            QVERIFY(c.isDigit());
+    }
+
+    void stubTexts_shouldFollowConstants()
+    {
+        qDebug() << "验证票根文案来自统一常量";
+        const LottoViewState state =
+            LottoPresenter::buildViewState(makeTicket(LottoTicket::GROUP_COUNT, false,
+                                                      QDateTime(QDate(2026, 11, 20),
+                                                                QTime(20, 46, 7))));
+        QCOMPARE(state.appTitleText, QString::fromUtf8(LottoViewText::APP_TITLE));
+        QCOMPARE(state.stubHintText, QString::fromUtf8(LottoViewText::STUB_HINT));
+        QCOMPARE(state.stubCountText,
+                 QString::fromUtf8(LottoViewText::STUB_COUNT_FORMAT)
+                     .arg(LottoTicket::GROUP_COUNT));
+        QCOMPARE(state.stubCountValueText, QString::number(LottoTicket::GROUP_COUNT));
+        QCOMPARE(state.stampText, QString::fromUtf8(LottoViewText::STAMP_TEXT));
+    }
+
+    void headerMeta_shouldAppendLockSuffixWhenLocked()
+    {
+        qDebug() << "验证锁定后顶栏副标题追加状态后缀";
+        const QDateTime time(QDate(2026, 11, 20), QTime(20, 46, 7));
+        const QString suffix = QString::fromUtf8(LottoViewText::HEADER_META_LOCKED).trimmed();
+
+        const LottoViewState unlocked =
+            LottoPresenter::buildViewState(makeTicket(LottoTicket::GROUP_COUNT, false, time));
+        const LottoViewState locked =
+            LottoPresenter::buildViewState(makeTicket(LottoTicket::GROUP_COUNT, true, time));
+
+        QVERIFY(!unlocked.headerMetaText.contains(suffix));
+        QVERIFY(locked.headerMetaText.contains(suffix));
+    }
 };
 
 QTEST_GUILESS_MAIN(TestLottoPresenter)

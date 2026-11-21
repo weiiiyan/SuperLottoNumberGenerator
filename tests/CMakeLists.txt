@@ -4,7 +4,7 @@
 # 注意事项：
 #   - 测试仅在桌面平台构建（MinGW/MSVC/Linux/macOS），Android 跳过
 #   - 测试目标链接各层库（lotto_core / lotto_application / lotto_adapters /
-#     lotto_ui / lotto_ui_classic / lotto_ui_neumorphic / lotto_main），
+#     lotto_ui / lotto_ui_ticket / lotto_ui_neumorphic / lotto_main），
 #     不再手工编译被测源码
 #   - 使用 CTest 集成，可通过 ctest 或 cmake --build . --target test 运行
 
@@ -118,11 +118,11 @@ if(NOT ANDROID)
     register_lotto_test(QSettingsStyleStoreTest QSettingsStyleStoreTest)
     message(STATUS "测试目标 QSettingsStyleStoreTest 已创建")
 
-    # ── UI 层: 经典视图单元测试 ──
-    add_lotto_test(LottoClassicViewTest tst_lottoclassicview.cpp)
-    target_link_libraries(LottoClassicViewTest PRIVATE lotto_ui_classic)
-    register_lotto_test(LottoClassicViewTest LottoClassicViewTest -platform offscreen)
-    message(STATUS "测试目标 LottoClassicViewTest 已创建")
+    # ── UI 层: 票据视图单元测试 ──
+    add_lotto_test(LottoTicketViewTest tst_lottoticketview.cpp)
+    target_link_libraries(LottoTicketViewTest PRIVATE lotto_ui_ticket)
+    register_lotto_test(LottoTicketViewTest LottoTicketViewTest -platform offscreen)
+    message(STATUS "测试目标 LottoTicketViewTest 已创建")
 
     # ── UI 层: 视图宿主单元测试(假目录, 无 QML 依赖)──
     add_lotto_test(LottoViewShellTest tst_lottoviewshell.cpp)

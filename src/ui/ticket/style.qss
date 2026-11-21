@@ -1,0 +1,147 @@
+/* ============================================================
+   SuperLottoNumberGenerator — 票据样式表
+   令牌与 doc/界面设计/design-spec.html 一致; 自绘控件
+   (号码球/骑缝线/条形码/印章)的配色见 lottotickettheme.h。
+   字号与字距在代码中按设计稿设置, 本文件只管颜色与描边。
+   ============================================================ */
+
+/* ---- 顶栏 ---- */
+QFrame#topBar {
+    border: none;
+    border-bottom: 2px solid #1C1B19;
+    background: transparent;
+}
+QLabel#brandMark {
+    background: #C1121F;
+    border: none;
+    border-radius: 5px;
+}
+QLabel#brandName {
+    color: #1C1B19;
+    background: transparent;
+}
+QLabel#brandMeta {
+    color: #6A655B;
+    background: transparent;
+}
+/* ---- 时间条 ---- */
+QFrame#metaStrip {
+    border: none;
+    border-bottom: 1px dashed #D6CCB6;
+    background: transparent;
+}
+QLabel#timeLabel {
+    color: #6A655B;
+    background: transparent;
+}
+QLabel#timeValueLabel {
+    color: #1C1B19;
+    background: transparent;
+}
+
+/* ---- 号码带: 虚线即行边界 ---- */
+QFrame[objectName^="ticketRow_"] {
+    border: none;
+    border-bottom: 1px dashed #D6CCB6;
+    background: transparent;
+}
+QFrame[objectName^="ticketRow_"][last="true"] {
+    border-bottom: none;
+}
+QLabel[objectName^="rowIndex_"] {
+    color: #6A655B;
+    background: transparent;
+}
+QLabel[objectName^="separator_"] {
+    color: #B0A692;
+    background: transparent;
+    border: none;
+}
+
+/* ---- 票根 ---- */
+QFrame#stub {
+    border: none;
+    background: transparent;
+}
+QLabel#serialLabel {
+    color: #6A655B;
+    background: transparent;
+}
+QFrame#stubHairline {
+    background: rgba(28, 27, 25, 0.10);
+    border: none;
+}
+QLabel#stubHint {
+    color: #6A655B;
+    background: transparent;
+}
+QLabel#stubCount {
+    color: #6A655B;
+    background: transparent;
+}
+
+/* ---- 操作区 ---- */
+QFrame#actions {
+    border: none;
+    border-top: 1px solid rgba(28, 27, 25, 0.12);
+    background: transparent;
+}
+QPushButton#btnLock {
+    background: transparent;
+    border: 1.5px solid #1C1B19;
+    border-radius: 10px;
+    color: #1C1B19;
+}
+QPushButton#btnLock:hover {
+    background: rgba(28, 27, 25, 0.06);
+}
+QPushButton#btnLock:checked {
+    background: #1C1B19;
+    border-color: #1C1B19;
+    color: #F7F2E6;
+}
+QPushButton#btnLock:disabled {
+    border-color: rgba(28, 27, 25, 0.35);
+    color: #8A8478;
+    background: transparent;
+}
+QPushButton#btnLock:focus {
+    border-color: #0B6FA4;
+}
+
+QPushButton#btnGenerate {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #D01A27, stop:0.55 #C1121F, stop:1 #A80F1A);
+    border: none;
+    border-bottom: 3px solid #8C0C16;
+    border-radius: 10px;
+    color: #FFF6F2;
+    padding-bottom: 3px;
+}
+QPushButton#btnGenerate:hover {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                stop:0 #DA2230, stop:0.55 #C81A28, stop:1 #B01622);
+}
+QPushButton#btnGenerate:pressed {
+    border-bottom: 1px solid #8C0C16;
+    padding-top: 2px;
+}
+QPushButton#btnGenerate:disabled {
+    background: #D8D2C4;
+    border: none;
+    color: #8A8478;
+}
+QPushButton#btnGenerate:focus {
+    border: 2px solid #0B6FA4;
+}
+
+/* ---- 风格切换底部抽屉 ---- */
+QWidget#styleDrawerSheet {
+    background: #FBF7EC;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+}
+QLabel#styleDrawerTitle {
+    color: #6A655B;
+    background: transparent;
+}
