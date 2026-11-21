@@ -26,6 +26,14 @@ struct LottoViewState {
     QString lockButtonText;            /*!< 锁定按钮文字 */
     bool    lockButtonEnabled  = false;/*!< 锁定按钮可用性(含号码才可锁定) */
     bool    lockButtonChecked  = false;/*!< 锁定按钮选中状态 */
+
+    QString appTitleText;              /*!< 顶栏应用名, 如 "超级大乐透" */
+    QString headerMetaText;            /*!< 顶栏副标题, 如 "本期 · 5 注" */
+    QString serialText;                /*!< 票根票号, 如 "NO. 261120 4077" */
+    QString stubHintText;              /*!< 票根提示, 如 "前区 1–35 · 后区 1–12" */
+    QString stubCountText;             /*!< 票根注数, 如 "共 5 注" */
+    QString stubCountValueText;        /*!< 票根注数数字, 如 "5" */
+    QString stampText;                 /*!< 锁定印章文字, 如 "已锁定" */
 };
 
 Q_DECLARE_METATYPE(LottoViewState)
@@ -44,6 +52,14 @@ constexpr const char *LOCK_TEXT_UNLOCKED = "锁定号码";
 constexpr const char *NUMBER_PLACEHOLDER = "?";
 constexpr const char *SEPARATOR_TEXT     = "+";
 constexpr const char *GENERATE_TEXT      = "生成号码";
+constexpr const char *APP_TITLE          = "超级大乐透";
+constexpr const char *HEADER_META_FORMAT = "本期 · %1 注";
+constexpr const char *HEADER_META_LOCKED = " · 已锁定";
+constexpr const char *SERIAL_PLACEHOLDER = "NO. 000000 0000";
+constexpr const char *SERIAL_PREFIX      = "NO. ";
+constexpr const char *STUB_HINT          = "前区 1–35 · 后区 1–12";
+constexpr const char *STUB_COUNT_FORMAT  = "共 %1 注";
+constexpr const char *STAMP_TEXT         = "已锁定";
 } // namespace LottoViewText
 
 /*!

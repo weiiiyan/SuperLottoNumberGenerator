@@ -8,7 +8,7 @@ add_library(lotto_main STATIC
 
 target_include_directories(lotto_main PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(lotto_main PUBLIC
-    lotto_ui lotto_ui_classic lotto_adapters lotto_core
+    lotto_ui lotto_ui_ticket lotto_adapters lotto_core
     Qt${QT_VERSION_MAJOR}::Widgets)
 if(QT_VERSION_MAJOR GREATER_EQUAL 6)
     target_link_libraries(lotto_main PUBLIC lotto_ui_neumorphic)

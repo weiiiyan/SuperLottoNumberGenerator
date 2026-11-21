@@ -6,7 +6,7 @@
 <title>新拟物主题 — 超级大乐透</title>
 <style>
 /* ============================================================
-   共用骨架（与 classic-ticket.html 逐像素一致）
+   共用骨架（与 ticket.html 逐像素一致）
    —— 仅视觉令牌不同，结构、间距、控件位置完全相同
    ============================================================ */
 :root{
@@ -15,9 +15,10 @@
   --pad-x: 22px;
   --pad-top: 40px;
   --pad-bottom: 34px;
-  --ball: 38px;
-  --ball-gap: 5px;
+  --ball: 40px;
+  --ball-gap: 4px;
   --row-idx: 18px;
+  --row-h: 76px;
 
   --font-body: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", "Source Han Sans SC", system-ui, sans-serif;
   --font-num: "Bahnschrift", "DIN Alternate", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
@@ -87,7 +88,7 @@ body{
   align-items:flex-start;
   justify-content:space-between;
   gap:12px;
-  padding-bottom:18px;
+  padding-bottom:24px;
   position:relative;
 }
 .top::after{
@@ -160,7 +161,7 @@ body{
   align-items:baseline;
   justify-content:space-between;
   gap:12px;
-  padding:20px 0 18px;
+  padding:22px 0 21px;
   position:relative;
 }
 .meta::after{
@@ -171,14 +172,14 @@ body{
   background: linear-gradient(90deg, transparent, rgba(163,177,198,.65) 15%, rgba(163,177,198,.65) 85%, transparent);
 }
 .meta-label{
-  font-size:10.5px;
+  font-size:11px;
   letter-spacing:.16em;
   color: var(--nm-muted);
   white-space:nowrap;
 }
 .meta-value{
   font-family: var(--font-num);
-  font-size:12.5px;
+  font-size:13.5px;
   letter-spacing:.04em;
   font-variant-numeric: tabular-nums;
   color: var(--nm-text);
@@ -192,11 +193,11 @@ body{
   display:flex;
   flex-direction:column;
   justify-content:center;
-  gap:12px;
+  gap:0;
 }
 .row{
   flex:0 0 auto;
-  height:84px;
+  height:var(--row-h);
   display:grid;
   grid-template-columns: var(--row-idx) 1fr;
   align-items:center;
@@ -212,8 +213,8 @@ body{
 }
 .idx{
   font-family: var(--font-num);
-  font-size:10px;
-  letter-spacing:.1em;
+  font-size:10.5px;
+  letter-spacing:.12em;
   color: var(--nm-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -226,7 +227,7 @@ body{
 }
 .balls{ display:flex; align-items:center; gap: var(--ball-gap); }
 .sep{
-  width:12px;
+  width:10px;
   text-align:center;
   font-family: var(--font-num);
   font-size:13px;
@@ -240,7 +241,7 @@ body{
   display:grid;
   place-items:center;
   font-family: var(--font-num);
-  font-size:16px;
+  font-size:17px;
   font-weight:700;
   letter-spacing:.01em;
   font-variant-numeric: tabular-nums;
@@ -257,7 +258,7 @@ body{
   to{ transform: scale(1); opacity:1; }
 }
 
-/* ---------- 票根：骑缝线 + 票号 ---------- */
+/* ---------- 票根：骑缝线 + 票号 + 微信息 + 印章 ---------- */
 .perf{
   position:relative;
   height:0;
@@ -280,41 +281,63 @@ body{
 .foot{
   position:relative;
   display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  gap:0;
+  min-height:105px;
+  padding:24px 0 19px;
+}
+.stub-row{
+  display:flex;
   align-items:flex-end;
   justify-content:space-between;
   gap:12px;
-  padding:20px 0 14px;
+}
+.stub-row + .stub-row{
+  position:relative;
+  margin-top:15px;
+  padding-top:9px;
+}
+.stub-row + .stub-row::before{
+  content:"";
+  position:absolute;
+  left:0; right:0; top:0;
+  height:1px;
+  background: linear-gradient(90deg, transparent, rgba(163,177,198,.55) 15%, rgba(163,177,198,.55) 85%, transparent);
 }
 .serial{
   font-family: var(--font-mono);
-  font-size:10.5px;
+  font-size:11px;
   letter-spacing:.06em;
   color: var(--nm-muted);
   white-space:nowrap;
 }
-.foot-right{
-  position:relative;
-  display:flex;
-  align-items:flex-end;
-  gap:10px;
-  min-height:22px;
-}
 .barcode{
-  width:78px; height:17px;
-  opacity:.55;
+  width:92px; height:20px;
+  opacity:.5;
   background: repeating-linear-gradient(90deg,
     var(--nm-muted) 0 1px, transparent 1px 3px,
     var(--nm-muted) 3px 5px, transparent 5px 7px,
     var(--nm-muted) 7px 8px, transparent 8px 12px);
 }
 .hint{
-  position:absolute;
-  right:0; bottom:2px;
   font-size:10px;
   letter-spacing:.06em;
   color: var(--nm-muted);
   white-space:nowrap;
+}
+.stub-count{
+  font-family: var(--font-num);
+  font-size:11px;
+  letter-spacing:.14em;
+  color: var(--nm-muted);
+  white-space:nowrap;
   transition: opacity .18s ease;
+}
+.stub-count b{
+  font-size:13px;
+  color: var(--nm-text);
+  letter-spacing:.04em;
 }
 .stamp{
   position:absolute;
@@ -338,7 +361,7 @@ body{
   border:1px solid rgba(200,106,106,.35);
   border-radius:7px;
 }
-.app.locked .hint{ opacity:0; }
+.app.locked .stub-count{ opacity:0; }
 .app.locked .stamp{ opacity:1; transform: rotate(-7deg) scale(1); }
 
 /* ---------- 操作区 ---------- */
@@ -346,7 +369,7 @@ body{
   display:grid;
   grid-template-columns: 1fr 1.32fr;
   gap:10px;
-  padding-top:20px;
+  padding-top:25px;
   position:relative;
 }
 .actions::before{
@@ -358,7 +381,7 @@ body{
 }
 .btn{
   appearance:none;
-  height:52px;
+  height:56px;
   border:none;
   border-radius:10px;
   background: var(--nm-bg);
@@ -480,7 +503,7 @@ body{
   <nav class="stage-nav" aria-label="设计文件">
     <div class="set">
       <a href="index.html">总览</a>
-      <a href="classic-ticket.html">经典 · 票券</a>
+      <a href="ticket.html">票据</a>
       <a href="neumorphic.html" aria-current="page">新拟物</a>
       <a href="design-spec.html">组件规范</a>
     </div>
@@ -518,10 +541,13 @@ body{
     <div class="perf" aria-hidden="true"></div>
 
     <footer class="foot" data-od-id="ticket-footer">
-      <span class="serial" id="serial">NO. 000000 0000</span>
-      <div class="foot-right">
+      <div class="stub-row">
+        <span class="serial" id="serial">NO. 000000 0000</span>
         <span class="barcode" aria-hidden="true"></span>
+      </div>
+      <div class="stub-row">
         <span class="hint">前区 1–35 · 后区 1–12</span>
+        <span class="stub-count">共 <b id="stubCount">5</b> 注</span>
         <span class="stamp" id="stamp" role="status">已锁定</span>
       </div>
     </footer>
@@ -536,8 +562,8 @@ body{
     <div class="scrim" id="scrim"></div>
     <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="切换界面风格">
       <p class="sheet-title">界面风格</p>
-      <a class="sheet-opt" href="classic-ticket.html" data-od-id="style-option-classic">
-        经典 · 票券 <span>切换</span>
+      <a class="sheet-opt" href="ticket.html" data-od-id="style-option-ticket">
+        票据 <span>切换</span>
       </a>
       <button class="sheet-opt" type="button" aria-current="true" data-od-id="style-option-neumorphic">
         新拟物 <span>当前</span>
@@ -557,6 +583,7 @@ body{
   const rowsHost = $('#rows');
   const genBtn = $('#genBtn');
   const lockBtn = $('#lockBtn');
+  $('#stubCount').textContent = GROUP_COUNT;
   let locked = false;
 
   function sample(count, max) {

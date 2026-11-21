@@ -71,12 +71,12 @@ package "框架与驱动 src/ui/ — lotto_ui(UI 核心)" as ui #E0E8F8 {
   MainWindow --> Shell : setCentralWidget
 }
 
-package "经典风格 src/ui/classic/ — lotto_ui_classic" as classic #E8F0E8 {
-  component [LottoClassicView\n«Widgets + QSS»] as ClassicView
+package "票据风格 src/ui/ticket/ — lotto_ui_ticket" as ticket #E8F0E8 {
+  component [LottoTicketView\n«Widgets + QSS»] as TicketView
   component [style.qss / resources.qrc] as Style
 
-  ClassicView ..|> View : implements
-  ClassicView ..> Style : 自带 Q_INIT_RESOURCE
+  TicketView ..|> View : implements
+  TicketView ..> Style : 自带 Q_INIT_RESOURCE
 }
 
 package "新拟物风格 src/ui/neumorphic/ — lotto_ui_neumorphic(Qt6)" as neo #EEE8F0 {
@@ -91,7 +91,7 @@ package "Main 组件 src/app/ — lotto_main(圆外)" as mainlib #F8E8E8 {
   component [buildStyleCatalog()\n«具体风格目录: 唯一出现类名处»] as Catalog
   component [QSettingsStyleStore\n«键 ui/styleId»] as StyleStore
 
-  Catalog ..> ClassicView : new
+  Catalog ..> TicketView : new
   Catalog ..> NeoView : new (Qt6)
 }
 
@@ -117,7 +117,7 @@ package "测试 tests/" as tests #F0F0F0 {
   component [LottoPresenterTest\n(展示推导 + 订阅桥接, 无 GUI 依赖)] as T4
   component [LottoUiTest / LottoViewShellTest\n(核心端口与宿主, 假目录)] as T7
   component [LottoUiIsolationTest\n(只链 lotto_ui: 不拖入 Quick)] as T8
-  component [LottoClassicViewTest] as T9
+  component [LottoTicketViewTest] as T9
   component [LottoNeumorphicViewTest\n/ LottoQmlSmokeTest (Qt6)] as T10
   component [LottoMainCatalogTest\n/ QSettingsStyleStoreTest (Main)] as T11
   component [MainWindowTest\n(offscreen 集成)] as T5
@@ -130,7 +130,7 @@ package "测试 tests/" as tests #F0F0F0 {
   T4 ..> Presenter
   T7 ..> Shell
   T8 ..> View
-  T9 ..> ClassicView
+  T9 ..> TicketView
   T10 ..> NeoView
   T11 ..> Catalog
   T5 ..> MainWindow
@@ -140,10 +140,10 @@ package "测试 tests/" as tests #F0F0F0 {
 application ..> domain : lotto_application → lotto_core (PUBLIC)
 adapters ..> application : lotto_adapters → lotto_application (PUBLIC)
 ui ..> adapters : lotto_ui → lotto_adapters (PUBLIC)
-classic ..> ui : lotto_ui_classic → lotto_ui
+ticket ..> ui : lotto_ui_ticket → lotto_ui
 neo ..> ui : lotto_ui_neumorphic → lotto_ui (Qt6 only)
 mainlib ..> ui : lotto_main → lotto_ui
-mainlib ..> classic : lotto_main → lotto_ui_classic
+mainlib ..> ticket : lotto_main → lotto_ui_ticket
 mainlib ..> neo : lotto_main → lotto_ui_neumorphic (Qt6 only)
 exe ..> mainlib : exe → lotto_main
 exe ..> adapters : exe → lotto_adapters

@@ -25,7 +25,9 @@ qt_add_qml_module(lotto_ui_neumorphic
         LottoUi/NeumoButton.qml
         LottoUi/NeumoTicketRow.qml
         LottoUi/NeumoValueRow.qml
-        LottoUi/NeumoPill.qml
+        LottoUi/NeumoPerf.qml
+        LottoUi/NeumoStub.qml
+        LottoUi/NeumoStyleSheet.qml
         LottoUi/NeumoIcon.qml
         LottoUi/NeumorphicView.qml
 )

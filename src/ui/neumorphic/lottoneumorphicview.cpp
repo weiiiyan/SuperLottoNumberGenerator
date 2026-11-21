@@ -4,7 +4,9 @@
 #include <QQmlEngine>
 #include <QQuickItem>
 #include <QQuickWidget>
+#include <QShowEvent>
 #include <QVBoxLayout>
+#include <QWindow>
 
 #include "lottostylehost.h"
 
@@ -60,6 +62,7 @@ LottoNeumorphicView::LottoNeumorphicView(LottoStyleHost *host, QWidget *parent)
         if (status == QQuickWidget::Ready) {
             connectRootSignals();
             pushStyles();
+            pushSafeArea();
             if (m_hasState)
                 pushStateToQml();
         }
@@ -71,6 +74,7 @@ LottoNeumorphicView::LottoNeumorphicView(LottoStyleHost *host, QWidget *parent)
     if (m_quick->status() == QQuickWidget::Ready) {
         connectRootSignals();
         pushStyles();
+        pushSafeArea();
     }
 }
 
@@ -123,6 +127,23 @@ QQuickItem *LottoNeumorphicView::rootItem() const
     return m_quick ? m_quick->rootObject() : nullptr;
 }
 
+void LottoNeumorphicView::showEvent(QShowEvent *event)
+{
+    LottoView::showEvent(event);
+    attachSafeAreaListener();
+}
+
+void LottoNeumorphicView::attachSafeAreaListener()
+{
+    QWidget *topLevel = window();
+    QWindow *windowHandle = topLevel ? topLevel->windowHandle() : nullptr;
+    if (!windowHandle || windowHandle == m_safeAreaWindow)
+        return;
+    m_safeAreaWindow = windowHandle;
+    connect(windowHandle, &QWindow::safeAreaMarginsChanged, this,
+            [this]() { pushSafeArea(); });
+}
+
 void LottoNeumorphicView::onStyleSwitchRequested(const QString &styleId)
 {
     if (m_host)
@@ -156,6 +177,17 @@ void LottoNeumorphicView::pushStyles()
                       m_host ? m_host->currentStyleId() : QString());
 }
 
+void LottoNeumorphicView::pushSafeArea()
+{
+    QQuickItem *root = rootItem();
+    if (!root)
+        return;
+    // 窗口安全区: QML 侧与设计上/下边距取较大者(C++ 判定, QML 只消费)
+    const QMargins safeArea = windowSafeArea();
+    root->setProperty("safeTop", safeArea.top());
+    root->setProperty("safeBottom", safeArea.bottom());
+}
+
 void LottoNeumorphicView::pushStateToQml()
 {
     QQuickItem *root = rootItem();
@@ -172,4 +204,11 @@ void LottoNeumorphicView::pushStateToQml()
     root->setProperty("lockButtonChecked", m_state.lockButtonChecked);
     root->setProperty("numberPlaceholder", m_state.numberPlaceholder);
     root->setProperty("separatorText", m_state.separatorText);
+    root->setProperty("appTitleText", m_state.appTitleText);
+    root->setProperty("headerMetaText", m_state.headerMetaText);
+    root->setProperty("serialText", m_state.serialText);
+    root->setProperty("stubHintText", m_state.stubHintText);
+    root->setProperty("stubCountText", m_state.stubCountText);
+    root->setProperty("stubCountValueText", m_state.stubCountValueText);
+    root->setProperty("stampText", m_state.stampText);
 }

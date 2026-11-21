@@ -8,7 +8,7 @@ title SuperLottoNumberGenerator 控制流图
 actor 用户 as U
 participant "main()\n(Main 组件)" as Main
 participant "LottoViewShell\n(视图宿主)" as Shell
-participant "当前 LottoView\n(经典 / 新拟物)" as V
+participant "当前 LottoView\n(票据 / 新拟物)" as V
 participant "LottoController\n(输入侧适配器)" as Ctrl
 participant "LottoInteractor\n(用例交互器)" as C
 participant "LottoEngine\n(领域服务)" as E

@@ -1,5 +1,7 @@
 #include "lottoview.h"
 
+#include <QWindow>
+
 LottoView::LottoView(QWidget *parent)
     : QWidget(parent)
 {
@@ -13,6 +15,13 @@ bool LottoView::isReady() const
 void LottoView::styleChanged(const QString &currentStyleId)
 {
     Q_UNUSED(currentStyleId)
+}
+
+QMargins LottoView::windowSafeArea() const
+{
+    const QWidget *topLevel = window();
+    QWindow *windowHandle = topLevel ? topLevel->windowHandle() : nullptr;
+    return windowHandle ? windowHandle->safeAreaMargins() : QMargins();
 }
 
 QPixmap LottoView::snapshot() const

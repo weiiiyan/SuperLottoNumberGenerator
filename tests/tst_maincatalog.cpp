@@ -11,12 +11,12 @@ class TestMainCatalog : public QObject
     Q_OBJECT
 
 private slots:
-    void firstEntryIsClassic()
+    void firstEntryIsTicket()
     {
-        qDebug() << "验证 Main 目录首项为经典视图";
+        qDebug() << "验证 Main 目录首项为票据视图";
         const auto catalog = buildStyleCatalog();
         QVERIFY(!catalog.isEmpty());
-        QCOMPARE(catalog.first().info.id, QStringLiteral("classic"));
+        QCOMPARE(catalog.first().info.id, QStringLiteral("ticket"));
     }
 
     void qt6CatalogContainsNeumorphic()

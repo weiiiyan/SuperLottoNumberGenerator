@@ -10,8 +10,8 @@
  * id 为稳定标识(用于持久化与切换), displayName 供视图直接展示。
  */
 struct LottoStyleInfo {
-    QString id;            /*!< 稳定 id, 如 "classic" / "neumorphic" */
-    QString displayName;   /*!< 展示名, 如 "经典" / "新拟物" */
+    QString id;            /*!< 稳定 id, 如 "ticket" / "neumorphic" */
+    QString displayName;   /*!< 展示名, 如 "票据" / "新拟物" */
 };
 
 /*!

@@ -52,23 +52,21 @@ Canvas {
                     Math.PI, Math.PI * 2)
             ctx.stroke()
         } else {
-            // 四角方块: 风格
-            const s = w * 0.30
-            const gap = w * 0.10
+            // 四角方块: 与设计稿 SVG 一致(5×5, rx=1, 1/.45/.45/.8)
+            const sx = w / 13.0
+            const sy = h / 13.0
             const positions = [
-                [pad, pad], [w - pad - s, pad],
-                [pad, h - pad - s], [w - pad - s, h - pad - s]
+                [0.5, 0.5], [7.5, 0.5], [0.5, 7.5], [7.5, 7.5]
             ]
+            const opacities = [1.0, 0.45, 0.45, 0.8]
             for (let i = 0; i < positions.length; ++i) {
+                ctx.globalAlpha = opacities[i]
                 ctx.beginPath()
-                ctx.roundedRect(positions[i][0], positions[i][1], s, s,
-                                w * 0.06, w * 0.06)
+                ctx.roundedRect(positions[i][0] * sx, positions[i][1] * sy,
+                                5.0 * sx, 5.0 * sy, 1.0 * sx, 1.0 * sy)
                 ctx.fill()
-                if (i === 3)
-                    break
-                if (gap > 0)
-                    ctx.fillStyle = color
             }
+            ctx.globalAlpha = 1.0
         }
     }
 }

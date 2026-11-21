@@ -11,10 +11,9 @@
 #include <QSettings>
 #include <QTemporaryDir>
 #include <QTest>
-#include <QToolButton>
 #include <QWidget>
 
-#include "classic/lottoclassicview.h"
+#include "ticket/lottoticketview.h"
 #include "lottocontroller.h"
 #include "lottoengine.h"
 #include "lottogroup.h"
@@ -43,13 +42,13 @@ private:
     FakeLottoStyleStore *m_store = nullptr;  /*!< 跨窗口重建保留, 验证持久化 */
     MainWindow *m_window = nullptr;
 
-    /// 默认混合目录: 真实经典视图 + 假视图(不依赖 QML, 供切换用例)
+    /// 默认混合目录: 真实票据视图 + 假视图(不依赖 QML, 供切换用例)
     static QVector<LottoStyleDefinition> makeTestCatalog()
     {
         QVector<LottoStyleDefinition> catalog;
-        catalog.append({ {QStringLiteral("classic"), QStringLiteral("经典")},
+        catalog.append({ {QStringLiteral("ticket"), QStringLiteral("票据")},
             [](LottoStyleHost *host, QWidget *parent) -> LottoView * {
-                return new LottoClassicView(host, parent);
+                return new LottoTicketView(host, parent);
             } });
         catalog.append({ {QStringLiteral("fake-b"), QStringLiteral("假风格")},
             [](LottoStyleHost *, QWidget *parent) -> LottoView * {
@@ -115,8 +114,8 @@ private slots:
     void initTestCase()
     {
         QVERIFY(m_dir.isValid());
-        // 资源初始化已内聚到 lotto_ui_classic; 测试不再手工初始化,
-        // 这样经典视图的自初始化若失效, 本测试会真实暴露
+        // 资源初始化已内聚到 lotto_ui_ticket; 测试不再手工初始化,
+        // 这样票据视图的自初始化若失效, 本测试会真实暴露
         m_store = new FakeLottoStyleStore;
         makeWindow();
     }
@@ -162,10 +161,10 @@ private slots:
 
     void viewShellShouldExist()
     {
-        qDebug() << "验证窗口承载视图宿主, 且当前为经典视图";
+        qDebug() << "验证窗口承载视图宿主, 且当前为票据视图";
         QVERIFY(m_window->viewShell() != nullptr);
-        QCOMPARE(m_window->viewShell()->currentStyleId(), QStringLiteral("classic"));
-        QVERIFY(m_window->findChild<QWidget*>("classicRoot") != nullptr);
+        QCOMPARE(m_window->viewShell()->currentStyleId(), QStringLiteral("ticket"));
+        QVERIFY(m_window->findChild<QWidget*>("ticketRoot") != nullptr);
     }
 
     void allKeyWidgetsShouldExist()
@@ -176,7 +175,7 @@ private slots:
         QVERIFY(timeLabel() != nullptr);
         QVERIFY(timeValueLabel() != nullptr);
         QVERIFY(m_window->findChild<QWidget*>("groupsContainer") != nullptr);
-        QVERIFY(m_window->findChild<QToolButton*>("btnStyleSwitch") != nullptr);
+        QVERIFY(m_window->findChild<QPushButton*>("btnStyleSwitch") != nullptr);
     }
 
     void allNumberLabelsAndSeparatorsShouldExist()
@@ -356,9 +355,35 @@ private slots:
         QVERIFY(b != nullptr);
         QCOMPARE(b->lastState().groups.at(0).at(0), before);
 
-        shell->requestSwitchTo(QStringLiteral("classic"));
-        QTRY_COMPARE(shell->currentStyleId(), QStringLiteral("classic"));
+        shell->requestSwitchTo(QStringLiteral("ticket"));
+        QTRY_COMPARE(shell->currentStyleId(), QStringLiteral("ticket"));
         QCOMPARE(frontLabel(0, 0)->text(), before);
+    }
+
+    void styleDrawer_doesNotReappearAfterSwitchBack()
+    {
+        qDebug() << "验证从抽屉切换风格后, 切回票据视图时抽屉不残留";
+        auto *shell = m_window->viewShell();
+        auto *ticket = qobject_cast<LottoTicketView *>(shell->currentView());
+        QVERIFY(ticket != nullptr);
+
+        auto *btn = ticket->findChild<QPushButton *>("btnStyleSwitch");
+        QVERIFY(btn != nullptr);
+        QTest::mouseClick(btn, Qt::LeftButton);
+
+        auto *drawer = ticket->findChild<QWidget *>("styleDrawer");
+        QVERIFY(drawer != nullptr);
+        QVERIFY(!drawer->isHidden());
+
+        auto *option = drawer->findChild<QPushButton *>("styleOption_1");
+        QVERIFY(option != nullptr);
+        QTest::mouseClick(option, Qt::LeftButton);   // 切到 fake-b
+        QTRY_COMPARE(shell->currentStyleId(), QStringLiteral("fake-b"));
+        QVERIFY2(drawer->isHidden(), "选择风格后抽屉应立即收起");
+
+        shell->requestSwitchTo(QStringLiteral("ticket"));
+        QTRY_COMPARE(shell->currentStyleId(), QStringLiteral("ticket"));
+        QVERIFY2(drawer->isHidden(), "切回票据后抽屉不得残留");
     }
 
     void realCatalog_neuomorphicEntryCanBeActivated()
@@ -380,9 +405,9 @@ private slots:
             shell->currentStyleId() == QStringLiteral("neumorphic"), 8000);
         QVERIFY(shell->currentView()->isReady());
 
-        // 复位到经典视图, 避免影响后续用例
-        shell->requestSwitchTo(QStringLiteral("classic"));
-        QTRY_COMPARE(shell->currentStyleId(), QStringLiteral("classic"));
+        // 复位到票据视图, 避免影响后续用例
+        shell->requestSwitchTo(QStringLiteral("ticket"));
+        QTRY_COMPARE(shell->currentStyleId(), QStringLiteral("ticket"));
     }
 
     // ── 场景 6c: 风格偏好持久化 ──
@@ -403,7 +428,7 @@ private slots:
         qDebug() << "验证未知偏好回退首项且保留原值";
         m_store->storedId = QStringLiteral("ghost");
         rebuildWindow(makeTestCatalog());
-        QCOMPARE(m_window->viewShell()->currentStyleId(), QStringLiteral("classic"));
+        QCOMPARE(m_window->viewShell()->currentStyleId(), QStringLiteral("ticket"));
         QCOMPARE(m_store->storedId, QStringLiteral("ghost"));
         m_store->storedId.clear();   // 复位, 避免影响后续用例
     }

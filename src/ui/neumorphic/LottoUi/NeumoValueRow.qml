@@ -2,26 +2,31 @@ import QtQuick
 import QtQuick.Layouts
 import LottoUi
 
-// 标题 + 值的一行文本(时间显示用)
+// 时间行: 标签左 / 值右, 整行两端对齐
 RowLayout {
     id: row
 
     property string label: ""
     property string value: ""
 
-    spacing: 6
+    spacing: 12
 
     Text {
         text: row.label
         color: NeumoTheme.textMuted
-        font.pixelSize: 14
-        Layout.alignment: Qt.AlignVCenter
+        font.pixelSize: 11
+        font.letterSpacing: 1.7
+        Layout.alignment: Qt.AlignBottom
     }
+
+    Item { Layout.fillWidth: true }
 
     Text {
         text: row.value
         color: NeumoTheme.text
-        font.pixelSize: 14
-        Layout.alignment: Qt.AlignVCenter
+        font.family: "Bahnschrift"
+        font.pixelSize: 13
+        font.letterSpacing: 0.5
+        Layout.alignment: Qt.AlignBottom
     }
 }

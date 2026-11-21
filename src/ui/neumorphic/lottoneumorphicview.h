@@ -2,12 +2,14 @@
 #define LOTTONEUMORPHICVIEW_H
 
 #include <QPointer>
+#include <QWindow>
 
 #include "lottoview.h"
 
 class LottoStyleHost;
 class QQuickItem;
 class QQuickWidget;
+class QShowEvent;
 
 /*!
  * \brief LottoNeumorphicView 新拟物风格视图(QML + QQuickWidget)
@@ -46,19 +48,25 @@ public:
     /*! QML 根对象(未就绪时为空, 供测试) */
     QQuickItem *rootItem() const;
 
+protected:
+    void showEvent(QShowEvent *event) override;
+
 private slots:
     /*! QML 请求切换风格: 转交宿主端口 */
     void onStyleSwitchRequested(const QString &styleId);
 
 private:
     void pushStyles();
+    void pushSafeArea();
     void pushStateToQml();
     void connectRootSignals();
+    void attachSafeAreaListener();
 
     LottoStyleHost *m_host = nullptr;   /*!< 宿主端口(不持有所有权) */
     QQuickWidget *m_quick = nullptr;    /*!< QML 承载控件(本视图持有) */
     LottoViewState m_state;             /*!< 最近一次展示状态 */
     bool m_hasState = false;            /*!< 是否已收到过展示状态 */
+    QPointer<QWindow> m_safeAreaWindow; /*!< 已监听安全区的顶层窗口 */
 };
 
 #endif // LOTTONEUMORPHICVIEW_H

@@ -58,13 +58,15 @@ Item {
             NeumoIcon {
                 kind: control.iconKind
                 visible: control.iconKind !== ""
+                color: control.checked ? NeumoTheme.frontColor : NeumoTheme.textMuted
                 anchors.verticalCenter: parent.verticalCenter
             }
 
             Text {
                 id: label
+                objectName: "buttonText"
                 text: control.text
-                color: NeumoTheme.text
+                color: control.checked ? NeumoTheme.frontColor : NeumoTheme.text
                 font.pixelSize: 15
                 font.bold: control.checked
                 anchors.verticalCenter: parent.verticalCenter

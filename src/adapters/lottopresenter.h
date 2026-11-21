@@ -36,6 +36,8 @@ public:
     static LottoViewState buildViewState(const LottoTicket &ticket);
     /*! 初始(空)展示状态, 供视图构建初始控件文本 */
     static LottoViewState initialState();
+    /*! 票号推导: 生成时间有效且含号码时取 "NO. yyMMdd NNNN", 否则为占位 */
+    static QString buildSerial(const QDateTime &time, bool hasNumbers);
 
 signals:
     /*! 用例状态变化后的视图展示状态, 视图唯一渲染入口 */

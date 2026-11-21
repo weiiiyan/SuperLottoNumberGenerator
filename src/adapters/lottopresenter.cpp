@@ -58,7 +58,36 @@ LottoViewState LottoPresenter::buildViewState(const LottoTicket &ticket)
     state.numberPlaceholder  = QString::fromUtf8(LottoViewText::NUMBER_PLACEHOLDER);
     state.separatorText      = QString::fromUtf8(LottoViewText::SEPARATOR_TEXT);
 
+    // 顶栏: 应用名与副标题(注数固定, 锁定后追加状态后缀)
+    state.appTitleText = QString::fromUtf8(LottoViewText::APP_TITLE);
+    state.headerMetaText = QString::fromUtf8(LottoViewText::HEADER_META_FORMAT)
+                               .arg(LottoTicket::GROUP_COUNT);
+    if (ticket.isLocked())
+        state.headerMetaText += QString::fromUtf8(LottoViewText::HEADER_META_LOCKED);
+
+    // 票根: 票号/提示/注数/印章
+    state.serialText = buildSerial(time, ticket.hasNumbers());
+    state.stubHintText = QString::fromUtf8(LottoViewText::STUB_HINT);
+    state.stubCountText = QString::fromUtf8(LottoViewText::STUB_COUNT_FORMAT)
+                              .arg(LottoTicket::GROUP_COUNT);
+    state.stubCountValueText = QString::number(LottoTicket::GROUP_COUNT);
+    state.stampText = QString::fromUtf8(LottoViewText::STAMP_TEXT);
+
     return state;
+}
+
+/*! rief 票号推导: 日期取生成时间, 后四位取时间戳尾数(确定性, 重绘不跳变) */
+QString LottoPresenter::buildSerial(const QDateTime &time, bool hasNumbers)
+{
+    if (!hasNumbers || !time.isValid())
+        return QString::fromUtf8(LottoViewText::SERIAL_PLACEHOLDER);
+
+    const QString date = time.toString(QStringLiteral("yyMMdd"));
+    const qint64 tail = time.toSecsSinceEpoch() % 10000;
+    const QString suffix = QString::number(tail).rightJustified(4, QLatin1Char('0'));
+
+    return QString::fromUtf8(LottoViewText::SERIAL_PREFIX)
+        + date + QLatin1Char(' ') + suffix;
 }
 
 LottoViewState LottoPresenter::initialState()

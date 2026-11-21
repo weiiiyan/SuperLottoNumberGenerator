@@ -159,7 +159,7 @@ code{
 <header class="top" data-od-id="overview-header">
   <p class="eyebrow">SuperLotto · Interface Design</p>
   <h1>一套骨架，两种质感</h1>
-  <p class="lede">经典主题与新拟物主题现在是同一张布局：相同的顶栏、相同的时间条、相同的 5 行号码区、相同的操作区位置。切换风格时，用户的手指记忆不会失效——变的只有表面。</p>
+  <p class="lede">票据主题与新拟物主题现在是同一张布局：相同的顶栏、相同的时间条、相同的 5 行号码区、相同的操作区位置。切换风格时，用户的手指记忆不会失效——变的只有表面。</p>
   <div class="meta-row">
     <div><strong>3</strong> 交付页面</div>
     <div><strong>390 × 844</strong> 竖屏基准</div>
@@ -169,7 +169,7 @@ code{
 </header>
 
 <div class="cards" data-od-id="design-cards">
-  <a class="card" href="classic-ticket.html" data-od-id="card-classic">
+  <a class="card" href="ticket.html" data-od-id="card-ticket">
     <div class="thumb thumb-ticket" aria-hidden="true">
       <div class="mini">
         <div class="mrow"><span class="mb front">03</span><span class="mb front">11</span><span class="mb front">19</span><span class="mb front">28</span><span class="mb front">34</span><span class="msep">+</span><span class="mb back">04</span><span class="mb back">09</span></div>
@@ -180,11 +180,11 @@ code{
     </div>
     <div class="card-body">
       <div class="card-title">
-        <h2>经典 · 票券</h2>
-        <span class="tag">Classic</span>
+        <h2>票据</h2>
+        <span class="tag">Ticket</span>
       </div>
-      <p>纸面票根。骑缝线、票号、锁定印章取代了原来的纯色块。红蓝号码球是整屏唯一的高饱和元素。</p>
-      <span class="file">classic-ticket.html</span>
+      <p>纸面票根。骑缝线、票号、两行票据微信息与锁定印章取代了原来的纯色块。红蓝号码球是整屏唯一的高饱和元素。</p>
+      <span class="file">ticket.html</span>
     </div>
   </a>
 
@@ -202,7 +202,7 @@ code{
         <h2>新拟物</h2>
         <span class="tag">Neumorphic</span>
       </div>
-      <p>原有柔面语言完整保留：同色球面、双向柔影、按下内陷。结构已改为与票券版逐像素对齐。</p>
+      <p>原有柔面语言完整保留：同色球面、双向柔影、按下内陷。结构已改为与票据版逐像素对齐；号码带收紧，票根扩成两行。</p>
       <span class="file">neumorphic.html</span>
     </div>
   </a>
@@ -232,12 +232,12 @@ code{
     <div class="rule">
       <span class="n">01</span>
       <h3>位置一致</h3>
-      <p>时间信息从"经典版居中红胶囊 / 新拟物版左侧纯文本"统一为一行两端对齐；主按钮从"左生成右锁定"统一为"左锁定右生成"，与大多数表单的"次要操作在左"一致。</p>
+      <p>时间信息从"票据版居中红胶囊 / 新拟物版左侧纯文本"统一为一行两端对齐；主按钮从"左生成右锁定"统一为"左锁定右生成"，与大多数表单的"次要操作在左"一致。</p>
     </div>
     <div class="rule">
       <span class="n">02</span>
       <h3>尺寸一致</h3>
-      <p>号码球统一 32px（原经典版按屏宽反算、新拟物版 44px），行高、球距、行号列宽全部来自同一组常量，窗口缩放时两版以同样方式压缩。</p>
+      <p>号码球统一 40px（390 宽下的上限；原票据版按屏宽反算、新拟物版 44px），行高 76、球距 4、行距 0，全部来自同一组常量；余高交给两行票根区，窗口缩放时两版以同样方式压缩。</p>
     </div>
     <div class="rule">
       <span class="n">03</span>
@@ -247,14 +247,19 @@ code{
     <div class="rule">
       <span class="n">04</span>
       <h3>反馈一致</h3>
-      <p>锁定状态在两版里都以"生成按钮禁用 + 锁定按钮反色 + 票号区印章"三重反馈呈现，不再依赖各主题自己的视觉暗示。</p>
+      <p>锁定状态在两版里都以"生成按钮禁用 + 锁定按钮反色 + 票根印章"三重反馈呈现，不再依赖各主题自己的视觉暗示。</p>
+    </div>
+    <div class="rule">
+      <span class="n">05</span>
+      <h3>节奏一致</h3>
+      <p>号码带收紧到 36px 球缘间距，省出的高度转给票根与操作区；两版在 390×844 下共用同一组骨架高度（66 / 60 / 380 / 105 / 81）。</p>
     </div>
   </div>
 </section>
 
 <footer class="doc">
   <span>SuperLottoNumberGenerator · doc/界面设计</span>
-  <span>经典 · 新拟物 · 组件规范</span>
+  <span>票据 · 新拟物 · 组件规范</span>
 </footer>
 
 </div>
