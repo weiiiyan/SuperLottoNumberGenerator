@@ -410,7 +410,7 @@ void LottoTicketView::initUi()
                    << "(本组件的 Q_INIT_RESOURCE 未能注册资源)";
     }
 
-    // 信号连接: 按钮点击只发请求信号, 由宿主转发给输入侧适配器
+    // 信号连接: 按钮点击只发请求信号, 由组合根接线到输入侧适配器
     connect(m_btnGenerate, &QPushButton::clicked,
             this, &LottoView::generateRequested);
     connect(m_btnLock, &QPushButton::clicked,

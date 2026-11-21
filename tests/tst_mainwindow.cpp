@@ -6,9 +6,11 @@
 
 #include <QDebug>
 #include <QLabel>
+#include <QPointer>
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QSettings>
+#include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QTest>
 #include <QWidget>
@@ -76,8 +78,8 @@ private:
         m_presenter = new LottoPresenter;
         m_interactor = new LottoInteractor(m_repo, m_engine, m_presenter);
         m_controller = new LottoController(m_interactor);
-        m_window = new MainWindow(m_controller, m_presenter, m_store, catalog,
-                                  LottoPresenter::initialState());
+        const auto wired = wireStyleCatalog(catalog, m_controller, m_presenter);
+        m_window = new MainWindow(m_store, wired);
         m_interactor->load();   // 用例启动: 排定异步恢复
         QTest::qWait(50);       // 等 interactor->load() 的 singleShot(0) 异步恢复
     }
@@ -358,6 +360,57 @@ private slots:
         shell->requestSwitchTo(QStringLiteral("ticket"));
         QTRY_COMPARE(shell->currentStyleId(), QStringLiteral("ticket"));
         QCOMPARE(frontLabel(0, 0)->text(), before);
+    }
+
+    void hiddenView_receivesStateUpdatesWhileInactive()
+    {
+        qDebug() << "验证隐藏视图在非当前状态时仍收到状态更新, 切回即最新";
+        auto *shell = m_window->viewShell();
+        shell->requestSwitchTo(QStringLiteral("fake-b"));
+        QTRY_COMPARE(shell->currentStyleId(), QStringLiteral("fake-b"));
+
+        auto *fakeB = static_cast<FakeLottoView *>(shell->currentView());
+        QVERIFY(fakeB != nullptr);
+        const int before = fakeB->stateCount();
+
+        // 票据视图此时不可见, 但仍在栈中; 经控制器触发用例
+        m_controller->onGenerateRequested();
+        QTRY_VERIFY(frontLabel(0, 0)->text()
+                    != QString::fromUtf8(LottoViewText::NUMBER_PLACEHOLDER));
+
+        // 两个视图都收到同一状态
+        QCOMPARE(fakeB->stateCount(), before + 1);
+        QCOMPARE(fakeB->lastState().groups.at(0).at(0), frontLabel(0, 0)->text());
+    }
+
+    void wiredNotReadyView_isDiscardedOnSwitch()
+    {
+        qDebug() << "验证已接线但未就绪的视图被丢弃, 不影响当前视图";
+        QPointer<FakeLottoView> created;
+        bool factoryCalled = false;
+        auto catalog = makeTestCatalog();
+        catalog.append({ {QStringLiteral("not-ready"), QStringLiteral("未就绪")},
+            [&created, &factoryCalled](LottoStyleHost *, QWidget *parent) -> LottoView * {
+                auto *view = new FakeLottoView(nullptr, QStringLiteral("not-ready"), parent);
+                view->setReady(false);
+                created = view;
+                factoryCalled = true;
+                return view;
+            } });
+
+        rebuildWindow(catalog);
+        QVERIFY(!factoryCalled);   // 懒创建: 切换前不构造
+
+        auto *shell = m_window->viewShell();
+        const int savesBefore = m_store->saveCount;
+        QSignalSpy spy(shell, &LottoViewShell::styleSwitchFailed);
+        shell->requestSwitchTo(QStringLiteral("not-ready"));
+        QTRY_COMPARE(spy.count(), 1);
+
+        QVERIFY(factoryCalled);        // 视图已被创建并接线
+        QCOMPARE(shell->currentStyleId(), QStringLiteral("ticket"));
+        QCOMPARE(m_store->saveCount, savesBefore);   // 失败不写偏好
+        QTRY_VERIFY(created.isNull());               // 已接线视图被 deleteLater 丢弃
     }
 
     void styleDrawer_doesNotReappearAfterSwitchBack()

@@ -5,10 +5,7 @@
 #include <QVector>
 
 #include "lottostylecatalog.h"
-#include "lottoviewstate.h"
 
-class LottoController;
-class LottoPresenter;
 class LottoStyleStore;
 class LottoViewShell;
 
@@ -19,9 +16,10 @@ QT_END_NAMESPACE
 /*!
  * \brief MainWindow 窗口壳: 承载视图宿主, 不含任何展示逻辑
  *
- * 视图的创建、状态渲染、风格切换与偏好持久化全部由 LottoViewShell
- * (UI 层的视图宿主)承担; 本类只负责窗口框架(菜单栏/状态栏骨架)与把
- * 依赖转交宿主, 以便视图成为可独立替换、可独立测试的组件。
+ * 视图的创建、风格切换与偏好持久化由 LottoViewShell(UI 层的视图宿主)
+ * 承担; 状态渲染由 Main 在 wireStyleCatalog() 中接线的展示器驱动。本类只
+ * 负责窗口框架(菜单栏/状态栏骨架)与把依赖转交宿主, 以便视图成为可独立
+ * 替换、可独立测试的组件。
  */
 class MainWindow : public QMainWindow
 {
@@ -30,17 +28,12 @@ class MainWindow : public QMainWindow
 public:
     /*!
      * \brief 构造主窗口
-     * \param controller 输入侧适配器(不持有所有权)
-     * \param presenter 输出侧适配器(不持有所有权)
      * \param store 风格偏好端口(不持有所有权)
-     * \param catalog 风格目录(由 Main 或测试注入)
-     * \param initialState 初始展示状态(由 Main 提供)
+     * \param catalog 风格目录(已由 Main 的 wireStyleCatalog 接线)
      * \param parent 父窗口
      */
-    MainWindow(LottoController *controller, LottoPresenter *presenter,
-               LottoStyleStore *store,
+    MainWindow(LottoStyleStore *store,
                QVector<LottoStyleDefinition> catalog,
-               const LottoViewState &initialState,
                QWidget *parent = nullptr);
     ~MainWindow() override;
 

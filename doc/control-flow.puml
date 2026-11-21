@@ -1,14 +1,15 @@
 @startuml control-flow
 !theme plain
-' 控制流图: 启动恢复 / 生成号码 / 锁定切换
+' 控制流图: 启动接线与恢复 / 生成号码 / 锁定切换 / 风格切换
 ' 渲染: 可用 VS Code PlantUML 插件, 或上传 kroki.io / plantuml.com 在线渲染
 
 title SuperLottoNumberGenerator 控制流图
 
 actor 用户 as U
 participant "main()\n(Main 组件)" as Main
+participant "wireStyleCatalog\n(Main: 创建 + 接线 + 首帧)" as Wire
 participant "LottoViewShell\n(视图宿主)" as Shell
-participant "当前 LottoView\n(票据 / 新拟物)" as V
+participant "LottoView\n(票据 / 新拟物)" as V
 participant "LottoController\n(输入侧适配器)" as Ctrl
 participant "LottoInteractor\n(用例交互器)" as C
 participant "LottoEngine\n(领域服务)" as E
@@ -17,14 +18,23 @@ participant "LottoPresenter\n(输出侧适配器)" as P
 
 note over C : 持有唯一状态源 m_ticket (LottoTicket 值类型)\n存储/用例间只传 LottoTicket\n实现输入边界 LottoInputBoundary, 经输出边界 LottoPresenterPort 推送
 note over Ctrl : 依赖 LottoInputBoundary, 把视图请求翻译为用例调用 (不含业务判断)
-note over P : 实现 LottoPresenterPort, present() 推导展示状态\n重发 viewStateChanged (LottoViewState)
-note over Shell : 缓存最近 LottoViewState 并重放给当前视图\n初始状态由 Main 注入, 视图构造期不自渲染
+note over P : 实现 LottoPresenterPort, present() 推导展示状态\n更新 state() 缓存并重发 viewStateChanged (LottoViewState)
+note over Wire : Main 的目录工厂: create → connect(viewStateChanged → renderState,\n请求信号 → 控制器槽) → renderState(presenter.state())
+note over Shell : 按目录懒创建/承载切换/过渡/偏好保存/失败回退\n不缓存状态, 不转发请求, 不感知业务端口
 note over V : 只消费 LottoViewState, 发 generateRequested / lockRequested\n风格切换交互由视图自己提供
 
-== 启动: 注入初始状态 + 异步恢复 ==
+== 启动: 接线 + 首帧 + 异步恢复 ==
 
-Main -> Shell : new(..., buildStyleCatalog(), initialState)
-Shell -> V : renderState(initialState)\n(首帧即占位符, 不空白)
+Main -> Wire : wireStyleCatalog(buildStyleCatalog(), &controller, &presenter)
+Main -> Main : new MainWindow(styleStore, 接线后的目录)
+Main -> Shell : new(styleStore, 接线后的目录)
+Shell -> Wire : 首个视图: 工厂 create(host, parent)
+Wire -> V : new
+Wire -> P : connect(viewStateChanged → V::renderState)
+Wire -> Ctrl : connect(V::generateRequested/lockRequested → 用例调用槽)
+Wire -> P : state()
+P --> Wire : 最近一次 LottoViewState
+Wire -> V : renderState(presenter.state())\n(首帧即占位符, 不空白)
 Main -> C : load()
 activate C
 C -> C : QTimer::singleShot(0, ...)\n不阻塞 Android 启动
@@ -32,16 +42,14 @@ C -> R : load()
 R --> C : LottoTicket\n(未锁定 → 默认票: 空号码/无效时间)
 C -> P : present(ticket) 经输出端口 LottoPresenterPort
 deactivate C
-P -> P : present() override\nbuildViewState(ticket) 推导
-P -> Shell : emit viewStateChanged(LottoViewState)
-Shell -> Shell : 缓存 m_lastState
-Shell -> V : renderState(state) 机械写入控件
+P -> P : present() override\nbuildViewState(ticket) 推导 + 更新 state()
+P -> V : emit viewStateChanged(LottoViewState)\n(所有已接线视图)
+V -> V : renderState(state) 机械写入控件
 
 == 用户点击 [生成] (未锁定) ==
 
 U -> V : clicked
-V -> Shell : generateRequested()
-Shell -> Ctrl : onGenerateRequested()
+V -> Ctrl : generateRequested() (Main 接线)
 Ctrl -> C : generateNewTicket()
 activate C
 alt 当前已锁定
@@ -54,17 +62,16 @@ else 未锁定
     deactivate E
     C -> C : 更新 m_ticket\n(时间戳 UTC→本地, setLocked(false))
     C -> P : present(ticket) 经输出端口 LottoPresenterPort
-    P -> P : buildViewState(ticket) 推导
-    P -> Shell : emit viewStateChanged(LottoViewState)\n(5 组号码文本)
-    Shell -> V : renderState(state) 写入标签
+    P -> P : buildViewState(ticket) + 更新 state()
+    P -> V : emit viewStateChanged(LottoViewState)\n(所有已接线视图, 5 组号码文本)
+    V -> V : renderState(state) 写入标签
 end
 deactivate C
 
 == 用户点击 [锁定 / 解锁] ==
 
 U -> V : clicked
-V -> Shell : lockRequested()
-Shell -> Ctrl : onLockRequested()
+V -> Ctrl : lockRequested() (Main 接线)
 Ctrl -> C : toggleLock()
 activate C
 C -> C : setLocked(!m_ticket.isLocked())
@@ -74,9 +81,9 @@ else 状态变化
     C -> R : save(ticket)
     R -> R : 锁定时写全量 + sync()\n未锁定仅写 isLocked=false
     C -> P : present(ticket) 经输出端口 LottoPresenterPort
-    P -> P : buildViewState(ticket) 推导
-    P -> Shell : emit viewStateChanged(LottoViewState)\n(按钮文字/互斥状态)
-    Shell -> V : renderState(state) 更新按钮
+    P -> P : buildViewState(ticket) + 更新 state()
+    P -> V : emit viewStateChanged(LottoViewState)\n(所有已接线视图: 按钮文字/互斥状态)
+    V -> V : renderState(state) 更新按钮
 end
 deactivate C
 
@@ -85,7 +92,12 @@ deactivate C
 U -> V : 点击风格切换入口
 V -> V : host->requestSwitchTo(styleId)
 V -> Shell : (同一宿主端口) 排队执行 applySwitch
-Shell -> Shell : 创建/取回目标视图, renderState(m_lastState)
+alt 目标视图尚未创建
+    Shell -> Wire : 工厂: create(host, parent)
+    Wire -> V : connect + renderState(presenter.state())\n(首帧即最新状态)
+else 目标视图已创建
+    Shell -> V : 视图持续收到 state 更新, 无需重放
+end
 Shell -> Shell : 保存偏好(失败则不写)
 Shell -> V : 旧视图 styleChanged(); 新视图 styleChanged()
 note right of Shell : 过渡: 旧视图快照淡出覆盖层\n快速连击先结束上一次过渡

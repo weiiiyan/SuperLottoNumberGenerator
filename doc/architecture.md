@@ -28,7 +28,7 @@ src/ui/            → lotto_ui 库: 框架与驱动(UI 核心)
                      不含任何具体风格, 不依赖 Qt Quick
 src/ui/ticket/     → lotto_ui_ticket 库: 票据风格组件(Widgets + QSS)
 src/ui/neumorphic/ → lotto_ui_neumorphic 库: 新拟物风格组件(Qt6 QML + QQuickWidget)
-src/app/           → lotto_main 库: Main 组件(具体风格目录 + 组合根)
+src/app/           → lotto_main 库: Main 组件(具体风格目录 + 接线 + 组合根)
 src/app/main.cpp   → 组合根: 装配具体依赖(唯一接触 QSettings 具体类的点)
 ```
 
@@ -52,7 +52,7 @@ lotto_main ─► 以上全部(运行期无人依赖它)
 | 用例(Use Cases) | src/application/ | LottoInteractor + TicketRepository 端口 |
 | 接口适配器(Interface Adapters) | src/adapters/ | QSettingsTicketRepository(存储)、LottoController(输入)、LottoPresenter(输出) |
 | 框架与驱动(Frameworks & Drivers) | src/ui/ 及其风格子目录 | LottoView/LottoViewShell/MainWindow/QSS/QML |
-| Main 组件(洋葱外) | src/app/ | buildStyleCatalog()/QSettingsStyleStore/main() |
+| Main 组件(洋葱外) | src/app/ | buildStyleCatalog()/wireStyleCatalog()/QSettingsStyleStore/main() |
 
 **为何按层封装而非按用例/功能划分目录(有意权衡)**:第 21 章"尖叫的架构"主张顶层目录反映用例(如 `patients/`、`diagnoses/`);第 34 章也指出按层封装的隐患——不同业务领域的分层代码看起来惊人相似,无法展现领域信息。本项目仍按层划分,理由:(1) 本系统只有**一个用例**(生成/锁定/恢复一注大乐透号码),用例即系统本身,层目录只是洋葱壳;(2) "尖叫"由类名承担——全项目 `Lotto*` 前缀(LottoGroup/LottoTicket/LottoEngine/LottoInteractor/LottoPresenter),打开任何文件都知道这是什么系统;(3) 本项目用于教学,目录与洋葱图一一对应本身就是教学目标。**触发条件**:出现第二个可区分用例(历史记录/统计分析/多玩法等)时,层目录将开始埋没用例,应改为按用例纵向切分——每用例一个组件,自带交互器/展示器/仓储端口(参考第 33 章案例分析)。详见 CLAUDE.md。
 
@@ -82,12 +82,12 @@ lotto_main ─► 以上全部(运行期无人依赖它)
 
 - `QSettingsTicketRepository` — TicketRepository 的 QSettings 实现。键名与旧版本兼容;时间存 ISO 字符串,读取时兼容旧版显示格式;锁定时写全量,未锁定仅写标志
 - `LottoController` — 输入侧适配器(控制器):依赖 `LottoInputBoundary`,把外部输入翻译为用例调用。`onGenerateRequested → generateNewTicket()`、`onLockRequested → toggleLock()`,不含业务判断。不依赖任何 Widget,可独立测试
-- `LottoPresenter` — 输出侧适配器(展示器,谦卑对象模式):实现输出边界 `LottoPresenterPort`,交互器调用 `present(LottoTicket)` 时经静态纯函数 `buildViewState(LottoTicket) → LottoViewState`(号码格式化/占位符/按钮互斥状态/时间显示格式)推导并重发 `viewStateChanged(LottoViewState)` 信号,不依赖任何 Widget。UI 展示字符串及视图结构常量单来源;`LottoViewState` 已注册 Qt 元类型
+- `LottoPresenter` — 输出侧适配器(展示器,谦卑对象模式):实现输出边界 `LottoPresenterPort`,交互器调用 `present(LottoTicket)` 时经静态纯函数 `buildViewState(LottoTicket) → LottoViewState`(号码格式化/占位符/按钮互斥状态/时间显示格式)推导,更新 `state()` 缓存并重发 `viewStateChanged(LottoViewState)` 信号,不依赖任何 Widget。UI 展示字符串及视图结构常量单来源;`LottoViewState` 已注册 Qt 元类型。`state()` 是懒创建视图的首帧来源
 
 ### 框架与驱动(ui)
 
-- `LottoView` — 视图端口:只消费 `LottoViewState`(定义在 adapters 的 `lottoviewstate.h`), 把用户操作翻译为 `generateRequested`/`lockRequested` 信号; 不感知领域实体与本用例层
-- `LottoViewShell` — 视图宿主: 按目录懒创建视图、缓存并重放最近状态、把请求转发给控制器、执行切换过渡、保存偏好。初始 `LottoViewState` 由 Main 注入, 保证任何时刻创建的视图都能渲染
+- `LottoView` — 视图端口:只消费 `LottoViewState`(定义在 adapters 的 `lottoviewstate.h`), 把用户操作翻译为 `generateRequested`/`lockRequested` 信号; 信号由 Main 的 `wireStyleCatalog()` 接到控制器, 视图不感知领域实体与本用例层
+- `LottoViewShell` — 视图宿主: 按目录懒创建视图、承载当前视图、执行切换过渡、保存偏好、失败回退。**不缓存展示状态、不转发请求、不感知业务端口**; 视图的创建与接线由 Main 的 `wireStyleCatalog()` 在工厂中完成
 - `MainWindow` — 窗口壳: `setupUi` + 把宿主设为 central widget, 与宿主同圆
 - `lotto_ui_ticket` — 票据风格组件: `LottoTicketView` + QSS + qrc(自带资源初始化)
 - `lotto_ui_neumorphic` — 新拟物风格组件: `LottoNeumorphicView`(组合 `QQuickWidget`)+ `LottoUi` QML 模块; Qt6-only
@@ -95,23 +95,27 @@ lotto_main ─► 以上全部(运行期无人依赖它)
 ### Main(src/app)
 
 - `buildStyleCatalog()` — 具体风格目录: 全仓唯一允许出现具体风格类名的地方
+- `wireStyleCatalog()` — 把目录中的每个视图工厂包装为"创建 + 接线 + 首帧渲染": 连接 `viewStateChanged → renderState`、两个请求信号 → 控制器槽, 并用 `presenter->state()` 渲染首帧。全仓唯一允许接线的地方
 - `QSettingsStyleStore` — 风格偏好端口的 QSettings 实现
-- `main.cpp` — 组合根: 装配具体依赖(唯一接触 QSettings 具体类的点), 装配顺序为 仓储/引擎 → 输出适配器(实现输出端口) → 交互器(注入输出端口) → 输入适配器(依赖输入边界) → MainWindow(注入目录与初始展示状态), 启动用例(`interactor.load()`), 栈分配, 移交控制权
+- `main.cpp` — 组合根: 装配具体依赖(唯一接触 QSettings 具体类的点), 装配顺序为 仓储/引擎 → 输出适配器(实现输出端口) → 交互器(注入输出端口) → 输入适配器(依赖输入边界) → 风格偏好 → `wireStyleCatalog(buildStyleCatalog(), ...)` 接线 → MainWindow(注入接线后的目录), 启动用例(`interactor.load()`), 栈分配, 移交控制权
 
 ## 数据流
 
 ```text
-用户点击(生成/锁定) → 当前 LottoView → LottoViewShell(宿主) → LottoController(输入侧适配器)
-    ──经 LottoInputBoundary──► LottoInteractor 用例
-                                                      ↓ 状态变化
-                              present(ticket) 经 LottoPresenterPort(输出边界)
-                                                      ↓
-                              LottoPresenter(输出侧适配器) buildViewState() 推导
-                                                      ↓
-                                        viewStateChanged(LottoViewState)
-                                                      ↓
-                              LottoViewShell 缓存 → 当前 LottoView 渲染
-                                                      ↑
+用户点击(生成/锁定) → 当前 LottoView ──请求信号──► LottoController(输入侧适配器)
+    (请求信号 → 控制器的接线由 Main 的 wireStyleCatalog 在创建视图时完成)
+                                                      │
+                                                      └─经 LottoInputBoundary──► LottoInteractor 用例
+                                                                                    ↓ 状态变化
+                                          present(ticket) 经 LottoPresenterPort(输出边界)
+                                                                                    ↓
+                                          LottoPresenter: buildViewState() 推导 + 更新 state() 缓存
+                                                                                    ↓
+                                                              viewStateChanged(LottoViewState)
+                                                                                    ↓
+                                          所有已接线 LottoView 各自 renderState()
+                                          懒创建视图由目录工厂用 state() 渲染首帧
+                                                                                    ↑
         QSettingsTicketRepository(仅锁定/解锁时读写, 恢复时异步加载, 加载结果经 presenter 适配)
 ```
 
@@ -127,12 +131,12 @@ lotto_main ─► 以上全部(运行期无人依赖它)
 | LottoInteractorTest | 状态机 + 输出端口推送(注入 Fake 仓储/Fake 输出端口,无 GUI 依赖) |
 | QSettingsRepositoryTest | 持久化 round-trip 与旧 INI 兼容 |
 | LottoControllerTest | 输入侧翻译(点击 → 用例调用,用例守卫仍生效,无 GUI 依赖) |
-| LottoPresenterTest | 展示推导 + 输出端口桥接(无 GUI 依赖) |
+| LottoPresenterTest | 展示推导 + 输出端口桥接 + `state()` 缓存(无 GUI 依赖) |
 | LottoUiTest | 视图基类默认行为 |
 | LottoUiIsolationTest | 只链接 lotto_ui: 核心库不拖入 Qt Quick 的守门测试 |
 | LottoTicketViewTest | 票据视图渲染/请求信号/票根文案/风格抽屉 |
-| LottoViewShellTest | 宿主: 默认与恢复风格/失败回退/状态重放/过渡覆盖层 |
+| LottoViewShellTest | 宿主: 默认与恢复风格/失败回退/过渡覆盖层(不装配业务端口) |
 | LottoNeumorphicViewTest / LottoQmlSmokeTest | QML 视图与模块加载(Qt6) |
-| LottoMainCatalogTest | Main 的具体风格目录条目 |
+| LottoMainCatalogTest | Main 的具体风格目录条目 + `wireStyleCatalog` 接线(首帧/请求/重渲染) |
 | QSettingsStyleStoreTest | 风格偏好存储往返 |
-| MainWindowTest | GUI 集成(注入式夹具,offscreen) |
+| MainWindowTest | GUI 集成(注入式夹具,目录经 `wireStyleCatalog` 接线,offscreen) |

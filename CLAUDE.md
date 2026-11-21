@@ -57,15 +57,15 @@ ctest --test-dir build/Desktop_Qt_6_11_1_MinGW_64_bit-Debug --output-on-failure
 
 - `LottoControllerTest`（输入侧适配器）注入 `FakeInputBoundary`，只断言"点击 → 用例调用"的翻译，不装配真交互器/引擎
 - `LottoInteractorTest`（用例层）注入 `FakeTicketRepository` + `FakePresenterPort` + `FakeLottoEngine`，断言编排（引擎输出写入票据 / 锁定守卫 / 状态变化保存 / 经输出端口推送）；号码合法性属引擎契约，由 `LottoEngineTest` 承担
-- `LottoPresenterTest`（输出侧适配器）只装配 presenter + `QSignalSpy`，直接 `present(票据) → viewStateChanged` 断言，不依赖用例/引擎
+- `LottoPresenterTest`（输出侧适配器）只装配 presenter + `QSignalSpy`，断言 `present(票据) → viewStateChanged` 与 `state()` 缓存，不依赖用例/引擎
 - `LottoEngineTest`（领域层）纯逻辑，无替身
 - `LottoUiTest`（UI 核心端口）验证视图基类默认行为
 - `LottoUiIsolationTest`（UI 核心）只链接 `lotto_ui`，是"核心库不拖入 Qt Quick"的守门测试
-- `LottoMainCatalogTest` / `QSettingsStyleStoreTest`（Main）验证具体目录条目与偏好存储
+- `LottoMainCatalogTest` / `QSettingsStyleStoreTest`（Main）验证具体目录条目、偏好存储与 `wireStyleCatalog` 接线（首帧/请求/重渲染）
 - `LottoTicketViewTest`（票据视图）注入 `FakeStyleHost`，验证状态渲染、请求信号、票根文案与风格抽屉
-- `LottoViewShellTest`（视图宿主）注入假视图目录（`FakeLottoView`）+ 假偏好，断言默认/恢复风格、非法 id、失败不写偏好、状态重放、过渡覆盖层生命周期
+- `LottoViewShellTest`（视图宿主）注入假视图目录（`FakeLottoView`）+ 假偏好，只断言默认/恢复风格、非法 id、失败不写偏好、过渡覆盖层生命周期；不装配业务端口
 - `LottoNeumorphicViewTest` / `LottoQmlSmokeTest`（QML）验证模块进资源、属性推送与信号回环；平台 Quick 不可用时 `QSKIP`
-- `MainWindowTest` 是唯一的集成测试：真实装配全链（真交互器/引擎/仓储 + 同一临时文件），验证信号管线、布局与持久化 round-trip；切换用例注入「票据视图 + 假视图」混合目录，另有一条真实目录冒烟用例
+- `MainWindowTest` 是唯一的集成测试：真实装配全链（真交互器/引擎/仓储 + 同一临时文件），验证信号管线、布局与持久化 round-trip；原始目录先经 `wireStyleCatalog` 再注入窗口，切换用例注入「票据视图 + 假视图」混合目录，另有一条真实目录冒烟用例
 
 配套：`LottoEngine::generate/generateBatch` 为 `virtual`，供 `FakeLottoEngine` 继承覆写返回固定号码——用例层断言从"号码看起来合法"变为精确确定性的"引擎输出原样写入票据"。
 
@@ -86,12 +86,13 @@ src/adapters/     → lotto_adapters 库：接口适配器（Interface Adapters�
                     输入侧 LottoController + 输出侧 LottoPresenter +
                     展示状态 DTO lottoviewstate.h + 风格偏好端口 lottostylestore.h（仅 Qt::Core）
 src/ui/           → lotto_ui 库：框架与驱动（Frameworks & Drivers）的 UI 核心
-                    视图端口 LottoView + 风格端口 LottoStyleHost + 宿主 LottoViewShell +
-                    过渡覆盖层 + 窗口壳 MainWindow。不含任何具体风格, 不依赖 Qt Quick
+                    视图端口 LottoView + 风格端口 LottoStyleHost + 宿主 LottoViewShell
+                    (只承载与切换) + 过渡覆盖层 + 窗口壳 MainWindow。
+                    不含任何具体风格, 不依赖 Qt Quick, 不感知业务端口
 src/ui/ticket/    → lotto_ui_ticket 库：票据风格组件（Widgets + QSS）
 src/ui/neumorphic/→ lotto_ui_neumorphic 库：新拟物风格组件（Qt6 QML + QQuickWidget）
 src/app/          → lotto_main 库 + main.cpp：Main 组件（圆外）
-                    具体风格目录 buildStyleCatalog() + 组合根
+                    具体风格目录 buildStyleCatalog() + 接线 wireStyleCatalog() + 组合根
 tests/            → 14 个测试 target
 ```
 
@@ -148,7 +149,7 @@ src/ui/lottoview.h/.cpp          视图端口：renderState / isReady / styleCha
                                  只包含 lottoviewstate.h, 不包含展示器, 不感知领域实体
 src/ui/lottostylehost.h          宿主端口：availableStyles / currentStyleId / requestSwitchTo(视图自行调用)
 src/ui/lottostylecatalog.h       仅 LottoStyleDefinition 类型（具体目录在 Main）
-src/ui/lottoviewshell.*          宿主：栈/懒创建/状态重放/信号转发/过渡/偏好保存/失败回退
+src/ui/lottoviewshell.*          宿主：栈/懒创建/切换/过渡/偏好保存/失败回退(不接线)
 src/ui/lottostyleswitchoverlay.* 切换过渡覆盖层(旧画面淡出)
 src/ui/mainwindow.*              窗口壳：setupUi + 挂宿主（并入 UI 核心, 不是单独一层）
 src/ui/ticket/                   lotto_ui_ticket: LottoTicketView + 自绘控件(球/骑缝线/条形码/印章)
@@ -156,16 +157,17 @@ src/ui/ticket/                   lotto_ui_ticket: LottoTicketView + 自绘控件
 src/ui/neumorphic/               lotto_ui_neumorphic: LottoNeumorphicView + LottoUi/*.qml
 ```
 
-Main 侧（`src/app/`）只有 `buildStyleCatalog()`——唯一允许出现具体风格类名的地方。
+Main 侧（`src/app/`）有 `buildStyleCatalog()` 与 `wireStyleCatalog()`——前者是唯一
+允许出现具体风格类名的地方，后者是唯一允许把视图接到控制器/展示器的地方。
 
 偏好端口 `LottoStyleStore`（`src/adapters/lottostylestore.h`）与其 QSettings 实现
 （`src/adapters/qsettingsstylestore.*`，键 `ui/styleId`）位于**适配器层**，与
 `QSettingsTicketRepository` 同级——风格偏好是呈现层偏好，不是应用业务规则，但
 它的实现是存储适配器，不属于 Main 的装配职责，也不与 UI 共库。
 
-**视图只消费 `LottoViewState`**：按钮点击只发 `generateRequested` / `lockRequested`，由宿主接给 `LottoController`；视图不持有控制器、不感知 `LottoInteractor` / `LottoTicket` / 仓储。
+**视图只消费 `LottoViewState`**：按钮点击只发 `generateRequested` / `lockRequested`，由 Main 在 `wireStyleCatalog()` 中接到 `LottoController`；视图不持有控制器/展示器、不感知 `LottoInteractor` / `LottoTicket` / 仓储。宿主也不感知 `LottoController` / `LottoPresenter`。
 
-**切换交互由视图自己提供**：视图经构造注入的 `LottoStyleHost` 枚举风格（两套主题统一为右上角按钮 + 底部抽屉），点击后调用 `requestSwitchTo(id)`；宿主排队执行切换、重放最近状态、通知两视图 `styleChanged`、播放过渡并保存偏好。**切换必须在队列中执行**（`QMetaObject::invokeMethod(..., Qt::QueuedConnection)`），否则会在视图自身事件处理中隐藏自己。
+**切换交互由视图自己提供**：视图经构造注入的 `LottoStyleHost` 枚举风格（两套主题统一为右上角按钮 + 底部抽屉），点击后调用 `requestSwitchTo(id)`；宿主排队执行切换、通知两视图 `styleChanged`、播放过渡并保存偏好。新视图由目录工厂懒创建，Main 的接线以展示器 `state()` 缓存渲染首帧。**切换必须在队列中执行**（`QMetaObject::invokeMethod(..., Qt::QueuedConnection)`），否则会在视图自身事件处理中隐藏自己。
 
 **失败路径**：目标 id 不在目录、工厂返回空、或 `isReady()` 为假（如 QML 加载出错）时，宿主保持当前视图、`qWarning` 并发出 `styleSwitchFailed(id)`，**不写偏好**；启动时未知/空偏好回退首项且不覆盖原值。
 
@@ -199,10 +201,10 @@ Widgets + QSS 实现，按 390 × 844 竖屏骨架排布：顶栏（品牌 + 副
 
 #### 输出侧适配器（展示器）：[lottopresenter.h](src/adapters/lottopresenter.h)
 
-`LottoPresenter` 按谦卑对象模式提取所有可测试的展示逻辑（不依赖任何 Widget）：实现用例层输出边界 `LottoPresenterPort`，交互器调用 `present(LottoTicket)` 时，经静态纯函数 `buildViewState(LottoTicket) → LottoViewState` 推导展示文本（号码格式化/`?` 占位符/时间标签/按钮文字与互斥状态）并重发 `viewStateChanged(LottoViewState)` 信号供视图消费。展示**文案与结构常量不在此定义**：它们住在 `src/adapters/lottoviewstate.h` 的
+`LottoPresenter` 按谦卑对象模式提取所有可测试的展示逻辑（不依赖任何 Widget）：实现用例层输出边界 `LottoPresenterPort`，交互器调用 `present(LottoTicket)` 时，经静态纯函数 `buildViewState(LottoTicket) → LottoViewState` 推导展示文本（号码格式化/`?` 占位符/时间标签/按钮文字与互斥状态），更新 `state()` 缓存并重发 `viewStateChanged(LottoViewState)` 信号供视图消费。展示**文案与结构常量不在此定义**：它们住在 `src/adapters/lottoviewstate.h` 的
 `LottoViewText::*` 与 `LottoViewShape::*`（见下文"展示状态与文案约定"）。
-本类只保留 `formatNumber()` / `buildSerial()` / `buildViewState()` / `initialState()`。
-`initialState()` 的唯一生产调用方是 Main（作为宿主种子），**视图不得调用它**。
+本类只保留 `formatNumber()` / `buildSerial()` / `buildViewState()` / `initialState()` / `state()`。
+`initialState()` 由构造函数用于播种 `state()`；懒创建视图由 Main 的接线以 `state()` 渲染首帧，**视图不得调用它**。
 
 #### 共用骨架与尺寸令牌
 
@@ -278,7 +280,8 @@ APK 现状（Qt 6.11.1，arm64-v8a，debug）：约 24 MB，已包含 `libQt6Qui
 | 模式 | 位置 | 说明 |
 | ---- | ---- | ---- |
 | `LottoPresenter::buildViewState()` | src/adapters/lottopresenter.h | 展示推导（号码格式化/占位符/按钮互斥/时间格式），纯函数供单测 |
-| `LottoPresenter::present()` | src/adapters/lottopresenter.cpp | 实现输出边界：推导后重发 viewStateChanged 信号 |
+| `LottoPresenter::present()` | src/adapters/lottopresenter.cpp | 实现输出边界：推导后更新 `state()` 缓存并重发 viewStateChanged 信号 |
+| `LottoPresenter::state()` | src/adapters/lottopresenter.h | 最近一次展示状态缓存，懒创建视图的首帧来源 |
 | `LottoPresenterPort` | src/application/lottopresenterport.h | 用例层输出边界端口，交互器状态变化后调用 |
 | `LottoInputBoundary` | src/application/lottoinputboundary.h | 用例层输入边界接口，Controller 依赖、交互器实现 |
 | `LottoPresenter::viewStateChanged` | src/adapters/lottopresenter.h | 输出侧适配器重发信号，视图唯一渲染入口 |
@@ -288,9 +291,10 @@ APK 现状（Qt 6.11.1，arm64-v8a，debug）：约 24 MB，已包含 `libQt6Qui
 | `LottoView` | src/ui/lottoview.h | 视图端口（renderState/isReady/styleChanged/snapshot + 请求信号） |
 | `LottoStyleHost` | src/ui/lottostylehost.h | 宿主端口：风格清单/当前风格/切换请求，视图自行调用 |
 | `LottoStyleStore` / `QSettingsStyleStore` | src/adapters/lottostylestore.h | 风格偏好端口与 INI 实现（键 `ui/styleId`） |
-| `buildStyleCatalog()` | src/app/maincatalog.cpp | 具体风格目录，首项默认；新增风格只改这里 |
+| `buildStyleCatalog()` | src/app/maincatalog.cpp | 具体风格目录（未接线），首项默认；新增风格只改这里 |
+| `wireStyleCatalog()` | src/app/maincatalog.cpp | Main：创建 + 接线 + 首帧渲染的唯一位置 |
 | `LottoViewShell::requestSwitchTo()` | src/ui/lottoviewshell.cpp | 切换排队执行，防在视图事件中隐藏自己 |
-| `LottoViewShell::applySwitch()` | src/ui/lottoviewshell.cpp | 查找/懒创建视图、重放状态、通知、存偏好、失败回退 |
+| `LottoViewShell::applySwitch()` | src/ui/lottoviewshell.cpp | 查找/懒创建视图、通知、存偏好、失败回退 |
 | `LottoStyleSwitchOverlay` | src/ui/lottostyleswitchoverlay.* | 切换过渡：旧视图快照淡出，快速连击时先结束上一次 |
 | `renderState()` / `applyState()` | lottoticketview.cpp | 票据视图渲染唯一入口（初始渲染与信号渲染共用） |
 | `NeumoIcon.kind` | src/ui/neumorphic/LottoUi/NeumoIcon.qml | Canvas 自绘图标（generate/lock/style），不依赖 Svg 模块 |
@@ -317,14 +321,16 @@ APK 现状（Qt 6.11.1，arm64-v8a，debug）：约 24 MB，已包含 `libQt6Qui
 - **窄屏票面不要按画布高 844 截断**：Android 全屏后可用高可能超过 844，`qMin(height, 844)` 会让票面缩成上下留边的圆角卡片。窄屏（宽 ≤ 390）必须宽高都满幅，票据视图 `updateCardRect()` 与 `NeumorphicView.qml` 的 `card` 两处同步。
 - **不要把具体风格链接进 `lotto_ui`**：核心库一旦依赖 `lotto_ui_ticket` 或 `lotto_ui_neumorphic`，"可插拔"就失效了。`LottoUiIsolationTest` 只链接 `lotto_ui`，它的 `linkLibs.rsp` 里出现任何 `Quick`/`Qml` 都说明边界被破坏。
 - **具体风格类名只允许出现在 `src/app/maincatalog.cpp`**：核心库、宿主、窗口壳都不得 include `lottoticketview.h` / `lottoneumorphicview.h`。新增风格时改目录，不改宿主。
-- **初始 ViewModel 由 Main 注入**：`LottoViewShell` / `MainWindow` 的构造需要 `const LottoViewState &initialState`（`LottoPresenter::initialState()`）。视图构造期不自我渲染，首帧与切换首帧都由注入的种子保证。
+- **接线只允许出现在 Main 的 `wireStyleCatalog()`**：宿主与视图不得持有 `LottoController` / `LottoPresenter`；展示器 `state()` 是懒创建视图的首帧来源。
+- **展示器/控制器生命周期必须长于窗口与目录工厂**：`wireStyleCatalog()` 的工厂闭包捕获裸指针；Main 中先构造依赖，再构造窗口。
+- **新增风格只改 `buildStyleCatalog()`**：接线由 `wireStyleCatalog()` 统一完成，不要在每个风格里自己连。
 - **视图用 `clicked` 而非 `toggled` 转发按钮动作**：程序化 `setChecked`（渲染时）会触发 `toggled`，若接 `toggled` 会导致保存回路。按钮 checked 状态完全由 `renderState()` 驱动。
 - **`.ui` 文件仅做骨架**：`mainwindow.ui` 只定义 central widget、menu bar、status bar；所有实际 UI 由 `LottoView` 实现提供，不要用 Qt Designer 添加业务控件。
 - **展示逻辑放 `LottoPresenter`，视图只调 `renderState()`**：号码格式化、占位符、按钮文字/互斥状态、时间拆分统一由 `LottoPresenter::buildViewState()` 推导；视图只做机械写入。展示文案与结构常量以 `LottoViewText::*` / `LottoViewShape::*`（[lottoviewstate.h](src/adapters/lottoviewstate.h)）为唯一来源，视图与测试不得重复魔法字符串，且**不得含 emoji**。
-- **视图不感知领域实体**：`LottoView` 实现只依赖 `LottoViewState`（+ `LottoStyleHost`），不得直接包含/引用 `LottoTicket`、`LottoInteractor`、`LottoController`。**端口头 `lottoview.h` 只包含 `lottoviewstate.h`**——加一个 `#include "lottopresenter.h"` 就会把领域实体带进所有视图的编译作用域。
+- **视图不感知领域实体与业务端口**：`LottoView` 实现只依赖 `LottoViewState`（+ `LottoStyleHost`），不得直接包含/引用 `LottoTicket`、`LottoInteractor`、`LottoController`、`LottoPresenter`。**端口头 `lottoview.h` 只包含 `lottoviewstate.h`**——加一个 `#include "lottopresenter.h"` 就会把领域实体带进所有视图的编译作用域。
 - **切换视图必须排队执行**：`LottoViewShell::requestSwitchTo()` 用 `QMetaObject::invokeMethod(..., Qt::QueuedConnection)` 延后到事件循环，否则会在视图自身的事件处理中隐藏/销毁自己。切换时先 `finishTransition()` 结束上一个过渡，避免覆盖层叠加。
 - **QML 属性不得覆盖基类成员**：例如 `Item` 已有 `enabled`，自定义按钮若声明同名属性会触发 `qmlcache` 警告并改变语义——本项目用 `interactive` 代替。
-- **测试夹具为注入式**：`MainWindowTest` 每次通过 `rebuildWindow()` 重建「交互器 + 输入/输出适配器 + 指向同一临时文件的仓储 + 窗口」，风格偏好存储 `FakeLottoStyleStore` **跨重建保留**以验证持久化；`rebuildWindow()` 内显式调用 `interactor->load()`（与生产一致：用例启动由组合根发起），恢复断言前必须 `QTest::qWait(50~100)` 等待 `singleShot(0)` 异步恢复。默认目录为「真实票据视图 + 假视图」混合目录，切换用例不依赖 QML 环境。
+- **测试夹具为注入式**：`MainWindowTest` 每次通过 `rebuildWindow()` 重建「交互器 + 输入/输出适配器 + 指向同一临时文件的仓储 + 窗口」，原始目录在依赖重建后经 `wireStyleCatalog()` 接线再注入窗口；风格偏好存储 `FakeLottoStyleStore` **跨重建保留**以验证持久化；`rebuildWindow()` 内显式调用 `interactor->load()`（与生产一致：用例启动由组合根发起），恢复断言前必须 `QTest::qWait(50~100)` 等待 `singleShot(0)` 异步恢复。默认目录为「真实票据视图 + 假视图」混合目录，切换用例不依赖 QML 环境。
 
 ## 代码风格
 

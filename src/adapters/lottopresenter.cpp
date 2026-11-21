@@ -15,11 +15,18 @@ LottoPresenter::LottoPresenter(QObject *parent)
 {
     // Qt 5 下 QSignalSpy/排队连接需运行时注册自定义类型
     qRegisterMetaType<LottoViewState>();
+    m_lastState = initialState();
 }
 
 void LottoPresenter::present(const LottoTicket &ticket)
 {
-    emit viewStateChanged(buildViewState(ticket));
+    m_lastState = buildViewState(ticket);
+    emit viewStateChanged(m_lastState);
+}
+
+const LottoViewState &LottoPresenter::state() const
+{
+    return m_lastState;
 }
 
 LottoViewState LottoPresenter::buildViewState(const LottoTicket &ticket)
