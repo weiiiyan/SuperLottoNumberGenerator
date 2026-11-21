@@ -10,8 +10,8 @@
 /*!
  * \brief LottoView 视图端口: 所有风格的视图都实现本接口
  *
- * 视图只消费展示状态 LottoViewState, 并把用户操作翻译为信号交由宿主
- * 转发给输入侧适配器; 视图不感知 LottoTicket / LottoInteractor /
+ * 视图只消费展示状态 LottoViewState, 并把用户操作翻译为信号; 信号由
+ * 组合根(Main)接线到输入侧适配器。视图不感知 LottoTicket / LottoInteractor /
  * TicketRepository, 也不认识其它风格的视图。风格切换交互由视图自行
  * 实现(经 LottoStyleHost 端口), 因此各风格观感可独立演进。
  */
