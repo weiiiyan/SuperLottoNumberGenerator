@@ -65,6 +65,31 @@ private slots:
         QCOMPARE(state.lockButtonText, QString::fromUtf8(LottoViewText::LOCK_TEXT_LOCKED));
         QVERIFY(!state.generateEnabled);
     }
+
+    // ── 最近状态缓存(懒创建视图的首帧来源) ──
+
+    void state_shouldBeSeededWithInitialState()
+    {
+        qDebug() << "验证展示器构造后缓存初始展示状态";
+        const LottoViewState expected = LottoPresenter::initialState();
+        QCOMPARE(m_presenter->state().generateButtonText, expected.generateButtonText);
+        QCOMPARE(m_presenter->state().stubHintText, expected.stubHintText);
+        QCOMPARE(m_presenter->state().groups.size(), LottoTicket::GROUP_COUNT);
+    }
+
+    void present_shouldUpdateCachedState()
+    {
+        qDebug() << "验证 present() 同时更新缓存与信号";
+        const LottoTicket ticket = makeTicket(
+            LottoTicket::GROUP_COUNT, false, QDateTime(QDate(2026, 1, 1), QTime(12, 0, 0)));
+        m_presenter->present(ticket);
+
+        const LottoViewState expected = LottoPresenter::buildViewState(ticket);
+        QCOMPARE(m_presenter->state().groups, expected.groups);
+        QCOMPARE(m_presenter->state().timeValueText, expected.timeValueText);
+        QCOMPARE(m_presenter->state().lockButtonEnabled, expected.lockButtonEnabled);
+    }
+
     // ── 空票据(初始状态) ──
 
     void emptyTicket_shouldUsePlaceholders()
