@@ -446,10 +446,17 @@ void LottoTicketView::buildLayout()
 
 void LottoTicketView::updateCardRect()
 {
-    // 票面: 桌面宽窗居中成卡片, 窄屏满幅
-    const int cardW = qMin(width(), static_cast<int>(LottoLayout::CanvasWidth));
-    const int cardH = qMin(height(), static_cast<int>(LottoLayout::CanvasHeight));
-    m_cardRect = QRect((width() - cardW) / 2, (height() - cardH) / 2, cardW, cardH);
+    // 票面: 桌面宽窗居中成 390 x 844 卡片; 窄屏(宽不超画布宽)满幅,
+    // 高度也不再受 844 上限约束——全屏手机的可用高可能超过 844,
+    // 若仍截断会上下露出圆角卡片边
+    const bool narrow = width() <= LottoLayout::CanvasWidth;
+    const int cardW = narrow ? width()
+                             : static_cast<int>(LottoLayout::CanvasWidth);
+    const int cardH = narrow
+        ? height()
+        : qMin(height(), static_cast<int>(LottoLayout::CanvasHeight));
+    m_cardRect = QRect((width() - cardW) / 2,
+                       narrow ? 0 : (height() - cardH) / 2, cardW, cardH);
 }
 
 void LottoTicketView::recomputeMetrics()
@@ -458,8 +465,11 @@ void LottoTicketView::recomputeMetrics()
     const int cardW = m_cardRect.width();
     const int cardH = m_cardRect.height();
 
-    m_padTop = LottoLayout::PadTop;
-    m_padBottom = LottoLayout::PadBottom;
+    // 上/下边距取设计令牌与窗口安全区的较大者: Android 全屏时状态栏
+    // 与手势条覆盖窗口边缘, 安全区更大时以安全区为准
+    const QMargins safeArea = windowSafeArea();
+    m_padTop = LottoLayout::effectivePadTop(safeArea);
+    m_padBottom = LottoLayout::effectivePadBottom(safeArea);
 
     const int fixedHeight = LottoLayout::TopBarHeight + LottoLayout::MetaHeight
         + LottoLayout::PerfHeight + LottoLayout::StubHeight + LottoLayout::ActionsHeight;
@@ -470,10 +480,13 @@ void LottoTicketView::recomputeMetrics()
     const int minRows = GROUP_COUNT * LottoLayout::RowHeightMin;
     if (rowsAvailable < minRows) {
         int deficit = minRows - rowsAvailable;
-        const int cutTop = qMin(deficit / 2, m_padTop - 16);
+        // 压缩不越过安全区, 否则内容会滑到状态栏/手势条下面
+        const int topFloor = qMax(16, safeArea.top());
+        const int bottomFloor = qMax(12, safeArea.bottom());
+        const int cutTop = qMin(deficit / 2, m_padTop - topFloor);
         m_padTop -= cutTop;
         deficit -= cutTop;
-        const int cutBottom = qMin(deficit, m_padBottom - 12);
+        const int cutBottom = qMin(deficit, m_padBottom - bottomFloor);
         m_padBottom -= cutBottom;
         rowsAvailable = cardH - m_padTop - m_padBottom - fixedHeight;
     }
@@ -609,6 +622,27 @@ void LottoTicketView::paintEvent(QPaintEvent *event)
 void LottoTicketView::renderState(const LottoViewState &state)
 {
     applyState(state);
+}
+
+void LottoTicketView::showEvent(QShowEvent *event)
+{
+    LottoView::showEvent(event);
+    attachSafeAreaListener();
+}
+
+void LottoTicketView::attachSafeAreaListener()
+{
+    QWidget *topLevel = window();
+    QWindow *windowHandle = topLevel ? topLevel->windowHandle() : nullptr;
+    if (!windowHandle || windowHandle == m_safeAreaWindow)
+        return;
+    m_safeAreaWindow = windowHandle;
+    connect(windowHandle, &QWindow::safeAreaMarginsChanged, this, [this]() {
+        recomputeMetrics();
+        applyMetricsToWidgets();
+        positionOverlays();
+        update();
+    });
 }
 
 void LottoTicketView::resizeEvent(QResizeEvent *event)

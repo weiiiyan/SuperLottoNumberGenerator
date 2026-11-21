@@ -1,9 +1,11 @@
 #ifndef LOTTOTICKETVIEW_H
 #define LOTTOTICKETVIEW_H
 
+#include <QPointer>
 #include <QRect>
 #include <QStringList>
 #include <QVector>
+#include <QWindow>
 
 #include "lottoview.h"
 
@@ -16,6 +18,7 @@ class LottoStyleDrawer;
 class QFrame;
 class QLabel;
 class QPushButton;
+class QShowEvent;
 class QTimer;
 class QVBoxLayout;
 
@@ -61,12 +64,14 @@ public:
 protected:
     void paintEvent(QPaintEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
+    void showEvent(QShowEvent *event) override;
 
 private:
     void initUi();
     void buildLayout();
     void applyState(const LottoViewState &state);
     void updateCardRect();
+    void attachSafeAreaListener();
     void recomputeMetrics();
     void applyMetricsToWidgets();
     void positionOverlays();
@@ -114,6 +119,7 @@ private:
 
     QTimer *m_layoutDebounceTimer = nullptr; /*!< 布局防抖定时器 */
     QSize   m_lastAppliedSize;               /*!< 上次实际应用的尺寸 */
+    QPointer<QWindow> m_safeAreaWindow;      /*!< 已监听安全区的顶层窗口 */
 
     QRect   m_cardRect;      /*!< 票面矩形(桌面居中卡片 / 窄屏满幅) */
     int     m_ballSize = 40; /*!< 当前球径 */

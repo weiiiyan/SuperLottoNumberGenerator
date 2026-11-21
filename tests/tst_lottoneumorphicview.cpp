@@ -9,6 +9,7 @@
 #include <QSignalSpy>
 #include <QTest>
 
+#include "lottolayoutmetrics.h"
 #include "lottopresenter.h"
 #include "neumorphic/lottoneumorphicview.h"
 #include "testhelpers.h"
@@ -39,6 +40,60 @@ private slots:
             QSKIP("当前平台 Quick 未能初始化");
         QVERIFY(view.rootItem() != nullptr);
         QCOMPARE(view.styleId(), QStringLiteral("neumorphic"));
+    }
+
+    void tallNarrowCardFillsWholeHeight()
+    {
+        qDebug() << "验证窄屏高于画布时 QML 卡片满幅(不露圆角卡片边)";
+        FakeStyleHost host;
+        LottoNeumorphicView view(&host);
+        view.resize(390, 900);
+        view.show();
+        if (!waitReady(view))
+            QSKIP("当前平台 Quick 未能初始化");
+
+        QQuickItem *card = nullptr;
+        for (QQuickItem *item : view.rootItem()->findChildren<QQuickItem *>()) {
+            if (item->objectName() == QStringLiteral("ticketCard")) {
+                card = item;
+                break;
+            }
+        }
+        QVERIFY2(card != nullptr, "未找到票面卡片");
+        QTRY_COMPARE_WITH_TIMEOUT(qRound(card->height()), 900, 2000);
+        QCOMPARE(qRound(card->property("radius").toReal()), 0);
+    }
+
+    void safeAreaRaisesContentTopMargin()
+    {
+        qDebug() << "验证窗口安全区大于设计上边距时, QML 内容整体下移";
+        FakeStyleHost host;
+        LottoNeumorphicView view(&host);
+        view.resize(390, 900);
+        view.show();
+        if (!waitReady(view))
+            QSKIP("当前平台 Quick 未能初始化");
+        QTest::qWait(100);
+
+        QQuickItem *card = nullptr;
+        QQuickItem *button = nullptr;
+        const QList<QQuickItem *> items =
+            view.rootItem()->findChildren<QQuickItem *>();
+        for (QQuickItem *item : items) {
+            if (item->objectName() == QStringLiteral("ticketCard"))
+                card = item;
+            else if (item->objectName() == QStringLiteral("styleButton"))
+                button = item;
+        }
+        QVERIFY2(card && button, "未找到票面卡片或风格按钮");
+
+        const int shifted = qMax(LottoLayout::PadTop,
+                                 view.rootItem()->property("safeTop").toInt()) + 20;
+        const qreal before = button->mapToItem(card, QPointF(0, 0)).y();
+        view.rootItem()->setProperty("safeTop", shifted);
+        QTRY_COMPARE_WITH_TIMEOUT(
+            qRound(button->mapToItem(card, QPointF(0, 0)).y()),
+            qRound(before) + 20, 1000);
     }
 
     void renderStatePushesProperties()

@@ -204,7 +204,7 @@ Widgets + QSS 实现，按 390 × 844 竖屏骨架排布：顶栏（品牌 + 副
 
 两套主题共用同一张骨架（设计文档 [design-spec.html](doc/界面设计/design-spec.html)）：顶栏 66 → 时间条 60 → 号码带（5 行 × 76，行距 0）→ 骑缝线 26 → 两行票根 105 → 操作区 81（按钮高 56）。左右安全边距 22、上 40、下 34；球径上限 40、球距 4、行号列宽 18。C++ 侧令牌集中在 [lottolayoutmetrics.h](src/ui/lottolayoutmetrics.h)，QML 侧镜像在 `NeumoTheme.qml`，两处不一致时以设计文档为准。
 
-`LottoTicketView::recomputeMetrics()` 只在尺寸变化（50ms 防抖后）重算：票面矩形（桌面 >440 宽时居中成 390 × 844 卡片，窄屏满幅）、行高（先压到 68，再压上下边距）、球径（按宽度反算并钳在 16–40）。**号码行不重建**，只调整控件尺寸，因此 `rebuildGroupRows()` / `clearLayout()` / 四档间距逻辑已删除。主布局设 `QLayout::SetNoConstraint`，窗口变小时压缩而不是撑出滚动条。
+`LottoTicketView::recomputeMetrics()` 只在尺寸变化（50ms 防抖后）重算：票面矩形（窄屏即宽 ≤ 390 时宽高都满幅；宽屏居中成 390 × 844 卡片）、行高（先压到 68，再压上下边距）、球径（按宽度反算并钳在 16–40）。**号码行不重建**，只调整控件尺寸，因此 `rebuildGroupRows()` / `clearLayout()` / 四档间距逻辑已删除。主布局设 `QLayout::SetNoConstraint`，窗口变小时压缩而不是撑出滚动条。
 
 彩票格式常量（`GROUP_COUNT` 等）别名 `LottoViewShape::*`（定义于 `lottoviewstate.h`，其 `GROUP_COUNT` 由 `static_assert` 与 `LottoTicket::GROUP_COUNT` 绑定），视图不直接依赖领域常量。
 
@@ -249,6 +249,18 @@ qrc/qmldir 随该目标一起被链接；`LottoNeumorphicView` 在 `loadFromModu
 
 `android/` 目录包含标准 Qt Android 部署文件：`AndroidManifest.xml`、`build.gradle`、Gradle wrapper 以及 `res/mipmap-*` 中的启动图标。CMake 通过 `QT_ANDROID_PACKAGE_SOURCE_DIR` 指向此目录。
 
+**全屏（edge-to-edge）**：`MainWindow` 在 Android（Qt 6.9+）上做三件事：
+`setWindowFlag(Qt::ExpandedClientAreaHint, true)` 让窗口铺满整屏（Android QPA 走
+`showExpanded`）；`setAttribute(Qt::WA_ContentsMarginsRespectsSafeArea, false)`
+关闭 Qt 6.9 起的"安全区并入 contentsMargins"——否则中央控件会被状态栏/手势条
+再缩一次（实机日志：窗口 375×834，central widget 只有 375×752）；`statusBar()->hide()`
+——设计骨架没有状态栏，否则底部再白占 24dp。之后两套视图把窗口安全区并入
+自己的上/下边距：`LottoView::windowSafeArea()` 读 `QWindow::safeAreaMargins()`，
+`LottoLayout::effectivePadTop/PadBottom()` 取 `max(设计令牌, 安全区)`（40/34 是设计
+下限，系统栏更高时自动让位）；窗口安全区变化时经 `safeAreaMarginsChanged` 重算
+（票据视图 `recomputeMetrics()`，QML 侧由 C++ 推送 `safeTop`/`safeBottom` 属性，
+QML 内取 `Math.max`）。票面在窄屏下必须**宽高都满幅**，不得按画布高 844 截断。
+
 APK 现状（Qt 6.11.1，arm64-v8a，debug）：约 24 MB，已包含 `libQt6Quick`、`libQt6QuickWidgets`、`libQt6QuickEffects`、`libQt6QuickLayouts`；`LottoUi` 的 QML 以资源形式编入应用库（已验证 APK 内 `.so` 含 `LottoUi/Neumo*` 资源名）。低端设备上 `QQuickWidget` 的性能与包体是否可接受仍需真机实测——若不可接受，新拟物视图可退回 Widgets 自绘，`LottoView` 端口以上无需改动。
 
 ### LSP / 工具链
@@ -286,6 +298,7 @@ APK 现状（Qt 6.11.1，arm64-v8a，debug）：约 24 MB，已包含 `libQt6Qui
 | `LottoStyleDrawer` | src/ui/ticket/lottostyledrawer.* | 底部风格抽屉（遮罩 + 上滑面板） |
 | `NeumoPerf` / `NeumoStub` / `NeumoStyleSheet` | src/ui/neumorphic/LottoUi/*.qml | 新拟物侧的骑缝线 / 两行票根 / 底部抽屉 |
 | `recomputeMetrics()` | src/ui/ticket/lottoticketview.cpp | 票面矩形、行高压缩、球径反算的唯一入口 |
+| `windowSafeArea()` / `effectivePadTop/PadBottom()` | src/ui/lottoview.cpp / lottolayoutmetrics.h | 全屏安全区并入设计上/下边距，取较大者 |
 | `m_layoutDebounceTimer` | src/ui/ticket/lottoticketview.cpp | 50ms 防抖定时器，解决 Android resizeEvent 自激震荡 |
 
 ### 避坑指南
@@ -293,6 +306,8 @@ APK 现状（Qt 6.11.1，arm64-v8a，debug）：约 24 MB，已包含 `libQt6Qui
 - **不要删除票据视图 resizeEvent 中的 50ms 防抖定时器**：Android 端宽度可能在相近值间反复跳动（如 448↔800），导致 `resizeEvent → recomputeMetrics → setFixedSize → resizeEvent` 自激震荡。`m_layoutDebounceTimer`（singleShot, 50ms）将多次 resize 合并为一次布局更新。QML 视图无此问题。
 - **新增源文件加入所属层的 CMakeLists.txt**：`src/domain/`、`src/application/`、`src/adapters/`、`src/ui/`、`src/ui/ticket/`、`src/ui/neumorphic/`、`src/app/` 各有独立 `CMakeLists.txt`。**QML 文件要加进 `qt_add_qml_module` 的 `QML_FILES`**，否则不会进资源。改 CMake 后需重新运行 cmake 配置以刷新 `compile_commands.json`。
 - **静态库的 Qt 依赖必须 PUBLIC**：`lotto_core`/`lotto_application`/`lotto_adapters`/`lotto_ui`/`lotto_ui_ticket`/`lotto_ui_neumorphic`/`lotto_main` 用 `target_link_libraries(... PUBLIC Qt::...)`，PRIVATE 不会向下游传递 Qt 头文件路径，导致测试/可执行编译找不到 Qt 头。
+- **Android 全屏要连 `WA_ContentsMarginsRespectsSafeArea` 一起关**：只设 `ExpandedClientAreaHint` 时窗口虽已是整屏，`QWidget::contentsMargins()` 仍会把 `safeAreaMargins()` 并进布局边距，中央控件再缩一圈，且 `QStatusBar` 在底部多占一行。属性必须在 `show()` 之前设置，否则自动置位已生效。
+- **窄屏票面不要按画布高 844 截断**：Android 全屏后可用高可能超过 844，`qMin(height, 844)` 会让票面缩成上下留边的圆角卡片。窄屏（宽 ≤ 390）必须宽高都满幅，票据视图 `updateCardRect()` 与 `NeumorphicView.qml` 的 `card` 两处同步。
 - **不要把具体风格链接进 `lotto_ui`**：核心库一旦依赖 `lotto_ui_ticket` 或 `lotto_ui_neumorphic`，"可插拔"就失效了。`LottoUiIsolationTest` 只链接 `lotto_ui`，它的 `linkLibs.rsp` 里出现任何 `Quick`/`Qml` 都说明边界被破坏。
 - **具体风格类名只允许出现在 `src/app/maincatalog.cpp`**：核心库、宿主、窗口壳都不得 include `lottoticketview.h` / `lottoneumorphicview.h`。新增风格时改目录，不改宿主。
 - **初始 ViewModel 由 Main 注入**：`LottoViewShell` / `MainWindow` 的构造需要 `const LottoViewState &initialState`（`LottoPresenter::initialState()`）。视图构造期不自我渲染，首帧与切换首帧都由注入的种子保证。

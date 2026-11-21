@@ -178,6 +178,33 @@ private slots:
         QCOMPARE(generate->height(), static_cast<int>(LottoLayout::ActionHeight));
     }
 
+    void tallNarrowViewFillsWholeHeight()
+    {
+        qDebug() << "验证窄屏高于画布时票面满幅, 不再按 844 截断居中";
+        FakeStyleHost host;
+        LottoTicketView view(&host);
+        view.resize(390, 900);
+        view.show();        // 隐藏窗口不派发 resizeEvent, 必须显示
+        QTest::qWait(80);   // 等 50ms 布局防抖
+
+        auto *topBar = view.findChild<QWidget *>(QStringLiteral("topBar"));
+        QVERIFY(topBar != nullptr);
+        // 满幅时票面上缘为 0, 顶栏恰好落在上安全边距处
+        QCOMPARE(topBar->y(), LottoLayout::PadTop);
+    }
+
+    void safeAreaRaisesPaddingsOnlyWhenLarger()
+    {
+        qDebug() << "验证安全边距取设计令牌与窗口安全区的较大者";
+        QCOMPARE(LottoLayout::effectivePadTop(QMargins()), LottoLayout::PadTop);
+        QCOMPARE(LottoLayout::effectivePadBottom(QMargins()), LottoLayout::PadBottom);
+        QCOMPARE(LottoLayout::effectivePadTop(QMargins(0, 60, 0, 0)), 60);
+        QCOMPARE(LottoLayout::effectivePadBottom(QMargins(0, 0, 0, 50)), 50);
+        // 小于设计值时不缩水
+        QCOMPARE(LottoLayout::effectivePadTop(QMargins(0, 8, 0, 0)),
+                 LottoLayout::PadTop);
+    }
+
     void styleButtonShowsFourSquareGlyph()
     {
         qDebug() << "验证风格按钮带四矩形自绘图标";

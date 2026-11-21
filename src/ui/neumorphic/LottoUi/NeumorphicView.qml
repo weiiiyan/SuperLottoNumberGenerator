@@ -9,6 +9,14 @@ import LottoUi
 Item {
     id: root
 
+    // 窄屏(宽不超画布宽)时票面满幅; 宽屏才收起为 390 x 844 卡片
+    readonly property bool narrow: root.width <= NeumoTheme.canvasWidth
+
+    // 窗口安全区(C++ 侧 windowSafeArea() 推送): 内容边距取设计令牌与
+    // 安全区的较大者, 避免全屏时被状态栏/手势条遮挡
+    property int safeTop: 0
+    property int safeBottom: 0
+
     // ── C++ 推送的展示状态 ──
     property var groups: []
     property string timeLabelText: ""
@@ -78,8 +86,11 @@ Item {
 
     Rectangle {
         id: card
+        objectName: "ticketCard"
         width: Math.min(root.width, NeumoTheme.canvasWidth)
-        height: Math.min(root.height, NeumoTheme.canvasHeight)
+        // 窄屏高度同样满幅: 全屏手机可用高可能超过画布高
+        height: narrow ? root.height
+                       : Math.min(root.height, NeumoTheme.canvasHeight)
         anchors.centerIn: parent
         radius: (width < root.width || height < root.height) ? 36 : 0
         color: NeumoTheme.background
@@ -90,8 +101,8 @@ Item {
             anchors.fill: parent
             anchors.leftMargin: NeumoTheme.padX
             anchors.rightMargin: NeumoTheme.padX
-            anchors.topMargin: NeumoTheme.padTop
-            anchors.bottomMargin: NeumoTheme.padBottom
+            anchors.topMargin: Math.max(NeumoTheme.padTop, root.safeTop)
+            anchors.bottomMargin: Math.max(NeumoTheme.padBottom, root.safeBottom)
             spacing: 0
 
             // ── 顶栏: 品牌 + 副标题 + 风格按钮 ──

@@ -1,6 +1,7 @@
 #ifndef LOTTOVIEW_H
 #define LOTTOVIEW_H
 
+#include <QMargins>
 #include <QPixmap>
 #include <QWidget>
 
@@ -31,6 +32,15 @@ public:
     virtual void styleChanged(const QString &currentStyleId);
     /*! 当前画面快照, 供切换过渡使用(默认抓取本控件) */
     virtual QPixmap snapshot() const;
+
+protected:
+    /*!
+     * \brief 顶层窗口的安全区(桌面/普通窗口为 QMargins())
+     *
+     * 全屏(edge-to-edge)时状态栏与手势条会覆盖窗口上下边缘, 返回的
+     * 边距即内容需避让的最小距离; 视图据此放大自己的安全边距。
+     */
+    QMargins windowSafeArea() const;
 
 signals:
     /*! 用户请求生成新号码 */

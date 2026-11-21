@@ -1,6 +1,8 @@
 #ifndef LOTTOLAYOUTMETRICS_H
 #define LOTTOLAYOUTMETRICS_H
 
+#include <QMargins>
+
 /*!
  * \brief 两套主题共用的骨架尺寸令牌(390 × 844 竖屏基准)
  *
@@ -32,6 +34,23 @@ inline constexpr int RowHeight     = 76;   /*!< 行高上限 */
 inline constexpr int RowHeightMin  = 68;   /*!< 窗口变矮时的行高下限 */
 inline constexpr int StubBarcodeWidth  = 92;
 inline constexpr int StubBarcodeHeight = 20;
+
+/*!
+ * \brief 有效上/下安全边距 = 设计令牌与窗口安全区取较大者
+ *
+ * Android 全屏(edge-to-edge)时状态栏与手势条会覆盖窗口上下边缘。
+ * 设计骨架的 40/34 是常规机型的经验值, 安全区更大时以安全区为准,
+ * 避免内容被系统 UI 遮挡; 桌面端安全区为 0, 结果即设计值。
+ */
+inline int effectivePadTop(const QMargins &safeArea)
+{
+    return qMax(PadTop, safeArea.top());
+}
+
+inline int effectivePadBottom(const QMargins &safeArea)
+{
+    return qMax(PadBottom, safeArea.bottom());
+}
 
 } // namespace LottoLayout
 
