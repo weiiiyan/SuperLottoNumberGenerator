@@ -36,6 +36,17 @@ inline constexpr int StubBarcodeWidth  = 92;
 inline constexpr int StubBarcodeHeight = 20;
 
 /*!
+ * \brief 视图可压缩到的下限尺寸
+ *
+ * 票据视图的左右居中边距由当前宽度推导, 其布局最小尺寸会随之≈当前宽度。
+ * 若把该值上报给宿主, 页面创建时(390 x 844)会把整个窗口的最小宽度抬到
+ * 超过手机屏幕, 页面被布局到屏幕之外(右侧内容被裁), 且该页隐藏后仍留在
+ * 视图栈中持续抬高下限。视图的最小尺寸必须是与当前尺寸无关的常量。
+ */
+inline constexpr int MinimumWidth  = 320;  /*!< 最小宽度(最窄手机) */
+inline constexpr int MinimumHeight = 500;  /*!< 最小高度(压缩后的可行高) */
+
+/*!
  * \brief 有效上/下安全边距 = 设计令牌与窗口安全区取较大者
  *
  * Android 全屏(edge-to-edge)时状态栏与手势条会覆盖窗口上下边缘。

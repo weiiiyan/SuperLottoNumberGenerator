@@ -55,6 +55,8 @@ public:
     void renderState(const LottoViewState &state) override;
     /*! 更新风格按钮文案并关闭抽屉 */
     void styleChanged(const QString &currentStyleId) override;
+    /*! 最小尺寸取设计下限, 不随当前宽度增长(见 LottoLayout::MinimumWidth) */
+    QSize minimumSizeHint() const override;
 
 public:
     // 彩票格式常量(别名展示器, 其别名领域层规则)

@@ -180,6 +180,15 @@ QString LottoTicketView::styleId() const
     return QString::fromLatin1(STYLE_ID);
 }
 
+QSize LottoTicketView::minimumSizeHint() const
+{
+    // 布局最小尺寸由"随当前宽度推导的居中边距"决定, 原样上报会≈当前宽度。
+    // 运行时创建本视图(390 x 844)会把宿主窗口的最小宽度抬到 388, 超过
+    // 窄屏手机的 375dp 后被布局到屏幕之外, 右侧内容被裁; 该页隐藏后仍留在
+    // 视图栈中, 于是切回其它风格也继续错位。这里上报与当前尺寸无关的下限。
+    return QSize(LottoLayout::MinimumWidth, LottoLayout::MinimumHeight);
+}
+
 void LottoTicketView::initUi()
 {
     m_mainLayout = new QVBoxLayout(this);

@@ -319,6 +319,7 @@ APK 现状（Qt 6.11.1，arm64-v8a，debug）：约 24 MB，已包含 `libQt6Qui
 - **手绘柔影要自己维护失效区域**：柔影画在面板矩形之外，Qt 只按面板新旧矩形失效重绘，面板滑动时旧柔影会留在画面上（收起时出现拖影）。抽屉在动画每帧调 `updatePaintFrame()`，把上一帧与当前帧的「面板 + 柔影」范围一并 `update()`。
 - **柔影裁剪要用正圆弧**：面板圆角是 QSS 的 20px 圆弧，柔影裁剪若用 `quadTo`（二次贝塞尔）会在角上偏外约 6px，圆角外留下月牙形浅色夹缝；`paintSheetShadow()` 用 `arcTo` 画圆角。
 - **窄屏票面不要按画布高 844 截断**：Android 全屏后可用高可能超过 844，`qMin(height, 844)` 会让票面缩成上下留边的圆角卡片。窄屏（宽 ≤ 390）必须宽高都满幅，票据视图 `updateCardRect()` 与 `NeumorphicView.qml` 的 `card` 两处同步。
+- **视图的最小尺寸不能随当前尺寸增长**：票据视图的左右居中边距由当前宽度推导，布局 `minimumSizeHint` 会≈当前宽度。运行时创建的页面（构造尺寸 390×844 → 最小宽 388dp）会把窗口/表面最小宽度抬到超过窄屏手机（如 375dp），整页被布局到屏幕之外、右侧内容被裁；该页隐藏后仍留在 `QStackedWidget` 中持续抬高下限，所以切回其它风格也继续错位。`LottoTicketView::minimumSizeHint()` 必须返回与尺寸无关的 `LottoLayout::MinimumWidth/MinimumHeight`（回归测试：`minimumSizeHintStaysBoundedWhenViewGrows`、`ticketMinimumWidthDoesNotBlockWindowShrink`）。
 - **不要把具体风格链接进 `lotto_ui`**：核心库一旦依赖 `lotto_ui_ticket` 或 `lotto_ui_neumorphic`，"可插拔"就失效了。`LottoUiIsolationTest` 只链接 `lotto_ui`，它的 `linkLibs.rsp` 里出现任何 `Quick`/`Qml` 都说明边界被破坏。
 - **具体风格类名只允许出现在 `src/app/maincatalog.cpp`**：核心库、宿主、窗口壳都不得 include `lottoticketview.h` / `lottoneumorphicview.h`。新增风格时改目录，不改宿主。
 - **接线只允许出现在 Main 的 `wireStyleCatalog()`**：宿主与视图不得持有 `LottoController` / `LottoPresenter`；展示器 `state()` 是懒创建视图的首帧来源。

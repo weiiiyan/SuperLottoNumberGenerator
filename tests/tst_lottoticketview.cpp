@@ -315,6 +315,25 @@ private slots:
         QVERIFY2(!stamp->isHidden(), "锁定时印章应显示");
     }
 
+    void minimumSizeHintStaysBoundedWhenViewGrows()
+    {
+        qDebug() << "验证视图放大后最小尺寸不随当前宽度增长"
+                    "(否则宿主会按该下限把页面布局到屏幕之外)";
+        FakeStyleHost host;
+        LottoTicketView view(&host);
+        view.resize(1600, 900);
+        view.show();
+        QTest::qWait(80);   // 等 50ms 布局防抖
+
+        const QSize minimum = view.minimumSizeHint();
+        QVERIFY2(minimum.width() <= LottoLayout::CanvasWidth,
+                 qPrintable(QStringLiteral("最小宽度 %1 超过设计画布宽 %2")
+                                .arg(minimum.width()).arg(LottoLayout::CanvasWidth)));
+        QVERIFY2(minimum.height() <= LottoLayout::CanvasHeight,
+                 qPrintable(QStringLiteral("最小高度 %1 超过设计画布高 %2")
+                                .arg(minimum.height()).arg(LottoLayout::CanvasHeight)));
+    }
+
     void ticketViewCanBeRegisteredInACatalog()
     {
         qDebug() << "验证票据视图可注册进风格目录";

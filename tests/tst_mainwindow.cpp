@@ -538,7 +538,30 @@ private slots:
                  QString::fromUtf8(LottoViewText::NUMBER_PLACEHOLDER));
     }
 
-    // ── 场景 9: resize 布局自适应不崩溃 ──
+    // ── 场景 9: 票据视图最小尺寸不随当前宽度增长 ──
+
+    void ticketMinimumWidthDoesNotBlockWindowShrink()
+    {
+        qDebug() << "验证票据视图按宽窗布局后, 窗口仍可缩回窄屏"
+                    "(最小宽度不得随当前宽度增长, 否则窄屏右侧内容会被裁)";
+        m_window->resize(1200, 900);
+        m_window->show();
+        QTest::qWait(150);   // 等首轮布局与 50ms 防抖
+
+        m_window->resize(420, 700);
+        QTest::qWait(150);
+
+        QVERIFY2(m_window->width() <= 460,
+                 qPrintable(QStringLiteral("窗口宽度仍为 %1, 被票据页最小宽度锁死")
+                                .arg(m_window->width())));
+
+        auto *ticket = m_window->findChild<LottoTicketView *>();
+        QVERIFY(ticket != nullptr);
+        QVERIFY2(ticket->width() <= m_window->viewShell()->width(),
+                 "票据页宽度不应超过视图宿主");
+    }
+
+    // ── 场景 10: resize 布局自适应不崩溃 ──
 
     void resizeWindow_shouldNotCrash()
     {
